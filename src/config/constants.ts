@@ -201,14 +201,26 @@ export const CURRENCY_CONFIG: Record<string, { symbol: string; locale: string }>
 /**
  * Format currency amount
  */
-export const formatCurrency = (amount: number, currency: string = DEFAULT_CURRENCY): string => {
+export const formatCurrency = (amount: number, currency: string = DEFAULT_CURRENCY, showPlusSign: boolean = false): string => {
   const config = CURRENCY_CONFIG[currency] ?? CURRENCY_CONFIG.INR;
-  return new Intl.NumberFormat(config.locale, {
+  const formatted = new Intl.NumberFormat(config.locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(Math.abs(amount));
+  
+  // Add + sign for positive amounts if requested, - sign is already included for negative
+  if (showPlusSign && amount > 0) {
+    return `+${formatted}`;
+  }
+  
+  // For negative amounts, ensure minus sign is shown
+  if (amount < 0) {
+    return `-${formatted}`;
+  }
+  
+  return formatted;
 };
 
 /**

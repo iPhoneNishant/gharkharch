@@ -15,6 +15,7 @@ import { colors, typography, spacing } from '../config/theme';
 import DashboardScreen from '../screens/DashboardScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import AccountsScreen from '../screens/AccountsScreen';
+import ReportsListScreen from '../screens/ReportsListScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -28,6 +29,7 @@ const TabIcon: React.FC<{ name: string; focused: boolean }> = ({ name, focused }
     Dashboard: '◉',
     Transactions: '⇄',
     Accounts: '☰',
+    Reports: '📊',
     Settings: '⚙',
   };
 
@@ -92,6 +94,13 @@ const MainTabNavigator: React.FC = () => {
         component={AccountsScreen}
         options={{
           headerTitle: 'Accounts',
+        }}
+      />
+      <Tab.Screen 
+        name="Reports" 
+        component={ReportsListScreen}
+        options={{
+          headerTitle: 'Reports',
         }}
       />
       <Tab.Screen 

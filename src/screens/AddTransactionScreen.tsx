@@ -43,15 +43,13 @@ import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddTransaction'>;
 type RouteType = RouteProp<RootStackParamList, 'AddTransaction'>;
 
-type TransactionType = 'expense' | 'income' | 'transfer';
-
 const AddTransactionScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   
   const { user } = useAuthStore();
-  const { accounts, getAccountsByType } = useAccountStore();
+  const { accounts } = useAccountStore();
   const { createTransaction, updateTransaction, getTransactionById, isLoading } = useTransactionStore();
 
   const editTransactionId = route.params?.editTransactionId;
@@ -59,7 +57,6 @@ const AddTransactionScreen: React.FC = () => {
   const existingTransaction = editTransactionId ? getTransactionById(editTransactionId) : null;
 
   // Form state
-  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [debitAccountId, setDebitAccountId] = useState<string | null>(null);
   const [creditAccountId, setCreditAccountId] = useState<string | null>(null);
@@ -74,19 +71,8 @@ const AddTransactionScreen: React.FC = () => {
       setCreditAccountId(existingTransaction.creditAccountId);
       setNote(existingTransaction.note || '');
       setDate(existingTransaction.date);
-      
-      // Determine transaction type from accounts
-      const debitAcc = accounts.find(a => a.id === existingTransaction.debitAccountId);
-      const creditAcc = accounts.find(a => a.id === existingTransaction.creditAccountId);
-      if (debitAcc?.accountType === 'expense') {
-        setTransactionType('expense');
-      } else if (creditAcc?.accountType === 'income') {
-        setTransactionType('income');
-      } else {
-        setTransactionType('transfer');
-      }
     }
-  }, [existingTransaction, accounts]);
+  }, [existingTransaction]);
 
   // Modal state
   const [showAccountPicker, setShowAccountPicker] = useState(false);
@@ -100,47 +86,19 @@ const AddTransactionScreen: React.FC = () => {
   const creditAccount = accounts.find(a => a.id === creditAccountId);
 
   /**
-   * Get available accounts for selection based on transaction type and picker type
-   * 
-   * ACCOUNTING RULES:
-   * - Expense: Debit = expense account, Credit = asset/liability account
-   * - Income: Debit = asset account, Credit = income account
-   * - Transfer: Both = asset/liability accounts
+   * Get available accounts for selection
+   * Show all active accounts, excluding the already selected account for the other side
    */
   const availableAccounts = useMemo(() => {
     const activeAccounts = accounts.filter(a => a.isActive);
     
-    if (transactionType === 'expense') {
-      if (accountPickerType === 'debit') {
-        // Expense account (where money goes)
-        return activeAccounts.filter(a => a.accountType === 'expense');
-      } else {
-        // Asset or liability account (where money comes from)
-        return activeAccounts.filter(a => a.accountType === 'asset' || a.accountType === 'liability');
-      }
-    } else if (transactionType === 'income') {
-      if (accountPickerType === 'debit') {
-        // Asset account (where money goes)
-        return activeAccounts.filter(a => a.accountType === 'asset');
-      } else {
-        // Income account (source of income)
-        return activeAccounts.filter(a => a.accountType === 'income');
-      }
+    // Filter out the account selected on the other side (debit/credit)
+    if (accountPickerType === 'debit') {
+      return activeAccounts.filter(a => a.id !== creditAccountId);
     } else {
-      // Transfer - both are asset/liability accounts
-      return activeAccounts.filter(a => a.accountType === 'asset' || a.accountType === 'liability');
+      return activeAccounts.filter(a => a.id !== debitAccountId);
     }
-  }, [accounts, transactionType, accountPickerType]);
-
-  /**
-   * Handle transaction type change
-   * Reset selected accounts when type changes
-   */
-  const handleTypeChange = (type: TransactionType) => {
-    setTransactionType(type);
-    setDebitAccountId(null);
-    setCreditAccountId(null);
-  };
+  }, [accounts, accountPickerType, debitAccountId, creditAccountId]);
 
   /**
    * Open account picker modal
@@ -160,6 +118,17 @@ const AddTransactionScreen: React.FC = () => {
       setCreditAccountId(account.id);
     }
     setShowAccountPicker(false);
+  };
+
+  /**
+   * Clear form fields
+   */
+  const clearForm = () => {
+    setAmount('');
+    setDebitAccountId(null);
+    setCreditAccountId(null);
+    setNote('');
+    setDate(new Date());
   };
 
   /**
@@ -194,6 +163,19 @@ const AddTransactionScreen: React.FC = () => {
           creditAccountId,
           note: note.trim() || undefined,
         });
+        
+        Alert.alert(
+          'Success',
+          'Transaction updated successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                navigation.goBack();
+              },
+            },
+          ]
+        );
       } else {
         await createTransaction({
           date: date.toISOString(),
@@ -202,25 +184,26 @@ const AddTransactionScreen: React.FC = () => {
           creditAccountId,
           note: note.trim() || undefined,
         });
+        
+        // Clear form and show success message
+        clearForm();
+        
+        Alert.alert(
+          'Success',
+          'Transaction created successfully!',
+          [{ text: 'OK' }]
+        );
       }
-
-      navigation.goBack();
     } catch (error) {
       Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'create'} transaction. Please try again.`);
     }
   };
 
   /**
-   * Get label for account selector based on transaction type
+   * Get label for account selector
    */
   const getAccountLabel = (type: 'debit' | 'credit'): string => {
-    if (transactionType === 'expense') {
-      return type === 'debit' ? 'Expense Category' : 'Paid From';
-    } else if (transactionType === 'income') {
-      return type === 'debit' ? 'Received In' : 'Income Source';
-    } else {
-      return type === 'debit' ? 'To Account' : 'From Account';
-    }
+    return type === 'debit' ? 'To Account (Debit)' : 'From Account (Credit)';
   };
 
   return (
@@ -235,55 +218,6 @@ const AddTransactionScreen: React.FC = () => {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Transaction Type Selector */}
-        <View style={styles.typeSelector}>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              transactionType === 'expense' && styles.typeButtonActive,
-              transactionType === 'expense' && { backgroundColor: getAccountTypeBgColor('expense') },
-            ]}
-            onPress={() => handleTypeChange('expense')}
-          >
-            <Text style={[
-              styles.typeButtonText,
-              transactionType === 'expense' && { color: colors.expense },
-            ]}>
-              Expense
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              transactionType === 'income' && styles.typeButtonActive,
-              transactionType === 'income' && { backgroundColor: getAccountTypeBgColor('income') },
-            ]}
-            onPress={() => handleTypeChange('income')}
-          >
-            <Text style={[
-              styles.typeButtonText,
-              transactionType === 'income' && { color: colors.income },
-            ]}>
-              Income
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              transactionType === 'transfer' && styles.typeButtonActive,
-              transactionType === 'transfer' && { backgroundColor: getAccountTypeBgColor('asset') },
-            ]}
-            onPress={() => handleTypeChange('transfer')}
-          >
-            <Text style={[
-              styles.typeButtonText,
-              transactionType === 'transfer' && { color: colors.asset },
-            ]}>
-              Transfer
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Amount Input */}
         <View style={styles.amountContainer}>
           <Text style={styles.currencySymbol}>{currency === 'INR' ? '₹' : '$'}</Text>
@@ -518,27 +452,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.base,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xs,
-    marginBottom: spacing.xl,
-  },
-  typeButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    borderRadius: borderRadius.md,
-  },
-  typeButtonActive: {
-    // Background color set dynamically
-  },
-  typeButtonText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.secondary,
   },
   amountContainer: {
     flexDirection: 'row',

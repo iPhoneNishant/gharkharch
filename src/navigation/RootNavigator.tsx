@@ -19,6 +19,7 @@ import AddTransactionScreen from '../screens/AddTransactionScreen';
 import AddAccountScreen from '../screens/AddAccountScreen';
 import AccountDetailScreen from '../screens/AccountDetailScreen';
 import TransactionDetailScreen from '../screens/TransactionDetailScreen';
+import ReportsScreen from '../screens/ReportsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -93,6 +94,48 @@ const RootNavigator: React.FC = () => {
                 headerTitle: 'Transaction Details',
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen 
+              name="SummaryMonthReport" 
+              component={ReportsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Summary Month Wise',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen 
+              name="SummaryCustomReport" 
+              component={ReportsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Summary Custom Range',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen 
+              name="TransactionsMonthReport" 
+              component={ReportsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Transactions Month Wise',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+                headerBackTitleVisible: true,
+              }}
+            />
+            <Stack.Screen 
+              name="TransactionsCustomReport" 
+              component={ReportsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Transactions Custom Range',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+                headerBackTitleVisible: true,
               }}
             />
           </>

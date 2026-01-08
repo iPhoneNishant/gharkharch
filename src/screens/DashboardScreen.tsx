@@ -88,7 +88,7 @@ const DashboardScreen: React.FC = () => {
 
   /**
    * Get display info for a transaction
-   * Determines the "primary" account and whether it's income/expense/transfer
+   * Determines the "primary" account and whether it's income/expense/transfer/return
    */
   const getTransactionDisplayInfo = (transaction: typeof transactions[0]) => {
     const debitAccount = getAccountById(transaction.debitAccountId);
@@ -97,6 +97,7 @@ const DashboardScreen: React.FC = () => {
     // Determine transaction type based on account types
     // Expense: Debit expense account, Credit asset/liability account
     // Income: Debit asset account, Credit income account
+    // Return: Credit expense account, Debit asset/liability account (money coming back from expense)
     // Transfer: Both accounts are asset/liability
     
     if (debitAccount?.accountType === 'expense') {
@@ -112,6 +113,15 @@ const DashboardScreen: React.FC = () => {
         subtitle: `to ${debitAccount?.name ?? 'Unknown'}`,
         type: 'income' as AccountType,
         isExpense: false,
+      };
+    } else if (creditAccount?.accountType === 'expense') {
+      // Return/Refund: Credit expense account means money is coming back from expense
+      return {
+        title: `${creditAccount.name} Return`,
+        subtitle: `Return to ${debitAccount?.name ?? 'Unknown'}`,
+        type: 'expense' as AccountType,
+        isExpense: false,
+        isReturn: true,
       };
     } else {
       // Transfer between asset/liability accounts

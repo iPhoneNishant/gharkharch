@@ -168,12 +168,17 @@ export type RootStackParamList = {
   AddAccount: { editAccountId?: string } | undefined;
   AccountDetail: { accountId: string };
   TransactionDetail: { transactionId: string };
+  SummaryMonthReport: undefined;
+  SummaryCustomReport: undefined;
+  TransactionsMonthReport: undefined;
+  TransactionsCustomReport: undefined;
 };
 
 export type MainTabParamList = {
   Dashboard: undefined;
   Transactions: undefined;
   Accounts: undefined;
+  Reports: undefined;
   Settings: undefined;
 };
 
@@ -184,4 +189,92 @@ export interface AuthState {
   user: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+}
+
+/**
+ * Report data for a specific period/category
+ */
+export interface ReportData {
+  /** Month and year (YYYY-MM format) */
+  period: string;
+  /** Parent category name */
+  category: string;
+  /** Sub-category name */
+  subCategory: string;
+  /** Account type */
+  accountType: AccountType;
+  /** Opening balance at start of period */
+  openingBalance: number;
+  /** Closing balance at end of period */
+  closingBalance: number;
+  /** Total transactions in period */
+  transactionCount: number;
+  /** Total debit amount */
+  totalDebits: number;
+  /** Total credit amount */
+  totalCredits: number;
+  /** Net change (debits - credits) */
+  netChange: number;
+  /** List of transactions in this period */
+  transactions: Transaction[];
+}
+
+/**
+ * Monthly report summary
+ */
+export interface MonthlyReport {
+  /** Month and year (YYYY-MM format) */
+  month: string;
+  /** Display name (e.g., "January 2024") */
+  displayName: string;
+  /** Reports grouped by category */
+  categoryReports: CategoryReport[];
+  /** Total opening balance across all accounts */
+  totalOpeningBalance: number;
+  /** Total closing balance across all accounts */
+  totalClosingBalance: number;
+  /** Total transactions in month */
+  totalTransactions: number;
+}
+
+/**
+ * Category report summary
+ */
+export interface CategoryReport {
+  /** Parent category name */
+  category: string;
+  /** Account type */
+  accountType: AccountType;
+  /** Sub-category reports */
+  subCategoryReports: SubCategoryReport[];
+  /** Total opening balance for category */
+  totalOpeningBalance: number;
+  /** Total closing balance for category */
+  totalClosingBalance: number;
+  /** Total transactions in category */
+  totalTransactions: number;
+}
+
+/**
+ * Sub-category report summary
+ */
+export interface SubCategoryReport {
+  /** Sub-category name */
+  subCategory: string;
+  /** Account IDs in this sub-category */
+  accountIds: string[];
+  /** Opening balance */
+  openingBalance: number;
+  /** Closing balance */
+  closingBalance: number;
+  /** Transaction count */
+  transactionCount: number;
+  /** Total debits */
+  totalDebits: number;
+  /** Total credits */
+  totalCredits: number;
+  /** Net change */
+  netChange: number;
+  /** Transactions */
+  transactions: Transaction[];
 }
