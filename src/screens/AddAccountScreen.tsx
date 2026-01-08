@@ -1,0 +1,823 @@
+/**
+ * Add Account Screen for Gharkharch
+ * 
+ * ACCOUNTING RULES:
+ * - Asset accounts: Track things you own (bank accounts, investments, cash)
+ * - Liability accounts: Track things you owe (credit cards, loans)
+ * - Income accounts: Categories for money earned (salary, dividends)
+ * - Expense accounts: Categories for money spent (rent, food, utilities)
+ * 
+ * Only Asset and Liability accounts have balances.
+ * Income and Expense accounts are just categories for tracking flows.
+ */
+
+import React, { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Modal,
+  FlatList,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { useAccountStore } from '../stores';
+import { RootStackParamList, AccountType } from '../types';
+import { 
+  colors, 
+  typography, 
+  spacing, 
+  borderRadius, 
+  shadows,
+  getAccountTypeColor,
+  getAccountTypeBgColor,
+} from '../config/theme';
+import { 
+  ACCOUNT_CATEGORIES, 
+  getCategoriesByType, 
+  getSubCategories,
+  ACCOUNT_COLORS,
+} from '../config/constants';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddAccount'>;
+type RouteType = RouteProp<RootStackParamList, 'AddAccount'>;
+
+const AddAccountScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteType>();
+  
+  const { createAccount, isLoading } = useAccountStore();
+
+  // Form state
+  const [accountType, setAccountType] = useState<AccountType>('asset');
+  const [name, setName] = useState('');
+  const [parentCategory, setParentCategory] = useState<string | null>(null);
+  const [subCategory, setSubCategory] = useState<string | null>(null);
+  const [openingBalance, setOpeningBalance] = useState('');
+  const [selectedColor, setSelectedColor] = useState(ACCOUNT_COLORS[0]);
+
+  // Modal state
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newSubCategoryName, setNewSubCategoryName] = useState('');
+
+  // Get categories for selected account type
+  const availableCategories = useMemo(() => {
+    return getCategoriesByType(accountType);
+  }, [accountType]);
+
+  // Custom categories state (in a real app, these would be stored per user in Firestore)
+  const [customCategories, setCustomCategories] = useState<Record<string, string[]>>({});
+
+  // Get sub-categories for selected parent category (including custom ones)
+  const availableSubCategories = useMemo(() => {
+    if (!parentCategory) return [];
+    const predefined = getSubCategories(parentCategory);
+    const custom = customCategories[parentCategory] || [];
+    return [...predefined, ...custom];
+  }, [parentCategory, customCategories]);
+
+  // Whether this account type has a balance
+  const hasBalance = accountType === 'asset' || accountType === 'liability';
+
+  /**
+   * Handle account type change
+   * Reset category selections when type changes
+   */
+  const handleTypeChange = (type: AccountType) => {
+    setAccountType(type);
+    setParentCategory(null);
+    setSubCategory(null);
+    setOpeningBalance('');
+  };
+
+  /**
+   * Handle parent category selection
+   */
+  const handleCategorySelect = (category: string) => {
+    setParentCategory(category);
+    setSubCategory(null);
+    setShowCategoryPicker(false);
+  };
+
+  /**
+   * Handle sub-category selection
+   */
+  const handleSubCategorySelect = (subCat: string) => {
+    setSubCategory(subCat);
+    setShowSubCategoryPicker(false);
+    
+    // Auto-fill name if empty
+    if (!name.trim()) {
+      setName(subCat);
+    }
+  };
+
+  /**
+   * Handle adding custom category
+   */
+  const handleAddCustomCategory = () => {
+    if (!newCategoryName.trim()) {
+      Alert.alert('Error', 'Please enter a category name');
+      return;
+    }
+
+    // Check if category already exists
+    const exists = availableCategories.some(cat => 
+      cat.parentCategory.toLowerCase() === newCategoryName.trim().toLowerCase()
+    );
+    
+    if (exists) {
+      Alert.alert('Error', 'This category already exists');
+      return;
+    }
+
+    // Add custom category
+    setCustomCategories(prev => ({
+      ...prev,
+      [newCategoryName.trim()]: []
+    }));
+    
+    setParentCategory(newCategoryName.trim());
+    setShowAddCategoryModal(false);
+    setShowCategoryPicker(false);
+    setNewCategoryName('');
+  };
+
+  /**
+   * Handle adding custom subcategory
+   */
+  const handleAddCustomSubCategory = () => {
+    if (!newSubCategoryName.trim()) {
+      Alert.alert('Error', 'Please enter a sub-category name');
+      return;
+    }
+
+    if (!parentCategory) {
+      Alert.alert('Error', 'Please select a category first');
+      return;
+    }
+
+    // Check if subcategory already exists
+    const exists = availableSubCategories.some(subCat => 
+      subCat.toLowerCase() === newSubCategoryName.trim().toLowerCase()
+    );
+    
+    if (exists) {
+      Alert.alert('Error', 'This sub-category already exists');
+      return;
+    }
+
+    // Add custom subcategory
+    setCustomCategories(prev => ({
+      ...prev,
+      [parentCategory]: [...(prev[parentCategory] || []), newSubCategoryName.trim()]
+    }));
+    
+    setSubCategory(newSubCategoryName.trim());
+    setShowAddSubCategoryModal(false);
+    setShowSubCategoryPicker(false);
+    setNewSubCategoryName('');
+    
+    // Auto-fill name if empty
+    if (!name.trim()) {
+      setName(newSubCategoryName.trim());
+    }
+  };
+
+  /**
+   * Validate and submit account
+   */
+  const handleSubmit = async () => {
+    // Validate name
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter an account name');
+      return;
+    }
+
+    // Validate categories
+    if (!parentCategory || !subCategory) {
+      Alert.alert('Error', 'Please select a category');
+      return;
+    }
+
+    // Validate opening balance for asset/liability accounts
+    let balance: number | undefined;
+    if (hasBalance && openingBalance.trim()) {
+      balance = parseFloat(openingBalance);
+      if (isNaN(balance) || balance < 0) {
+        Alert.alert('Error', 'Please enter a valid opening balance');
+        return;
+      }
+    }
+
+    try {
+      await createAccount({
+        name: name.trim(),
+        accountType,
+        parentCategory,
+        subCategory,
+        openingBalance: balance,
+        color: selectedColor,
+      });
+
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create account. Please try again.');
+    }
+  };
+
+  /**
+   * Get description for account type
+   */
+  const getTypeDescription = (type: AccountType): string => {
+    switch (type) {
+      case 'asset':
+        return 'Things you own (bank accounts, investments, cash)';
+      case 'liability':
+        return 'Things you owe (credit cards, loans)';
+      case 'income':
+        return 'Sources of money earned';
+      case 'expense':
+        return 'Categories for money spent';
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + spacing.xl }
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Account Type Selector */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Type</Text>
+          <View style={styles.typeGrid}>
+            {(['asset', 'liability', 'income', 'expense'] as AccountType[]).map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.typeCard,
+                  accountType === type && styles.typeCardActive,
+                  accountType === type && { borderColor: getAccountTypeColor(type) },
+                ]}
+                onPress={() => handleTypeChange(type)}
+              >
+                <View style={[
+                  styles.typeIcon,
+                  { backgroundColor: getAccountTypeBgColor(type) }
+                ]}>
+                  <Text style={[
+                    styles.typeIconText,
+                    { color: getAccountTypeColor(type) }
+                  ]}>
+                    {type === 'asset' ? '↗' : type === 'liability' ? '↙' : type === 'income' ? '↓' : '↑'}
+                  </Text>
+                </View>
+                <Text style={[
+                  styles.typeName,
+                  accountType === type && { color: getAccountTypeColor(type) }
+                ]}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.typeDescription}>
+            {getTypeDescription(accountType)}
+          </Text>
+        </View>
+
+        {/* Category Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Category</Text>
+          <View style={styles.formCard}>
+            <TouchableOpacity
+              style={styles.selector}
+              onPress={() => setShowCategoryPicker(true)}
+            >
+              <Text style={styles.selectorLabel}>Category</Text>
+              {parentCategory ? (
+                <Text style={styles.selectorValue}>{parentCategory}</Text>
+              ) : (
+                <Text style={styles.selectorPlaceholder}>Select category</Text>
+              )}
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+
+            {parentCategory && (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity
+                  style={styles.selector}
+                  onPress={() => setShowSubCategoryPicker(true)}
+                >
+                  <Text style={styles.selectorLabel}>Sub-category</Text>
+                  {subCategory ? (
+                    <Text style={styles.selectorValue}>{subCategory}</Text>
+                  ) : (
+                    <Text style={styles.selectorPlaceholder}>Select sub-category</Text>
+                  )}
+                  <Text style={styles.chevron}>›</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* Account Name */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Name</Text>
+          <View style={styles.formCard}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter account name"
+              placeholderTextColor={colors.neutral[400]}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+          </View>
+        </View>
+
+        {/* Opening Balance (only for asset/liability) */}
+        {hasBalance && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Opening Balance</Text>
+            <View style={styles.formCard}>
+              <View style={styles.balanceInput}>
+                <Text style={styles.currencySymbol}>₹</Text>
+                <TextInput
+                  style={styles.balanceTextInput}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.neutral[400]}
+                  value={openingBalance}
+                  onChangeText={setOpeningBalance}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+            <Text style={styles.helperText}>
+              {accountType === 'asset' 
+                ? 'Current balance in this account'
+                : 'Current amount owed'}
+            </Text>
+          </View>
+        )}
+
+        {/* Color Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Color</Text>
+          <View style={styles.colorGrid}>
+            {ACCOUNT_COLORS.map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.colorOption,
+                  { backgroundColor: color },
+                  selectedColor === color && styles.colorOptionSelected,
+                ]}
+                onPress={() => setSelectedColor(color)}
+              >
+                {selectedColor === color && (
+                  <Text style={styles.colorCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+          onPress={handleSubmit}
+          disabled={isLoading}
+        >
+          <Text style={styles.submitButtonText}>
+            {isLoading ? 'Creating...' : 'Create Account'}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Category Picker Modal */}
+      <Modal
+        visible={showCategoryPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCategoryPicker(false)}
+      >
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Category</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <FlatList
+            data={availableCategories}
+            keyExtractor={(item) => item.parentCategory}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => handleCategorySelect(item.parentCategory)}
+              >
+                <Text style={styles.optionText}>{item.parentCategory}</Text>
+                <Text style={styles.optionSubtext}>
+                  {item.subCategories.length} sub-categories
+                </Text>
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListFooterComponent={() => (
+              <>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  style={styles.addCustomButton}
+                  onPress={() => {
+                    setShowCategoryPicker(false);
+                    setShowAddCategoryModal(true);
+                  }}
+                >
+                  <Text style={styles.addCustomButtonText}>+ Add Custom Category</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            contentContainerStyle={{ paddingBottom: insets.bottom }}
+          />
+        </View>
+      </Modal>
+
+      {/* Sub-Category Picker Modal */}
+      <Modal
+        visible={showSubCategoryPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSubCategoryPicker(false)}
+      >
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowSubCategoryPicker(false)}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Sub-category</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <FlatList
+            data={availableSubCategories}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => handleSubCategorySelect(item)}
+              >
+                <Text style={styles.optionText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListFooterComponent={() => (
+              <>
+                <View style={styles.separator} />
+                <TouchableOpacity
+                  style={styles.addCustomButton}
+                  onPress={() => {
+                    setShowSubCategoryPicker(false);
+                    setShowAddSubCategoryModal(true);
+                  }}
+                >
+                  <Text style={styles.addCustomButtonText}>+ Add Custom Sub-category</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            contentContainerStyle={{ paddingBottom: insets.bottom }}
+          />
+        </View>
+      </Modal>
+
+      {/* Add Custom Category Modal */}
+      <Modal
+        visible={showAddCategoryModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowAddCategoryModal(false);
+          setNewCategoryName('');
+        }}
+      >
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => {
+              setShowAddCategoryModal(false);
+              setNewCategoryName('');
+            }}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Add Custom Category</Text>
+            <TouchableOpacity onPress={handleAddCustomCategory}>
+              <Text style={styles.modalDone}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.modalContent}>
+            <Text style={styles.inputLabel}>Category Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter category name"
+              placeholderTextColor={colors.neutral[400]}
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+              autoCapitalize="words"
+              autoFocus
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Custom Sub-category Modal */}
+      <Modal
+        visible={showAddSubCategoryModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowAddSubCategoryModal(false);
+          setNewSubCategoryName('');
+        }}
+      >
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => {
+              setShowAddSubCategoryModal(false);
+              setNewSubCategoryName('');
+            }}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Add Custom Sub-category</Text>
+            <TouchableOpacity onPress={handleAddCustomSubCategory}>
+              <Text style={styles.modalDone}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.modalContent}>
+            <Text style={styles.inputLabel}>Sub-category Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter sub-category name"
+              placeholderTextColor={colors.neutral[400]}
+              value={newSubCategoryName}
+              onChangeText={setNewSubCategoryName}
+              autoCapitalize="words"
+              autoFocus
+            />
+          </View>
+        </View>
+      </Modal>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  scrollContent: {
+    padding: spacing.base,
+  },
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.sm,
+  },
+  typeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  typeCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    ...shadows.sm,
+  },
+  typeCardActive: {
+    // Border color set dynamically
+  },
+  typeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  typeIconText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+  },
+  typeName: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+  },
+  typeDescription: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  formCard: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
+  },
+  selector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.base,
+  },
+  selectorLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    width: 100,
+  },
+  selectorValue: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+  },
+  selectorPlaceholder: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    color: colors.text.tertiary,
+  },
+  chevron: {
+    fontSize: typography.fontSize.xl,
+    color: colors.neutral[400],
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border.light,
+    marginLeft: spacing.base,
+  },
+  textInput: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    padding: spacing.base,
+  },
+  balanceInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.base,
+  },
+  currencySymbol: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+    marginRight: spacing.sm,
+  },
+  balanceTextInput: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+  },
+  helperText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    marginTop: spacing.sm,
+    marginLeft: spacing.sm,
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  colorOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  colorOptionSelected: {
+    borderWidth: 3,
+    borderColor: colors.neutral[0],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  colorCheck: {
+    color: colors.neutral[0],
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+  },
+  submitButton: {
+    backgroundColor: colors.primary[500],
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.base,
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    ...shadows.md,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
+  submitButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.neutral[0],
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  modalCancel: {
+    fontSize: typography.fontSize.base,
+    color: colors.primary[500],
+  },
+  modalTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+  },
+  optionItem: {
+    padding: spacing.base,
+    backgroundColor: colors.background.elevated,
+  },
+  optionText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+  },
+  optionSubtext: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.border.light,
+  },
+  addCustomButton: {
+    padding: spacing.base,
+    alignItems: 'center',
+    backgroundColor: colors.primary[50],
+  },
+  addCustomButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.primary[500],
+  },
+  modalContent: {
+    padding: spacing.base,
+  },
+  modalDone: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.primary[500],
+  },
+});
+
+export default AddAccountScreen;

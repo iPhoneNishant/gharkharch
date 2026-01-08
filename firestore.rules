@@ -1,0 +1,57 @@
+rules_version = '2';
+
+/**
+ * Firestore Security Rules for Gharkharch
+ * 
+ * IMPORTANT: These rules enforce read-only access from the client.
+ * All writes MUST go through Cloud Functions.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isOwner(userId);
+      // Users can create their own profile on signup
+      // They can only create (not update/delete) and only for their own UID
+      allow create: if isAuthenticated() 
+                    && request.auth.uid == userId
+                    && !exists(/databases/$(database)/documents/users/$(userId));
+      // Updates and deletes must go through Cloud Functions
+      allow update, delete: if false;
+    }
+    
+    // Accounts collection
+    match /accounts/{accountId} {
+      // Users can read their own accounts
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // All writes go through Cloud Functions
+      allow write: if false;
+    }
+    
+    // Transactions collection
+    match /transactions/{transactionId} {
+      // Users can read their own transactions
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // All writes go through Cloud Functions
+      allow write: if false;
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
