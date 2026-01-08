@@ -28,16 +28,28 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getFunctions, Functions } from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// TODO: Replace with your actual Firebase configuration
+// Firebase configuration from environment variables
+// Create a .env file in the root directory with your Firebase config
+// See .env.example for the required variables
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDGtnSJTZenpmyPqoTiKi3Ks4nlVwL1WaI",
-  authDomain: "gharkharch-d36dc.firebaseapp.com",
-  projectId: "gharkharch-d36dc",
-  storageBucket: "gharkharch-d36dc.firebasestorage.app",
-  messagingSenderId: "360598936824",
-  appId: "1:360598936824:web:d5bc8077917dc5afb12f0d",
-  measurementId: "G-BQH7R1R68B"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
 };
+
+// Validate that required config values are present
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error(
+    "⚠️ Firebase configuration is missing!\n" +
+    "Please create a .env file with your Firebase credentials.\n" +
+    "See .env.example for the required variables."
+  );
+}
 
 let app: FirebaseApp;
 let auth: Auth;

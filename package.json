@@ -29,6 +29,7 @@
   "devDependencies": {
     "@react-native/metro-config": "^0.83.1",
     "@types/react": "~19.1.0",
+    "dotenv": "^17.2.3",
     "firebase-tools": "^15.1.0",
     "typescript": "~5.9.2"
   },
