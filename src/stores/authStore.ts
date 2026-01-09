@@ -9,6 +9,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  sendPasswordResetEmail,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -28,6 +29,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -237,6 +239,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const errorMessage = error instanceof Error ? error.message : 'Sign out failed';
       set({ isLoading: false, error: errorMessage });
       throw error;
+    }
+  },
+
+  /**
+   * Send password reset email
+   */
+  resetPassword: async (email: string) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      await sendPasswordResetEmail(firebaseAuth, email.trim());
+      set({ isLoading: false });
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to send password reset email';
+      
+      if (error?.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (error?.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address. Please check and try again.';
+      } else if (error?.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (error?.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      set({ isLoading: false, error: errorMessage });
+      throw new Error(errorMessage);
     }
   },
 

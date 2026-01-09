@@ -21,26 +21,65 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores';
 import { colors, typography, spacing, borderRadius, shadows } from '../config/theme';
 
-type AuthMode = 'signIn' | 'signUp';
+type AuthMode = 'signIn' | 'signUp' | 'forgotPassword';
 
 const AuthScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { signIn, signUp, isLoading, error, clearError } = useAuthStore();
+  const { signIn, signUp, resetPassword, isLoading, error, clearError } = useAuthStore();
 
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async () => {
+    if (mode === 'forgotPassword') {
+      if (!email.trim()) {
+        Alert.alert('Error', 'Please enter your email address');
+        return;
+      }
+
+      try {
+        await resetPassword(email.trim());
+        setResetEmailSent(true);
+        Alert.alert(
+          'Password Reset Email Sent',
+          'Please check your email for instructions to reset your password.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setMode('signIn');
+                setResetEmailSent(false);
+                setEmail('');
+              },
+            },
+          ]
+        );
+      } catch (err) {
+        // Error is handled by the store
+      }
+      return;
+    }
+
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
-    if (mode === 'signUp' && password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
+    if (mode === 'signUp') {
+      if (password.length < 6) {
+        Alert.alert('Error', 'Password must be at least 6 characters');
+        return;
+      }
+      if (password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match. Please try again.');
+        return;
+      }
     }
 
     try {
@@ -58,6 +97,24 @@ const AuthScreen: React.FC = () => {
     clearError();
     setMode(mode === 'signIn' ? 'signUp' : 'signIn');
     setPassword('');
+    setConfirmPassword('');
+    setResetEmailSent(false);
+  };
+
+  const handleForgotPassword = () => {
+    clearError();
+    setMode('forgotPassword');
+    setPassword('');
+    setConfirmPassword('');
+    setResetEmailSent(false);
+  };
+
+  const handleBackToSignIn = () => {
+    clearError();
+    setMode('signIn');
+    setPassword('');
+    setConfirmPassword('');
+    setResetEmailSent(false);
   };
 
   return (
@@ -68,7 +125,7 @@ const AuthScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + spacing['2xl'], paddingBottom: insets.bottom + spacing['2xl'] },
+          { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl },
         ]}
         keyboardShouldPersistTaps="handled"
       >
@@ -76,8 +133,16 @@ const AuthScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={styles.logo}>₹</Text>
           <Text style={styles.title}>Gharkharch</Text>
-          <Text style={styles.subtitle}>
-            {mode === 'signIn' ? 'Welcome back!' : 'Create your account'}
+          <Text 
+            style={styles.subtitle}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {mode === 'signIn' 
+              ? 'Welcome back!' 
+              : mode === 'signUp' 
+              ? 'Create your account' 
+              : 'Reset your password'}
           </Text>
         </View>
 
@@ -113,19 +178,63 @@ const AuthScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              placeholderTextColor={colors.neutral[400]}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-            />
-          </View>
+          {mode !== 'forgotPassword' && (
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordInputWrapper}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Enter your password"
+                    placeholderTextColor={colors.neutral[400]}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="password"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Text style={styles.eyeIconText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              {mode === 'signUp' && (
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Confirm Password</Text>
+                  <View style={styles.passwordInputWrapper}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="Confirm your password"
+                      placeholderTextColor={colors.neutral[400]}
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry={!showConfirmPassword}
+                      autoCapitalize="none"
+                      autoComplete="password"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <Text style={styles.eyeIconText}>{showConfirmPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </>
+          )}
+
+          {mode === 'signIn' && (
+            <TouchableOpacity 
+              style={styles.forgotPasswordLink}
+              onPress={handleForgotPassword}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          )}
 
           {error && (
             <View style={styles.errorContainer}>
@@ -142,23 +251,35 @@ const AuthScreen: React.FC = () => {
               <ActivityIndicator color={colors.neutral[0]} />
             ) : (
               <Text style={styles.submitButtonText}>
-                {mode === 'signIn' ? 'Sign In' : 'Create Account'}
+                {mode === 'signIn' 
+                  ? 'Sign In' 
+                  : mode === 'signUp' 
+                  ? 'Create Account' 
+                  : 'Send Reset Email'}
               </Text>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Toggle Mode */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            {mode === 'signIn' ? "Don't have an account? " : 'Already have an account? '}
-          </Text>
-          <TouchableOpacity onPress={toggleMode}>
-            <Text style={styles.footerLink}>
-              {mode === 'signIn' ? 'Sign Up' : 'Sign In'}
+        {/* Toggle Mode / Back to Sign In */}
+        {mode === 'forgotPassword' ? (
+          <View style={styles.footer}>
+            <TouchableOpacity onPress={handleBackToSignIn}>
+              <Text style={styles.footerLink}>Back to Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              {mode === 'signIn' ? "Don't have an account?  " : 'Already have an account?  '}
             </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity onPress={toggleMode}>
+              <Text style={styles.footerLink}>
+                {mode === 'signIn' ? 'Sign Up' : 'Sign In'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -176,47 +297,73 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing['3xl'],
+    marginBottom: spacing.xl,
   },
   logo: {
-    fontSize: 64,
+    fontSize: 56,
     color: colors.primary[500],
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: typography.fontSize['3xl'],
+    fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
+    textAlign: 'center',
+    flexShrink: 0,
+    paddingHorizontal: spacing.sm,
+    width: '100%',
   },
   form: {
     backgroundColor: colors.background.elevated,
     borderRadius: borderRadius.xl,
-    padding: spacing.xl,
+    padding: spacing.lg,
     ...shadows.md,
   },
   inputContainer: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   label: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.secondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   input: {
     backgroundColor: colors.neutral[100],
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     fontSize: typography.fontSize.base,
     color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.border.light,
+  },
+  passwordInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[100],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+  },
+  eyeIcon: {
+    padding: spacing.sm,
+    paddingRight: spacing.base,
+  },
+  eyeIconText: {
+    fontSize: 20,
   },
   errorContainer: {
     backgroundColor: '#FFEBEE',
@@ -247,16 +394,32 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
     marginTop: spacing['2xl'],
+    paddingHorizontal: spacing.base,
+    flexWrap: 'wrap',
   },
   footerText: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+    flexShrink: 0,
+    marginRight: spacing.xs,
+    textAlign: 'center',
   },
   footerLink: {
     fontSize: typography.fontSize.sm,
     color: colors.primary[500],
     fontWeight: typography.fontWeight.semiBold,
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  forgotPasswordText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.medium,
   },
 });
 
