@@ -166,7 +166,7 @@ export type RootStackParamList = {
   Main: undefined;
   AddTransaction: { editTransactionId?: string } | undefined;
   AddAccount: { editAccountId?: string } | undefined;
-  AccountDetail: { accountId: string };
+  AccountDetail: { accountId: string; fromDate?: Date; toDate?: Date };
   TransactionDetail: { transactionId: string };
   SummaryMonthReport: undefined;
   SummaryCustomReport: undefined;

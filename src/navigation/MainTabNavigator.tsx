@@ -45,35 +45,39 @@ const MainTabNavigator: React.FC = () => {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => (
-          <TabIcon name={route.name} focused={focused} />
-        ),
-        tabBarActiveTintColor: colors.primary[500],
-        tabBarInactiveTintColor: colors.neutral[500],
-        tabBarStyle: {
-          backgroundColor: colors.background.elevated,
-          borderTopColor: colors.border.light,
-          borderTopWidth: 1,
-          paddingBottom: insets.bottom > 0 ? insets.bottom - 10 : spacing.sm,
-          paddingTop: spacing.sm,
-          height: 60 + (insets.bottom > 0 ? insets.bottom - 10 : 0),
-        },
-        tabBarLabelStyle: {
-          fontSize: typography.fontSize.xs,
-          fontWeight: typography.fontWeight.medium,
-        },
-        headerStyle: {
-          backgroundColor: colors.background.elevated,
-          shadowColor: 'transparent',
-          elevation: 0,
-        },
-        headerTitleStyle: {
-          color: colors.text.primary,
-          fontSize: typography.fontSize.lg,
-          fontWeight: typography.fontWeight.semiBold,
-        },
-      })}
+      initialRouteName="Transactions"
+      screenOptions={({ route }) => {
+        const isTransactions = route.name === 'Transactions';
+        return {
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={route.name} focused={focused} />
+          ),
+          tabBarActiveTintColor: colors.primary[500],
+          tabBarInactiveTintColor: colors.neutral[500],
+          tabBarStyle: {
+            backgroundColor: colors.background.elevated,
+            borderTopColor: colors.border.light,
+            borderTopWidth: 1,
+            paddingBottom: insets.bottom > 0 ? insets.bottom - 10 : spacing.sm,
+            paddingTop: spacing.sm,
+            height: 60 + (insets.bottom > 0 ? insets.bottom - 10 : 0),
+          },
+          tabBarLabelStyle: {
+            fontSize: typography.fontSize.xs,
+            fontWeight: typography.fontWeight.medium,
+          },
+          headerStyle: {
+            backgroundColor: colors.background.elevated,
+            shadowColor: 'transparent',
+            elevation: 0,
+          },
+          headerTitleStyle: {
+            color: colors.text.primary,
+            fontSize: typography.fontSize.lg,
+            fontWeight: typography.fontWeight.semiBold,
+          },
+        };
+      }}
     >
       <Tab.Screen 
         name="Dashboard" 
@@ -83,17 +87,17 @@ const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen 
-        name="Transactions" 
-        component={TransactionsScreen}
-        options={{
-          headerTitle: 'Transactions',
-        }}
-      />
-      <Tab.Screen 
         name="Accounts" 
         component={AccountsScreen}
         options={{
           headerTitle: 'Accounts',
+        }}
+      />
+      <Tab.Screen 
+        name="Transactions" 
+        component={TransactionsScreen}
+        options={{
+          headerTitle: 'Transactions',
         }}
       />
       <Tab.Screen 

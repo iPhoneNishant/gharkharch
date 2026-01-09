@@ -192,9 +192,13 @@ export function generateDateRangeReport(
   const end = new Date(endDate);
   end.setHours(23, 59, 59, 999);
 
-  // Group accounts by category
-  const categoryMap = new Map<string, Account[]>();
+  // Group accounts by account type first, then by category
+  const accountTypeMap = new Map<AccountType, Map<string, Account[]>>();
   accounts.forEach(account => {
+    if (!accountTypeMap.has(account.accountType)) {
+      accountTypeMap.set(account.accountType, new Map());
+    }
+    const categoryMap = accountTypeMap.get(account.accountType)!;
     const key = account.parentCategory;
     if (!categoryMap.has(key)) {
       categoryMap.set(key, []);
@@ -202,96 +206,102 @@ export function generateDateRangeReport(
     categoryMap.get(key)!.push(account);
   });
 
-  // Generate category reports
+  // Generate category reports grouped by account type
   const categoryReports: CategoryReport[] = [];
   let totalOpeningBalance = 0;
   let totalClosingBalance = 0;
 
-  categoryMap.forEach((categoryAccounts, categoryName) => {
-    // Group by sub-category
-    const subCategoryMap = new Map<string, Account[]>();
-    categoryAccounts.forEach(account => {
-      const key = account.subCategory;
-      if (!subCategoryMap.has(key)) {
-        subCategoryMap.set(key, []);
-      }
-      subCategoryMap.get(key)!.push(account);
-    });
+  // Process each account type (asset, liability, income, expense)
+  const accountTypeOrder: AccountType[] = ['asset', 'liability', 'income', 'expense'];
+  accountTypeOrder.forEach(accountType => {
+    const categoryMap = accountTypeMap.get(accountType);
+    if (!categoryMap || categoryMap.size === 0) return;
 
-    const subCategoryReports: SubCategoryReport[] = [];
-    let categoryOpeningBalance = 0;
-    let categoryClosingBalance = 0;
-    let categoryTransactionCount = 0;
-
-    subCategoryMap.forEach((subCategoryAccounts, subCategoryName) => {
-      const accountIds = subCategoryAccounts.map(acc => acc.id);
-      const accountType = subCategoryAccounts[0]?.accountType ?? 'asset';
-
-      // Get transactions involving these accounts
-      const subCategoryTransactions = rangeTransactions.filter(txn =>
-        accountIds.includes(txn.debitAccountId) || accountIds.includes(txn.creditAccountId)
-      );
-
-      // Calculate balances (only for asset/liability accounts)
-      let subCategoryOpeningBalance = 0;
-      let subCategoryClosingBalance = 0;
-      let totalDebits = 0;
-      let totalCredits = 0;
-
-      subCategoryAccounts.forEach(account => {
-        // Only calculate balances for asset/liability accounts
-        if (account.accountType === 'asset' || account.accountType === 'liability') {
-          const opening = getOpeningBalance(account, transactions, start);
-          const closing = getClosingBalance(account, transactions, end);
-          subCategoryOpeningBalance += opening;
-          subCategoryClosingBalance += closing;
+    categoryMap.forEach((categoryAccounts, categoryName) => {
+      // Group by sub-category
+      const subCategoryMap = new Map<string, Account[]>();
+      categoryAccounts.forEach(account => {
+        const key = account.subCategory;
+        if (!subCategoryMap.has(key)) {
+          subCategoryMap.set(key, []);
         }
+        subCategoryMap.get(key)!.push(account);
       });
 
-      // Calculate debits and credits
-      subCategoryTransactions.forEach(txn => {
-        if (accountIds.includes(txn.debitAccountId)) {
-          totalDebits += txn.amount;
-        }
-        if (accountIds.includes(txn.creditAccountId)) {
-          totalCredits += txn.amount;
-        }
+      const subCategoryReports: SubCategoryReport[] = [];
+      let categoryOpeningBalance = 0;
+      let categoryClosingBalance = 0;
+      let categoryTransactionCount = 0;
+
+      subCategoryMap.forEach((subCategoryAccounts, subCategoryName) => {
+        const accountIds = subCategoryAccounts.map(acc => acc.id);
+
+        // Get transactions involving these accounts
+        const subCategoryTransactions = rangeTransactions.filter(txn =>
+          accountIds.includes(txn.debitAccountId) || accountIds.includes(txn.creditAccountId)
+        );
+
+        // Calculate balances (only for asset/liability accounts)
+        let subCategoryOpeningBalance = 0;
+        let subCategoryClosingBalance = 0;
+        let totalDebits = 0;
+        let totalCredits = 0;
+
+        subCategoryAccounts.forEach(account => {
+          // Only calculate balances for asset/liability accounts
+          if (account.accountType === 'asset' || account.accountType === 'liability') {
+            const opening = getOpeningBalance(account, transactions, start);
+            const closing = getClosingBalance(account, transactions, end);
+            subCategoryOpeningBalance += opening;
+            subCategoryClosingBalance += closing;
+          }
+        });
+
+        // Calculate debits and credits
+        subCategoryTransactions.forEach(txn => {
+          if (accountIds.includes(txn.debitAccountId)) {
+            totalDebits += txn.amount;
+          }
+          if (accountIds.includes(txn.creditAccountId)) {
+            totalCredits += txn.amount;
+          }
+        });
+
+        // For income/expense accounts, net change is debits - credits
+        // For asset/liability accounts, net change is closing - opening
+        const netChange = (subCategoryOpeningBalance !== 0 || subCategoryClosingBalance !== 0)
+          ? subCategoryClosingBalance - subCategoryOpeningBalance
+          : totalDebits - totalCredits;
+
+        subCategoryReports.push({
+          subCategory: subCategoryName,
+          accountIds,
+          openingBalance: subCategoryOpeningBalance,
+          closingBalance: subCategoryClosingBalance,
+          transactionCount: subCategoryTransactions.length,
+          totalDebits,
+          totalCredits,
+          netChange,
+          transactions: subCategoryTransactions,
+        });
+
+        categoryOpeningBalance += subCategoryOpeningBalance;
+        categoryClosingBalance += subCategoryClosingBalance;
+        categoryTransactionCount += subCategoryTransactions.length;
       });
 
-      // For income/expense accounts, net change is debits - credits
-      // For asset/liability accounts, net change is closing - opening
-      const netChange = (subCategoryOpeningBalance !== 0 || subCategoryClosingBalance !== 0)
-        ? subCategoryClosingBalance - subCategoryOpeningBalance
-        : totalDebits - totalCredits;
-
-      subCategoryReports.push({
-        subCategory: subCategoryName,
-        accountIds,
-        openingBalance: subCategoryOpeningBalance,
-        closingBalance: subCategoryClosingBalance,
-        transactionCount: subCategoryTransactions.length,
-        totalDebits,
-        totalCredits,
-        netChange,
-        transactions: subCategoryTransactions,
+      categoryReports.push({
+        category: categoryName,
+        accountType: accountType,
+        subCategoryReports,
+        totalOpeningBalance: categoryOpeningBalance,
+        totalClosingBalance: categoryClosingBalance,
+        totalTransactions: categoryTransactionCount,
       });
 
-      categoryOpeningBalance += subCategoryOpeningBalance;
-      categoryClosingBalance += subCategoryClosingBalance;
-      categoryTransactionCount += subCategoryTransactions.length;
+      totalOpeningBalance += categoryOpeningBalance;
+      totalClosingBalance += categoryClosingBalance;
     });
-
-    categoryReports.push({
-      category: categoryName,
-      accountType: categoryAccounts[0]?.accountType ?? 'asset',
-      subCategoryReports,
-      totalOpeningBalance: categoryOpeningBalance,
-      totalClosingBalance: categoryClosingBalance,
-      totalTransactions: categoryTransactionCount,
-    });
-
-    totalOpeningBalance += categoryOpeningBalance;
-    totalClosingBalance += categoryClosingBalance;
   });
 
   const formatDate = (date: Date) => {
@@ -326,55 +336,23 @@ export function generateMonthlyReport(
  * Get available months from transactions
  */
 export function getAvailableMonths(transactions: Transaction[]): { year: number; month: number; displayName: string }[] {
-  if (transactions.length === 0) {
-    // If no transactions, return current month
-    const now = new Date();
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return [{
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-      displayName: `${monthNames[now.getMonth()]} ${now.getFullYear()}`,
-    }];
-  }
-
-  // Find the earliest transaction date
-  const dates = transactions.map(txn => new Date(txn.date));
-  const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())));
-  const startYear = earliestDate.getFullYear();
-  const startMonth = earliestDate.getMonth() + 1;
-
-  // Get current date
-  const now = new Date();
-  const endYear = now.getFullYear();
-  const endMonth = now.getMonth() + 1;
-
-  // Generate all months from earliest to current
-  const months: { year: number; month: number }[] = [];
+  const monthSet = new Set<string>();
   
-  let currentYear = startYear;
-  let currentMonth = startMonth;
-
-  while (
-    currentYear < endYear ||
-    (currentYear === endYear && currentMonth <= endMonth)
-  ) {
-    months.push({ year: currentYear, month: currentMonth });
-    
-    currentMonth++;
-    if (currentMonth > 12) {
-      currentMonth = 1;
-      currentYear++;
-    }
-  }
-
-  // Sort in descending order (most recent first)
-  months.sort((a, b) => {
-    if (a.year !== b.year) return b.year - a.year;
-    return b.month - a.month;
+  transactions.forEach(txn => {
+    const date = new Date(txn.date);
+    const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    monthSet.add(key);
   });
+
+  const months = Array.from(monthSet)
+    .map(key => {
+      const [year, month] = key.split('-').map(Number);
+      return { year, month, key };
+    })
+    .sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
+    });
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',

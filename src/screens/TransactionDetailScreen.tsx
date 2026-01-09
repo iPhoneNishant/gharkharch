@@ -60,9 +60,6 @@ const TransactionDetailScreen: React.FC = () => {
       return 'Expense';
     } else if (creditAccount.accountType === 'income') {
       return 'Income';
-    } else if (creditAccount.accountType === 'expense') {
-      // Return/Refund: Credit expense account means money is coming back from expense
-      return 'Return';
     } else {
       return 'Transfer';
     }

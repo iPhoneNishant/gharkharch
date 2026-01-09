@@ -1,6 +1,6 @@
 /**
  * Dashboard Screen for Gharkharch
- * Shows financial overview with net worth, recent transactions, and quick actions
+ * Shows financial overview with net worth and quick actions
  */
 
 import React, { useEffect } from 'react';
@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
+import { useAuthStore, useAccountStore } from '../stores';
 import { RootStackParamList, AccountType } from '../types';
 import { 
   colors, 
@@ -44,27 +44,18 @@ const DashboardScreen: React.FC = () => {
     getTotalLiabilities,
     getNetWorth,
   } = useAccountStore();
-  const { 
-    transactions,
-    isLoading: transactionsLoading, 
-    subscribeToTransactions,
-    getRecentTransactions,
-  } = useTransactionStore();
-  const { getAccountById } = useAccountStore();
 
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
     if (user?.id) {
       const unsubAccounts = subscribeToAccounts(user.id);
-      const unsubTransactions = subscribeToTransactions(user.id);
       
       return () => {
         unsubAccounts();
-        unsubTransactions();
       };
     }
-  }, [user?.id, subscribeToAccounts, subscribeToTransactions]);
+  }, [user?.id, subscribeToAccounts]);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -76,62 +67,9 @@ const DashboardScreen: React.FC = () => {
   const totalAssets = getTotalAssets();
   const totalLiabilities = getTotalLiabilities();
   const netWorth = getNetWorth();
-  const recentTransactions = getRecentTransactions(5);
 
   const handleAddTransaction = () => {
     navigation.navigate('AddTransaction');
-  };
-
-  const handleTransactionPress = (transactionId: string) => {
-    navigation.navigate('TransactionDetail', { transactionId });
-  };
-
-  /**
-   * Get display info for a transaction
-   * Determines the "primary" account and whether it's income/expense/transfer/return
-   */
-  const getTransactionDisplayInfo = (transaction: typeof transactions[0]) => {
-    const debitAccount = getAccountById(transaction.debitAccountId);
-    const creditAccount = getAccountById(transaction.creditAccountId);
-
-    // Determine transaction type based on account types
-    // Expense: Debit expense account, Credit asset/liability account
-    // Income: Debit asset account, Credit income account
-    // Return: Credit expense account, Debit asset/liability account (money coming back from expense)
-    // Transfer: Both accounts are asset/liability
-    
-    if (debitAccount?.accountType === 'expense') {
-      return {
-        title: debitAccount.name,
-        subtitle: `from ${creditAccount?.name ?? 'Unknown'}`,
-        type: 'expense' as AccountType,
-        isExpense: true,
-      };
-    } else if (creditAccount?.accountType === 'income') {
-      return {
-        title: creditAccount.name,
-        subtitle: `to ${debitAccount?.name ?? 'Unknown'}`,
-        type: 'income' as AccountType,
-        isExpense: false,
-      };
-    } else if (creditAccount?.accountType === 'expense') {
-      // Return/Refund: Credit expense account means money is coming back from expense
-      return {
-        title: `${creditAccount.name} Return`,
-        subtitle: `Return to ${debitAccount?.name ?? 'Unknown'}`,
-        type: 'expense' as AccountType,
-        isExpense: false,
-        isReturn: true,
-      };
-    } else {
-      // Transfer between asset/liability accounts
-      return {
-        title: `${creditAccount?.name ?? 'Unknown'} → ${debitAccount?.name ?? 'Unknown'}`,
-        subtitle: 'Transfer',
-        type: 'asset' as AccountType,
-        isExpense: false,
-      };
-    }
   };
 
   return (
@@ -181,80 +119,10 @@ const DashboardScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Recent Transactions */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'Transactions' } as never)}>
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {transactionsLoading ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Loading...</Text>
-          </View>
-        ) : recentTransactions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No transactions yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Add your first transaction to get started
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.transactionsList}>
-            {recentTransactions.map((transaction) => {
-              const displayInfo = getTransactionDisplayInfo(transaction);
-              return (
-                <TouchableOpacity
-                  key={transaction.id}
-                  style={styles.transactionItem}
-                  onPress={() => handleTransactionPress(transaction.id)}
-                >
-                  <View style={[
-                    styles.transactionIcon,
-                    { backgroundColor: getAccountTypeBgColor(displayInfo.type) }
-                  ]}>
-                    <Text style={[
-                      styles.transactionIconText,
-                      { color: getAccountTypeColor(displayInfo.type) }
-                    ]}>
-                      {displayInfo.isExpense ? '↑' : '↓'}
-                    </Text>
-                  </View>
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionTitle} numberOfLines={1}>
-                      {displayInfo.title}
-                    </Text>
-                    <Text style={styles.transactionSubtitle} numberOfLines={1}>
-                      {displayInfo.subtitle}
-                    </Text>
-                  </View>
-                  <View style={styles.transactionAmount}>
-                    <Text style={[
-                      styles.transactionAmountText,
-                      displayInfo.isExpense ? styles.expenseText : styles.incomeText
-                    ]}>
-                      {displayInfo.isExpense ? '-' : '+'}{formatCurrency(transaction.amount, currency)}
-                    </Text>
-                    <Text style={styles.transactionDate}>
-                      {transaction.date.toLocaleDateString()}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      </View>
-
       {/* Account Summary */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Accounts</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'Accounts' } as never)}>
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
         </View>
 
         {accountsLoading ? (
@@ -272,7 +140,13 @@ const DashboardScreen: React.FC = () => {
           <View style={styles.accountsList}>
             {accounts
               .filter(a => a.isActive && (a.accountType === 'asset' || a.accountType === 'liability'))
-              .slice(0, 5)
+              .sort((a, b) => {
+                // Assets first, then liabilities
+                if (a.accountType === 'asset' && b.accountType === 'liability') return -1;
+                if (a.accountType === 'liability' && b.accountType === 'asset') return 1;
+                // Within same type, sort by name
+                return a.name.localeCompare(b.name);
+              })
               .map((account) => (
                 <TouchableOpacity
                   key={account.id}
@@ -391,20 +265,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: spacing.md,
   },
   sectionTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
-  },
-  seeAllText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.medium,
   },
   emptyState: {
     backgroundColor: colors.background.elevated,
@@ -422,62 +288,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.tertiary,
     textAlign: 'center',
-  },
-  transactionsList: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  transactionIconText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-  },
-  transactionInfo: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  transactionTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  transactionSubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    marginTop: 2,
-  },
-  transactionAmount: {
-    alignItems: 'flex-end',
-  },
-  transactionAmountText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-  },
-  expenseText: {
-    color: colors.expense,
-  },
-  incomeText: {
-    color: colors.income,
-  },
-  transactionDate: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-    marginTop: 2,
   },
   accountsList: {
     backgroundColor: colors.background.elevated,

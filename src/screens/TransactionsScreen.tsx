@@ -3,7 +3,7 @@
  * Lists all transactions with filtering and search
  */
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -29,7 +29,7 @@ import {
   getAccountTypeBgColor,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
-import { getAvailableMonths } from '../utils/reports';
+import { getTransactionsForMonth, getAvailableMonths } from '../utils/reports';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -43,89 +43,97 @@ const TransactionsScreen: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Month and year filter state
+  // Get available months
   const availableMonths = useMemo(() => getAvailableMonths(transactions), [transactions]);
+  
+  // Get available years from first transaction to current date
   const availableYears = useMemo(() => {
     if (transactions.length === 0) {
       return [new Date().getFullYear()];
     }
+
+    // Find the earliest transaction date
     const dates = transactions.map(txn => new Date(txn.date));
     const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())));
     const startYear = earliestDate.getFullYear();
     const endYear = new Date().getFullYear();
+
+    // Generate all years from earliest to current
     const years: number[] = [];
     for (let year = endYear; year >= startYear; year--) {
       years.push(year);
     }
     return years;
   }, [transactions]);
+
+  // Month/Year selection state - default to current month
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   
-  const [selectedYear, setSelectedYear] = useState(() => {
-    return new Date().getFullYear();
-  });
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    return new Date().getMonth() + 1;
-  });
-  
+  const yearListRef = useRef<FlatList>(null);
+  const monthListRef = useRef<FlatList>(null);
+
+  // Get months for selected year - show all months up to current month
   const monthsForSelectedYear = useMemo(() => {
-    if (transactions.length === 0) {
-      const now = new Date();
-      if (selectedYear === now.getFullYear()) {
-        return [{
-          year: now.getFullYear(),
-          month: now.getMonth() + 1,
-          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-US', { month: 'long' }),
-        }];
-      }
-      return [];
-    }
-    const dates = transactions.map(txn => new Date(txn.date));
-    const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())));
-    const startYear = earliestDate.getFullYear();
-    const startMonth = earliestDate.getMonth() + 1;
     const now = new Date();
-    const endYear = now.getFullYear();
-    const endMonth = now.getMonth() + 1;
     const months: { year: number; month: number; displayName: string }[] = [];
     
-    if (selectedYear === startYear && selectedYear === endYear) {
-      for (let month = endMonth; month >= startMonth; month--) {
-        months.push({
-          year: selectedYear,
-          month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
-        });
-      }
-    } else if (selectedYear === startYear) {
-      for (let month = 12; month >= startMonth; month--) {
-        months.push({
-          year: selectedYear,
-          month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
-        });
-      }
-    } else if (selectedYear === endYear) {
-      for (let month = endMonth; month >= 1; month--) {
-        months.push({
-          year: selectedYear,
-          month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
-        });
-      }
-    } else if (selectedYear > startYear && selectedYear < endYear) {
-      for (let month = 12; month >= 1; month--) {
-        months.push({
-          year: selectedYear,
-          month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
-        });
-      }
+    // Always show all 12 months for the selected year
+    // If it's the current year, only show up to current month
+    const maxMonth = (selectedYear === now.getFullYear()) ? now.getMonth() + 1 : 12;
+    
+    for (let month = maxMonth; month >= 1; month--) {
+      months.push({
+        year: selectedYear,
+        month,
+        displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+      });
     }
+    
     return months;
-  }, [transactions, selectedYear]);
-  
-  const [showYearPicker, setShowYearPicker] = useState(false);
-  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  }, [selectedYear]);
+
+  // When year changes, adjust selected month if needed and scroll month list
+  useEffect(() => {
+    const now = new Date();
+    const maxMonth = (selectedYear === now.getFullYear()) ? now.getMonth() + 1 : 12;
+    
+    // If selected month is not available for the selected year, reset to first available month
+    if (selectedMonth > maxMonth || selectedMonth < 1) {
+      setSelectedMonth(maxMonth);
+    } else {
+      // Scroll to selected month when year changes
+      setTimeout(() => {
+        const monthIndex = monthsForSelectedYear.findIndex(m => m.month === selectedMonth);
+        if (monthIndex >= 0 && monthListRef.current) {
+          monthListRef.current.scrollToIndex({ index: monthIndex, animated: true });
+        }
+      }, 100);
+    }
+  }, [selectedYear, selectedMonth, monthsForSelectedYear]);
+
+  // Scroll to selected values when picker opens
+  useEffect(() => {
+    if (showMonthYearPicker) {
+      // Scroll year list
+      setTimeout(() => {
+        const yearIndex = availableYears.findIndex(y => y === selectedYear);
+        if (yearIndex >= 0 && yearListRef.current) {
+          yearListRef.current.scrollToIndex({ index: yearIndex, animated: false });
+        }
+      }, 100);
+      
+      // Scroll month list
+      setTimeout(() => {
+        const monthIndex = monthsForSelectedYear.findIndex(m => m.month === selectedMonth);
+        if (monthIndex >= 0 && monthListRef.current) {
+          monthListRef.current.scrollToIndex({ index: monthIndex, animated: false });
+        }
+      }, 150);
+    }
+  }, [showMonthYearPicker, selectedYear, selectedMonth, availableYears, monthsForSelectedYear]);
 
   // Subscribe to transactions when user is available
   useEffect(() => {
@@ -160,15 +168,6 @@ const TransactionsScreen: React.FC = () => {
         type: 'income' as AccountType,
         isExpense: false,
       };
-    } else if (creditAccount?.accountType === 'expense') {
-      // Return/Refund: Credit expense account means money is coming back from expense
-      return {
-        title: `${creditAccount.name} Return`,
-        subtitle: `Return to ${debitAccount?.name ?? 'Unknown'}`,
-        type: 'expense' as AccountType,
-        isExpense: false,
-        isReturn: true,
-      };
     } else {
       return {
         title: `${creditAccount?.name ?? 'Unknown'} → ${debitAccount?.name ?? 'Unknown'}`,
@@ -180,23 +179,19 @@ const TransactionsScreen: React.FC = () => {
   };
 
   /**
-   * Filter transactions by selected month/year and optionally by search query
+   * Filter transactions based on selected month/year and search query
    */
   const filteredTransactions = useMemo(() => {
-    // Filter to selected month and year
-    const monthTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.date);
-      return txnDate.getFullYear() === selectedYear && txnDate.getMonth() + 1 === selectedMonth;
-    });
-
-    // If no search query, return month transactions
+    // First filter by month/year
+    let monthFiltered = getTransactionsForMonth(transactions, selectedYear, selectedMonth);
+    
+    // Then filter by search query if provided
     if (!searchQuery.trim()) {
-      return monthTransactions;
+      return monthFiltered;
     }
 
-    // Apply search filter on month transactions
     const query = searchQuery.toLowerCase();
-    return monthTransactions.filter((txn) => {
+    return monthFiltered.filter((txn) => {
       const debitAccount = getAccountById(txn.debitAccountId);
       const creditAccount = getAccountById(txn.creditAccountId);
       
@@ -207,13 +202,7 @@ const TransactionsScreen: React.FC = () => {
         txn.amount.toString().includes(query)
       );
     });
-  }, [transactions, searchQuery, getAccountById, selectedYear, selectedMonth]);
-  
-  const handleMonthSelect = (year: number, month: number) => {
-    setSelectedYear(year);
-    setSelectedMonth(month);
-    setShowMonthPicker(false);
-  };
+  }, [transactions, selectedYear, selectedMonth, searchQuery, getAccountById]);
 
   /**
    * Group transactions by date
@@ -307,20 +296,26 @@ const TransactionsScreen: React.FC = () => {
     </View>
   );
 
+
+  const getMonthDisplayName = () => {
+    return new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
   return (
     <View style={styles.container}>
-      {/* Month/Year Filter */}
-      <View style={styles.filterContainer}>
+      {/* Month/Year Selector */}
+      <View style={styles.monthSelectorContainer}>
         <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowYearPicker(true)}
+          style={styles.monthSelectorButton}
+          onPress={() => setShowMonthYearPicker(true)}
         >
-          <Text style={styles.filterLabel}>Month</Text>
-          <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-            {availableMonths.find(m => m.year === selectedYear && m.month === selectedMonth)?.displayName || 
-             new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </Text>
-          <Text style={styles.chevron}>›</Text>
+          <Text style={styles.monthSelectorValue}>{getMonthDisplayName()}</Text>
+          <TouchableOpacity
+            style={styles.editIconButton}
+            onPress={() => setShowMonthYearPicker(true)}
+          >
+            <Text style={styles.editIcon}>✎</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
       </View>
 
@@ -356,10 +351,10 @@ const TransactionsScreen: React.FC = () => {
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateIcon}>📝</Text>
           <Text style={styles.emptyStateText}>
-            {searchQuery ? 'No transactions found' : `No transactions for ${new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`}
+            {searchQuery ? 'No transactions found' : 'No transactions yet'}
           </Text>
           <Text style={styles.emptyStateSubtext}>
-            {searchQuery ? 'Try a different search' : 'Add a transaction for this month to get started'}
+            {searchQuery ? 'Try a different search' : 'Add your first transaction to get started'}
           </Text>
         </View>
       ) : (
@@ -380,109 +375,129 @@ const TransactionsScreen: React.FC = () => {
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
 
-      {/* Year Picker Modal */}
+      {/* Month/Year Picker */}
       <Modal
-        visible={showYearPicker}
+        visible={showMonthYearPicker}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowYearPicker(false)}
+        onRequestClose={() => setShowMonthYearPicker(false)}
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowYearPicker(false)}>
-              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                Cancel
-              </Text>
+            <TouchableOpacity onPress={() => setShowMonthYearPicker(false)}>
+              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Year</Text>
-            <View style={{ width: 60 }} />
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select Month & Year</Text>
+            <TouchableOpacity onPress={() => setShowMonthYearPicker(false)}>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+            </TouchableOpacity>
           </View>
-          <FlatList
-            data={availableYears}
-            keyExtractor={(item) => item.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.monthOption}
-                onPress={() => {
-                  setSelectedYear(item);
-                  setShowYearPicker(false);
-                  setShowMonthPicker(true);
-                }}
-              >
-                <Text style={styles.monthOptionText} numberOfLines={1} ellipsizeMode="tail">
-                  {item}
-                </Text>
-                {selectedYear === item && (
-                  <Text style={styles.checkmark}>✓</Text>
+          <View style={styles.monthYearPickerContainer}>
+            {/* Year Picker */}
+            <View style={styles.pickerColumn}>
+              <Text style={styles.pickerColumnLabel}>Year</Text>
+              <FlatList
+                ref={yearListRef}
+                data={availableYears}
+                keyExtractor={(item) => item.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.pickerOption,
+                      selectedYear === item && styles.pickerOptionSelected
+                    ]}
+                    onPress={() => setSelectedYear(item)}
+                  >
+                    <Text 
+                      style={[
+                        styles.pickerOptionText,
+                        selectedYear === item && styles.pickerOptionTextSelected
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
                 )}
-              </TouchableOpacity>
-            )}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            contentContainerStyle={{ paddingBottom: insets.bottom }}
-          />
-        </View>
-      </Modal>
-
-      {/* Month Picker Modal */}
-      <Modal
-        visible={showMonthPicker}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowMonthPicker(false)}
-      >
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => {
-              setShowMonthPicker(false);
-              setShowYearPicker(true);
-            }}>
-              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                Back
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">
-              Select Month ({selectedYear})
-            </Text>
-            <TouchableOpacity onPress={() => setShowMonthPicker(false)}>
-              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {monthsForSelectedYear.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No months available for {selectedYear}</Text>
-              <TouchableOpacity
-                style={styles.backToYearButton}
-                onPress={() => {
-                  setShowMonthPicker(false);
-                  setShowYearPicker(true);
+                contentContainerStyle={{ paddingVertical: spacing.base }}
+                showsVerticalScrollIndicator={false}
+                getItemLayout={(data, index) => ({
+                  length: 50,
+                  offset: 50 * index,
+                  index,
+                })}
+                onScrollToIndexFailed={(info) => {
+                  // Fallback if scroll fails
+                  setTimeout(() => {
+                    if (yearListRef.current) {
+                      yearListRef.current.scrollToIndex({ index: info.index, animated: false });
+                    }
+                  }, 100);
                 }}
-              >
-                <Text style={styles.backToYearButtonText}>Select Different Year</Text>
-              </TouchableOpacity>
+              />
             </View>
-          ) : (
-            <FlatList
-              data={monthsForSelectedYear}
-              keyExtractor={(item) => `${item.year}-${item.month}`}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.monthOption}
-                  onPress={() => handleMonthSelect(item.year, item.month)}
-                >
-                  <Text style={styles.monthOptionText} numberOfLines={1} ellipsizeMode="tail">
-                    {item.displayName}
-                  </Text>
-                  {selectedYear === item.year && selectedMonth === item.month && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              contentContainerStyle={{ paddingBottom: insets.bottom }}
-            />
-          )}
+            
+            {/* Month Picker */}
+            <View style={styles.pickerColumn}>
+              <Text style={styles.pickerColumnLabel}>Month</Text>
+              <FlatList
+                ref={monthListRef}
+                data={monthsForSelectedYear.map(m => m.month)}
+                keyExtractor={(item) => item.toString()}
+                renderItem={({ item }) => {
+                  const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString('en-US', { month: 'long' });
+                  const isSelected = selectedMonth === item;
+                  const now = new Date();
+                  const isFutureMonth = selectedYear > now.getFullYear() || 
+                                       (selectedYear === now.getFullYear() && item > now.getMonth() + 1);
+                  
+                  return (
+                    <TouchableOpacity
+                      style={[
+                        styles.pickerOption,
+                        isSelected && styles.pickerOptionSelected,
+                        isFutureMonth && styles.pickerOptionDisabled
+                      ]}
+                      onPress={() => {
+                        if (!isFutureMonth) {
+                          setSelectedMonth(item);
+                        }
+                      }}
+                      disabled={isFutureMonth}
+                    >
+                      <Text 
+                        style={[
+                          styles.pickerOptionText,
+                          isSelected && styles.pickerOptionTextSelected,
+                          isFutureMonth && styles.pickerOptionTextDisabled
+                        ]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {monthName}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }}
+                contentContainerStyle={{ paddingVertical: spacing.base }}
+                showsVerticalScrollIndicator={false}
+                getItemLayout={(data, index) => ({
+                  length: 50,
+                  offset: 50 * index,
+                  index,
+                })}
+                onScrollToIndexFailed={(info) => {
+                  // Fallback if scroll fails
+                  setTimeout(() => {
+                    if (monthListRef.current) {
+                      monthListRef.current.scrollToIndex({ index: info.index, animated: false });
+                    }
+                  }, 100);
+                }}
+              />
+            </View>
+          </View>
         </View>
       </Modal>
     </View>
@@ -622,35 +637,34 @@ const styles = StyleSheet.create({
     color: colors.error[600],
     fontFamily: 'monospace',
   },
-  filterContainer: {
-    padding: spacing.base,
+  monthSelectorContainer: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.background.elevated,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
-  filterButton: {
+  monthSelectorButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.base,
-    backgroundColor: colors.background.primary,
-    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    position: 'relative',
   },
-  filterLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    width: 100,
-  },
-  filterValue: {
-    flex: 1,
+  monthSelectorValue: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
-    flexShrink: 1,
+    textAlign: 'center',
   },
-  chevron: {
-    fontSize: typography.fontSize.xl,
-    color: colors.neutral[400],
+  editIconButton: {
+    position: 'absolute',
+    right: 0,
+    padding: spacing.xs,
+  },
+  editIcon: {
+    fontSize: typography.fontSize.base,
+    color: colors.primary[500],
   },
   modalContainer: {
     flex: 1,
@@ -680,40 +694,60 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     marginHorizontal: spacing.sm,
   },
-  monthOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.base,
-  },
-  monthOptionText: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-    flex: 1,
-    flexShrink: 1,
-    marginRight: spacing.sm,
-  },
-  checkmark: {
-    fontSize: typography.fontSize.base,
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.bold,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: colors.border.light,
-  },
-  backToYearButton: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  backToYearButtonText: {
+  modalDone: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
-    color: colors.neutral[0],
+    color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+  },
+  monthYearPickerContainer: {
+    flexDirection: 'row',
+    flex: 1,
+    paddingHorizontal: spacing.sm,
+  },
+  pickerColumn: {
+    flex: 1,
+    marginHorizontal: spacing.xs,
+    minWidth: 140,
+  },
+  pickerColumnLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  pickerOption: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+    width: '100%',
+  },
+  pickerOptionSelected: {
+    backgroundColor: colors.primary[50],
+  },
+  pickerOptionDisabled: {
+    opacity: 0.3,
+  },
+  pickerOptionText: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    textAlign: 'center',
+    width: '100%',
+    flexShrink: 0,
+    paddingHorizontal: spacing.xs,
+  },
+  pickerOptionTextSelected: {
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.semiBold,
+  },
+  pickerOptionTextDisabled: {
+    color: colors.text.secondary,
   },
 });
 

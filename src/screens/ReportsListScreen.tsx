@@ -73,7 +73,6 @@ const ReportsListScreen: React.FC = () => {
           paddingBottom: insets.bottom + spacing.xl,
         }}
       >
-        <Text style={styles.title}>Reports</Text>
         <Text style={styles.subtitle}>Select a report type to view</Text>
 
         <View style={styles.optionsContainer}>

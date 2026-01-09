@@ -11,12 +11,15 @@ import {
   ScrollView,
   TouchableOpacity,
   SectionList,
+  Modal,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { useAuthStore, useAccountStore } from '../stores';
+import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
 import { RootStackParamList, Account, AccountType } from '../types';
 import { 
   colors, 
@@ -28,6 +31,7 @@ import {
   getAccountTypeBgColor,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
+import { getOpeningBalance, getClosingBalance, getTransactionsForDateRange } from '../utils/reports';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -44,10 +48,40 @@ const AccountsScreen: React.FC = () => {
     getTotalAssets,
     getTotalLiabilities,
   } = useAccountStore();
+  const { transactions } = useTransactionStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('balance');
+  
+  // Date range state
+  const [fromDate, setFromDate] = useState(() => {
+    const date = new Date();
+    date.setDate(1); // First day of current month
+    return date;
+  });
+  const [toDate, setToDate] = useState(new Date());
+  const [showFromDatePicker, setShowFromDatePicker] = useState(false);
+  const [showToDatePicker, setShowToDatePicker] = useState(false);
 
   const currency = user?.currency ?? DEFAULT_CURRENCY;
+  
+  // Calculate opening and closing balances for accounts
+  const accountBalances = useMemo(() => {
+    const balances = new Map<string, { opening: number; closing: number }>();
+    
+    accounts.forEach(account => {
+      if (account.accountType === 'asset' || account.accountType === 'liability') {
+        const opening = getOpeningBalance(account, transactions, fromDate);
+        const closing = getClosingBalance(account, transactions, toDate);
+        // Always set balance, even if 0 or NaN
+        balances.set(account.id, { 
+          opening: isNaN(opening) ? 0 : opening, 
+          closing: isNaN(closing) ? 0 : closing 
+        });
+      }
+    });
+    
+    return balances;
+  }, [accounts, transactions, fromDate, toDate]);
 
   /**
    * Get accounts filtered and grouped by the active tab
@@ -63,20 +97,38 @@ const AccountsScreen: React.FC = () => {
       const result: { title: string; data: Account[]; type: AccountType; total: number }[] = [];
       
       if (assetAccounts.length > 0) {
+        const totalOpening = assetAccounts.reduce((sum, acc) => {
+          const balance = accountBalances.get(acc.id);
+          return sum + (balance?.opening ?? 0);
+        }, 0);
+        const totalClosing = assetAccounts.reduce((sum, acc) => {
+          const balance = accountBalances.get(acc.id);
+          return sum + (balance?.closing ?? 0);
+        }, 0);
+        
         result.push({
           title: 'Assets',
           data: assetAccounts,
           type: 'asset',
-          total: getTotalAssets(),
+          total: totalClosing,
         });
       }
       
       if (liabilityAccounts.length > 0) {
+        const totalOpening = liabilityAccounts.reduce((sum, acc) => {
+          const balance = accountBalances.get(acc.id);
+          return sum + (balance?.opening ?? 0);
+        }, 0);
+        const totalClosing = liabilityAccounts.reduce((sum, acc) => {
+          const balance = accountBalances.get(acc.id);
+          return sum + (balance?.closing ?? 0);
+        }, 0);
+        
         result.push({
           title: 'Liabilities',
           data: liabilityAccounts,
           type: 'liability',
-          total: getTotalLiabilities(),
+          total: totalClosing,
         });
       }
       
@@ -84,54 +136,123 @@ const AccountsScreen: React.FC = () => {
     } else if (activeTab === 'income') {
       const incomeAccounts = activeAccounts.filter(a => a.accountType === 'income');
       
-      // Group by parent category
-      const grouped = incomeAccounts.reduce((acc, account) => {
-        const category = account.parentCategory;
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(account);
-        return acc;
-      }, {} as Record<string, Account[]>);
+      // Filter transactions for date range
+      const periodTransactions = getTransactionsForDateRange(transactions, fromDate, toDate);
       
-      return Object.entries(grouped).map(([category, data]) => ({
-        title: category,
-        data,
-        type: 'income' as AccountType,
-        total: 0, // Income accounts don't have balances
-      }));
+      // Group by parent category and calculate account-wise totals
+      const categoryGroups = new Map<string, {
+        accounts: Array<Account & { accountTotal: number }>;
+        total: number;
+      }>();
+      
+      incomeAccounts.forEach(account => {
+        const category = account.parentCategory;
+        
+        if (!categoryGroups.has(category)) {
+          categoryGroups.set(category, {
+            accounts: [],
+            total: 0,
+          });
+        }
+        
+        const catGroup = categoryGroups.get(category)!;
+        
+        // Calculate total for this account in the period (credit to income account)
+        const accountTransactions = periodTransactions.filter(txn => 
+          txn.creditAccountId === account.id
+        );
+        const accountTotal = accountTransactions.reduce((sum, txn) => sum + txn.amount, 0);
+        
+        catGroup.accounts.push({ ...account, accountTotal });
+        catGroup.total += accountTotal;
+      });
+      
+      // Flatten into sections with account-wise totals
+      const result: { title: string; data: Array<Account & { accountTotal?: number }>; type: AccountType; total: number }[] = [];
+      
+      categoryGroups.forEach((catGroup, category) => {
+        result.push({
+          title: category,
+          data: catGroup.accounts,
+          type: 'income' as AccountType,
+          total: catGroup.total,
+        });
+      });
+      
+      return result;
     } else {
       const expenseAccounts = activeAccounts.filter(a => a.accountType === 'expense');
       
-      // Group by parent category
-      const grouped = expenseAccounts.reduce((acc, account) => {
-        const category = account.parentCategory;
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(account);
-        return acc;
-      }, {} as Record<string, Account[]>);
+      // Filter transactions for date range
+      const periodTransactions = getTransactionsForDateRange(transactions, fromDate, toDate);
       
-      return Object.entries(grouped).map(([category, data]) => ({
-        title: category,
-        data,
-        type: 'expense' as AccountType,
-        total: 0, // Expense accounts don't have balances
-      }));
+      // Group by parent category and calculate account-wise totals
+      const categoryGroups = new Map<string, {
+        accounts: Array<Account & { accountTotal: number }>;
+        total: number;
+      }>();
+      
+      expenseAccounts.forEach(account => {
+        const category = account.parentCategory;
+        
+        if (!categoryGroups.has(category)) {
+          categoryGroups.set(category, {
+            accounts: [],
+            total: 0,
+          });
+        }
+        
+        const catGroup = categoryGroups.get(category)!;
+        
+        // Calculate total for this account in the period
+        // Debit to expense = expense, Credit to expense = return (subtract)
+        const accountTransactions = periodTransactions.filter(txn => 
+          txn.debitAccountId === account.id || txn.creditAccountId === account.id
+        );
+        const accountTotal = accountTransactions.reduce((sum, txn) => {
+          if (txn.debitAccountId === account.id) {
+            return sum + txn.amount; // Expense
+          } else {
+            return sum - txn.amount; // Return (subtract)
+          }
+        }, 0);
+        
+        catGroup.accounts.push({ ...account, accountTotal });
+        catGroup.total += accountTotal;
+      });
+      
+      // Flatten into sections with account-wise totals
+      const result: { title: string; data: Array<Account & { accountTotal?: number }>; type: AccountType; total: number }[] = [];
+      
+      categoryGroups.forEach((catGroup, category) => {
+        result.push({
+          title: category,
+          data: catGroup.accounts,
+          type: 'expense' as AccountType,
+          total: Math.abs(catGroup.total),
+        });
+      });
+      
+      return result;
     }
-  }, [accounts, activeTab, getTotalAssets, getTotalLiabilities]);
+  }, [accounts, activeTab, accountBalances, transactions, fromDate, toDate]);
 
   const handleAddAccount = () => {
     navigation.navigate('AddAccount');
   };
 
   const handleAccountPress = (accountId: string) => {
-    navigation.navigate('AccountDetail', { accountId });
+    navigation.navigate('AccountDetail', { 
+      accountId,
+      fromDate,
+      toDate,
+    });
   };
 
-  const renderAccount = ({ item: account }: { item: Account }) => {
+  const renderAccount = ({ item: account }: { item: Account & { accountTotal?: number } }) => {
     const showBalance = account.accountType === 'asset' || account.accountType === 'liability';
+    const showAccountTotal = (account.accountType === 'income' || account.accountType === 'expense') && account.accountTotal !== undefined;
+    const balance = accountBalances.get(account.id);
     
     return (
       <TouchableOpacity
@@ -158,12 +279,39 @@ const AccountsScreen: React.FC = () => {
           </Text>
         </View>
         {showBalance && (
-          <Text style={[
-            styles.accountBalance,
-            account.accountType === 'liability' && styles.liabilityBalance
-          ]}>
-            {formatCurrency(account.currentBalance ?? 0, currency)}
-          </Text>
+          <View style={styles.balanceContainer}>
+            <Text 
+              style={[
+                styles.accountBalance,
+                account.accountType === 'liability' && styles.liabilityBalance
+              ]}
+              allowFontScaling={true}
+            >
+              {balance ? formatCurrency(balance.closing, currency) : formatCurrency(account.currentBalance ?? 0, currency)}
+            </Text>
+            {showBalance && (
+              <Text 
+                style={styles.balanceLabel}
+                allowFontScaling={true}
+              >
+                Opening: {balance ? formatCurrency(balance.opening ?? 0, currency) : formatCurrency(account.openingBalance ?? 0, currency)}
+              </Text>
+            )}
+          </View>
+        )}
+        {showAccountTotal && (
+          <View style={styles.balanceContainer}>
+            <Text 
+              style={[
+                styles.accountBalance,
+                account.accountType === 'income' && { color: colors.income },
+                account.accountType === 'expense' && { color: colors.expense },
+              ]}
+              allowFontScaling={true}
+            >
+              {formatCurrency(Math.abs(account.accountTotal ?? 0), currency)}
+            </Text>
+          </View>
         )}
         <Text style={styles.chevron}>›</Text>
       </TouchableOpacity>
@@ -179,10 +327,12 @@ const AccountsScreen: React.FC = () => {
         ]} />
         <Text style={styles.sectionTitle}>{section.title}</Text>
       </View>
-      {(section.type === 'asset' || section.type === 'liability') && (
+      {section.total !== 0 && (
         <Text style={[
           styles.sectionTotal,
-          section.type === 'liability' && styles.liabilityBalance
+          section.type === 'liability' && styles.liabilityBalance,
+          section.type === 'income' && { color: colors.income },
+          section.type === 'expense' && { color: colors.expense },
         ]}>
           {formatCurrency(section.total, currency)}
         </Text>
@@ -190,8 +340,56 @@ const AccountsScreen: React.FC = () => {
     </View>
   );
 
+  const onFromDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || fromDate;
+    setShowFromDatePicker(Platform.OS === 'ios');
+    if (currentDate > toDate) {
+      return;
+    }
+    setFromDate(currentDate);
+  };
+
+  const onToDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || toDate;
+    setShowToDatePicker(Platform.OS === 'ios');
+    if (currentDate < fromDate) {
+      return;
+    }
+    setToDate(currentDate);
+  };
+
   return (
     <View style={styles.container}>
+      {/* Period Selector */}
+      <View style={styles.periodSection}>
+          <View style={styles.dateRangeRow}>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowFromDatePicker(true)}
+            >
+              <View style={styles.dateButtonContent}>
+                <Text style={styles.dateLabel}>From Date</Text>
+                <Text style={styles.dateValue} numberOfLines={1} ellipsizeMode="tail">
+                  {fromDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowToDatePicker(true)}
+            >
+              <View style={styles.dateButtonContent}>
+                <Text style={styles.dateLabel}>To Date</Text>
+                <Text style={styles.dateValue} numberOfLines={1} ellipsizeMode="tail">
+                  {toDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+          </View>
+      </View>
+
       {/* Tab Bar */}
       <View style={styles.tabBar}>
         <TouchableOpacity
@@ -258,6 +456,88 @@ const AccountsScreen: React.FC = () => {
       >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
+
+      {/* From Date Picker Modal */}
+      {showFromDatePicker && (
+        Platform.OS === 'ios' ? (
+          <Modal
+            visible={showFromDatePicker}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={() => setShowFromDatePicker(false)}
+          >
+            <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
+                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">From Date</Text>
+                <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
+                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={fromDate}
+                mode="date"
+                display="spinner"
+                onChange={onFromDateChange}
+                maximumDate={toDate}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </Modal>
+        ) : (
+          <DateTimePicker
+            value={fromDate}
+            mode="date"
+            display="default"
+            onChange={onFromDateChange}
+            maximumDate={toDate}
+          />
+        )
+      )}
+
+      {/* To Date Picker Modal */}
+      {showToDatePicker && (
+        Platform.OS === 'ios' ? (
+          <Modal
+            visible={showToDatePicker}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={() => setShowToDatePicker(false)}
+          >
+            <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
+                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">To Date</Text>
+                <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
+                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={toDate}
+                mode="date"
+                display="spinner"
+                onChange={onToDateChange}
+                minimumDate={fromDate}
+                maximumDate={new Date()}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </Modal>
+        ) : (
+          <DateTimePicker
+            value={toDate}
+            mode="date"
+            display="default"
+            onChange={onToDateChange}
+            minimumDate={fromDate}
+            maximumDate={new Date()}
+          />
+        )
+      )}
     </View>
   );
 };
@@ -341,6 +621,18 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semiBold,
     color: colors.asset,
   },
+  subCategoryHeader: {
+    paddingLeft: spacing.xl,
+    backgroundColor: colors.background.primary,
+  },
+  subCategoryTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  subCategoryTotal: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
   accountItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -363,6 +655,8 @@ const styles = StyleSheet.create({
   accountInfo: {
     flex: 1,
     marginRight: spacing.md,
+    minWidth: 0,
+    flexShrink: 1,
   },
   accountName: {
     fontSize: typography.fontSize.base,
@@ -374,11 +668,26 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 2,
   },
+  balanceContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    flexShrink: 0,
+    width: 150,
+  },
   accountBalance: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.asset,
-    marginRight: spacing.sm,
+    textAlign: 'right',
+    width: '100%',
+  },
+  balanceLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
+    textAlign: 'right',
+    width: '100%',
   },
   liabilityBalance: {
     color: colors.liability,
@@ -386,6 +695,79 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: typography.fontSize.xl,
     color: colors.neutral[400],
+  },
+  periodSection: {
+    padding: spacing.base,
+    backgroundColor: colors.background.elevated,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  dateRangeRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  dateButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.md,
+  },
+  dateButtonContent: {
+    flex: 1,
+    flexShrink: 1,
+    marginRight: spacing.sm,
+  },
+  dateLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  dateValue: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+    flexShrink: 1,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  modalCancel: {
+    fontSize: typography.fontSize.base,
+    color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+    textAlign: 'left',
+  },
+  modalTitle: {
+    flex: 1,
+    textAlign: 'center',
+    flexShrink: 1,
+    marginHorizontal: spacing.sm,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+  },
+  modalDone: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+    textAlign: 'right',
   },
   separator: {
     height: 1,
