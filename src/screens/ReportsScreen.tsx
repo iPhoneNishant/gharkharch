@@ -35,7 +35,6 @@ import {
   generateMonthlyReport,
   generateDateRangeReport,
   getAvailableMonths,
-  calculateExpenseIncomeTotals,
   getTransactionsForDateRange,
   getTransactionsForMonth,
 } from '../utils/reports';
@@ -193,6 +192,7 @@ const ReportsScreen: React.FC = () => {
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   
   // Refs for FlatList scrolling
@@ -229,20 +229,6 @@ const ReportsScreen: React.FC = () => {
       return generateDateRangeReport(accounts, transactions, fromDate, toDate);
     }
   }, [accounts, transactions, selectedYear, selectedMonth, dateRangeMode, fromDate, toDate, viewMode]);
-
-  // Calculate expense/income totals
-  const expenseIncomeTotals = useMemo(() => {
-    if (!viewMode || !dateRangeMode) return { expenses: new Map(), income: new Map() };
-    
-    const startDate = dateRangeMode === 'month' 
-      ? new Date(selectedYear, selectedMonth - 1, 1)
-      : fromDate;
-    const endDate = dateRangeMode === 'month'
-      ? new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999)
-      : toDate;
-    
-    return calculateExpenseIncomeTotals(accounts, transactions, startDate, endDate);
-  }, [accounts, transactions, dateRangeMode, selectedYear, selectedMonth, fromDate, toDate, viewMode]);
 
   // Get filtered transactions
   const filteredTransactions = useMemo(() => {
@@ -283,6 +269,49 @@ const ReportsScreen: React.FC = () => {
     return txnList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, accounts, dateRangeMode, selectedYear, selectedMonth, fromDate, toDate, selectedCategory, selectedSubCategory, viewMode]);
 
+  // Calculate expense/income totals from filtered transactions
+  const expenseIncomeTotals = useMemo(() => {
+    if (filteredTransactions.length === 0) return { expenses: new Map(), income: new Map() };
+    
+    const expenses = new Map<string, { category: string; subCategory: string; total: number; transactions: Transaction[] }>();
+    const income = new Map<string, { category: string; subCategory: string; total: number; transactions: Transaction[] }>();
+
+    filteredTransactions.forEach(txn => {
+      const debitAccount = accounts.find(acc => acc.id === txn.debitAccountId);
+      const creditAccount = accounts.find(acc => acc.id === txn.creditAccountId);
+
+      // Expense: debit account is expense type
+      if (debitAccount?.accountType === 'expense') {
+        const key = `${debitAccount.parentCategory}|${debitAccount.subCategory}`;
+        const existing = expenses.get(key) || {
+          category: debitAccount.parentCategory,
+          subCategory: debitAccount.subCategory,
+          total: 0,
+          transactions: [],
+        };
+        existing.total += txn.amount;
+        existing.transactions.push(txn);
+        expenses.set(key, existing);
+      }
+
+      // Income: credit account is income type
+      if (creditAccount?.accountType === 'income') {
+        const key = `${creditAccount.parentCategory}|${creditAccount.subCategory}`;
+        const existing = income.get(key) || {
+          category: creditAccount.parentCategory,
+          subCategory: creditAccount.subCategory,
+          total: 0,
+          transactions: [],
+        };
+        existing.total += txn.amount;
+        existing.transactions.push(txn);
+        income.set(key, existing);
+      }
+    });
+
+    return { expenses, income };
+  }, [filteredTransactions, accounts]);
+
   // Filter report by category/subcategory
   const filteredReport = useMemo(() => {
     if (!dateRangeReport) return null;
@@ -308,12 +337,68 @@ const ReportsScreen: React.FC = () => {
     };
   }, [dateRangeReport, selectedCategory, selectedSubCategory]);
 
+  // Recalculate category and subcategory transaction counts based on filtered transactions
+  const categoryReportsWithFilteredCounts = useMemo(() => {
+    if (!filteredReport) return [];
+    
+    return filteredReport.categoryReports.map(categoryReport => {
+      // Count transactions for this category from filtered transactions
+      const categoryTransactionCount = filteredTransactions.filter(txn => {
+        const debitAccount = accounts.find(acc => acc.id === txn.debitAccountId);
+        const creditAccount = accounts.find(acc => acc.id === txn.creditAccountId);
+        return (debitAccount?.parentCategory === categoryReport.category || 
+                creditAccount?.parentCategory === categoryReport.category) &&
+               (debitAccount?.accountType === categoryReport.accountType ||
+                creditAccount?.accountType === categoryReport.accountType);
+      }).length;
+      
+      // Recalculate subcategory transaction counts
+      const subCategoryReports = categoryReport.subCategoryReports.map(subCategoryReport => {
+        const subCategoryTransactionCount = filteredTransactions.filter(txn => {
+          const debitAccount = accounts.find(acc => acc.id === txn.debitAccountId);
+          const creditAccount = accounts.find(acc => acc.id === txn.creditAccountId);
+          return (debitAccount?.subCategory === subCategoryReport.subCategory || 
+                  creditAccount?.subCategory === subCategoryReport.subCategory) &&
+                 (debitAccount?.parentCategory === categoryReport.category ||
+                  creditAccount?.parentCategory === categoryReport.category) &&
+                 (debitAccount?.accountType === categoryReport.accountType ||
+                  creditAccount?.accountType === categoryReport.accountType);
+        }).length;
+        
+        return {
+          ...subCategoryReport,
+          transactionCount: subCategoryTransactionCount,
+        };
+      });
+      
+      return {
+        ...categoryReport,
+        totalTransactions: categoryTransactionCount,
+        subCategoryReports,
+      };
+    });
+  }, [filteredReport, filteredTransactions, accounts]);
+
+  // Expand all categories by default when filtered report changes
+  useEffect(() => {
+    if (categoryReportsWithFilteredCounts && categoryReportsWithFilteredCounts.length > 0) {
+      const allCategoryKeys = new Set<string>();
+      categoryReportsWithFilteredCounts.forEach(cr => {
+        const categoryKey = `${cr.accountType}-${cr.category}`;
+        allCategoryKeys.add(categoryKey);
+      });
+      setExpandedCategories(allCategoryKeys);
+    }
+  }, [categoryReportsWithFilteredCounts]);
+
   // Group category reports by account type
   const categoryReportsByAccountType = useMemo(() => {
-    if (!filteredReport) return new Map<AccountType, CategoryReport[]>();
+    if (!categoryReportsWithFilteredCounts || categoryReportsWithFilteredCounts.length === 0) {
+      return new Map<AccountType, CategoryReport[]>();
+    }
     
     const grouped = new Map<AccountType, CategoryReport[]>();
-    filteredReport.categoryReports.forEach(cr => {
+    categoryReportsWithFilteredCounts.forEach(cr => {
       if (!grouped.has(cr.accountType)) {
         grouped.set(cr.accountType, []);
       }
@@ -321,7 +406,7 @@ const ReportsScreen: React.FC = () => {
     });
     
     return grouped;
-  }, [filteredReport]);
+  }, [categoryReportsWithFilteredCounts]);
 
   // Get unique categories from report
   const availableCategories = useMemo(() => {
@@ -340,6 +425,14 @@ const ReportsScreen: React.FC = () => {
     });
     return Array.from(subCats);
   }, [dateRangeReport]);
+
+  // Get sub-categories for selected category
+  const subCategoriesForSelectedCategory = useMemo(() => {
+    if (!selectedCategory || !dateRangeReport) return [];
+    const categoryReport = dateRangeReport.categoryReports.find(cr => cr.category === selectedCategory);
+    if (!categoryReport) return [];
+    return categoryReport.subCategoryReports.map(scr => scr.subCategory);
+  }, [selectedCategory, dateRangeReport]);
 
 
 
@@ -624,7 +717,7 @@ const ReportsScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.filterButton}
               onPress={() => {
-                setSelectedSubCategory(null);
+                setShowSubCategoryPicker(true);
                 // Show sub-category picker
               }}
             >
@@ -704,7 +797,7 @@ const ReportsScreen: React.FC = () => {
             <View style={styles.summaryItem}>
               <Text style={styles.summaryItemLabel}>Transactions</Text>
               <Text style={styles.summaryItemValue}>
-                {filteredReport.totalTransactions}
+                {filteredTransactions.length}
               </Text>
             </View>
           </View>
@@ -1077,6 +1170,51 @@ const ReportsScreen: React.FC = () => {
                   {item.displayName}
                 </Text>
                 {selectedCategory === item.category && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            contentContainerStyle={{ paddingBottom: insets.bottom }}
+          />
+        </View>
+      </Modal>
+
+      {/* Sub-Category Picker Modal */}
+      <Modal
+        visible={showSubCategoryPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSubCategoryPicker(false)}
+      >
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowSubCategoryPicker(false)}>
+              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Sub-Category</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <FlatList
+            data={[
+              { subCategory: null, displayName: 'All Sub-Categories' },
+              ...subCategoriesForSelectedCategory.map(sc => ({ subCategory: sc, displayName: sc }))
+            ]}
+            keyExtractor={(item) => item.subCategory || 'all'}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.categoryOption}
+                onPress={() => {
+                  setSelectedSubCategory(item.subCategory);
+                  setShowSubCategoryPicker(false);
+                }}
+              >
+                <Text style={styles.categoryOptionText} numberOfLines={1} ellipsizeMode="tail">
+                  {item.displayName}
+                </Text>
+                {selectedSubCategory === item.subCategory && (
                   <Text style={styles.checkmark}>✓</Text>
                 )}
               </TouchableOpacity>
