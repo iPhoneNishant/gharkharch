@@ -42,3 +42,34 @@ If you see "Firebase configuration is missing!" error:
 1. Make sure `.env` file exists in the root directory
 2. Check that all variables start with `EXPO_PUBLIC_`
 3. Restart the Expo development server after creating/updating `.env`
+
+## EAS Build Setup
+
+For **EAS Build** (cloud builds), you need to set environment variables as EAS Secrets. The `.env` file is only used for local development.
+
+### Quick Setup for EAS Build:
+
+1. **Use the automated script**:
+   ```bash
+   ./set-eas-secrets.sh
+   ```
+   
+   This script reads your `.env` file and sets all Firebase secrets in EAS.
+
+2. **Or set secrets manually**:
+   ```bash
+   eas secret:create --scope project --name EXPO_PUBLIC_FIREBASE_API_KEY --value "your-api-key"
+   # ... repeat for each variable
+   ```
+
+3. **Verify secrets**:
+   ```bash
+   eas secret:list
+   ```
+
+4. **Build with EAS**:
+   ```bash
+   eas build --platform android --profile preview
+   ```
+
+For detailed instructions, see [EAS_BUILD_SETUP.md](./EAS_BUILD_SETUP.md).

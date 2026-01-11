@@ -44,11 +44,13 @@ const firebaseConfig = {
 
 // Validate that required config values are present
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.error(
-    "⚠️ Firebase configuration is missing!\n" +
+  const errorMsg = "⚠️ Firebase configuration is missing!\n" +
     "Please create a .env file with your Firebase credentials.\n" +
-    "See .env.example for the required variables."
-  );
+    "See .env.example for the required variables.\n" +
+    `Current values: apiKey=${firebaseConfig.apiKey ? '***' : 'MISSING'}, projectId=${firebaseConfig.projectId || 'MISSING'}`;
+  console.error(errorMsg);
+  // Throw error to fail fast and prevent Firebase from initializing with invalid config
+  throw new Error(errorMsg);
 }
 
 let app: FirebaseApp;
@@ -121,8 +123,17 @@ export const initializeFirebase = (): {
   return { app, auth, db, functions };
 };
 
-// Initialize on import
-const firebase = initializeFirebase();
+// Initialize on import with error handling
+let firebase: { app: FirebaseApp; auth: Auth; db: Firestore; functions: Functions };
+try {
+  firebase = initializeFirebase();
+} catch (error) {
+  console.error('❌ Failed to initialize Firebase:', error);
+  throw new Error(
+    `Firebase initialization failed: ${error instanceof Error ? error.message : String(error)}\n` +
+    'Please check your .env file and ensure all EXPO_PUBLIC_FIREBASE_* variables are set.'
+  );
+}
 
 export { firebase };
 export const firebaseAuth = firebase.auth;
