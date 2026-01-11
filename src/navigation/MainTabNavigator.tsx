@@ -3,13 +3,14 @@
  * Bottom tab navigation for authenticated users
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MainTabParamList } from '../types';
 import { colors, typography, spacing } from '../config/theme';
+import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
 
 // Screens
 import DashboardScreen from '../screens/DashboardScreen';
@@ -42,6 +43,23 @@ const TabIcon: React.FC<{ name: string; focused: boolean }> = ({ name, focused }
 
 const MainTabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { user } = useAuthStore();
+  const { subscribeToAccounts } = useAccountStore();
+  const { subscribeToTransactions } = useTransactionStore();
+
+  // Initialize data subscriptions when user is available
+  // This ensures data is loaded regardless of which screen loads first
+  useEffect(() => {
+    if (user?.id) {
+      const unsubAccounts = subscribeToAccounts(user.id);
+      const unsubTransactions = subscribeToTransactions(user.id);
+      
+      return () => {
+        unsubAccounts();
+        unsubTransactions();
+      };
+    }
+  }, [user?.id, subscribeToAccounts, subscribeToTransactions]);
 
   return (
     <Tab.Navigator

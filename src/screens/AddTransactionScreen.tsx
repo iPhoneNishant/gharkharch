@@ -3,9 +3,11 @@
  * 
  * DOUBLE-ENTRY ACCOUNTING:
  * Every transaction has exactly ONE debit account and ONE credit account.
- * - Expense: Debit expense account, Credit asset/liability account
- * - Income: Debit asset account, Credit income account  
- * - Transfer: Debit destination asset/liability, Credit source asset/liability
+ * Any account can be selected for debit or credit, allowing flexibility for:
+ * - Expenses: Money going out
+ * - Income: Money coming in
+ * - Transfers: Money moving between accounts
+ * - Returns: Items returned, money refunded to any account
  */
 
 import React, { useState, useMemo } from 'react';
@@ -43,15 +45,13 @@ import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddTransaction'>;
 type RouteType = RouteProp<RootStackParamList, 'AddTransaction'>;
 
-type TransactionType = 'expense' | 'income' | 'transfer';
-
 const AddTransactionScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   
   const { user } = useAuthStore();
-  const { accounts, getAccountsByType } = useAccountStore();
+  const { accounts } = useAccountStore();
   const { createTransaction, updateTransaction, getTransactionById, isLoading } = useTransactionStore();
 
   const editTransactionId = route.params?.editTransactionId;
@@ -59,7 +59,6 @@ const AddTransactionScreen: React.FC = () => {
   const existingTransaction = editTransactionId ? getTransactionById(editTransactionId) : null;
 
   // Form state
-  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [debitAccountId, setDebitAccountId] = useState<string | null>(null);
   const [creditAccountId, setCreditAccountId] = useState<string | null>(null);
@@ -74,24 +73,14 @@ const AddTransactionScreen: React.FC = () => {
       setCreditAccountId(existingTransaction.creditAccountId);
       setNote(existingTransaction.note || '');
       setDate(existingTransaction.date);
-      
-      // Determine transaction type from accounts
-      const debitAcc = accounts.find(a => a.id === existingTransaction.debitAccountId);
-      const creditAcc = accounts.find(a => a.id === existingTransaction.creditAccountId);
-      if (debitAcc?.accountType === 'expense') {
-        setTransactionType('expense');
-      } else if (creditAcc?.accountType === 'income') {
-        setTransactionType('income');
-      } else {
-        setTransactionType('transfer');
-      }
     }
-  }, [existingTransaction, accounts]);
+  }, [existingTransaction]);
 
   // Modal state
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [accountPickerType, setAccountPickerType] = useState<'debit' | 'credit'>('debit');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [accountSearchQuery, setAccountSearchQuery] = useState('');
 
   const currency = user?.currency ?? DEFAULT_CURRENCY;
 
@@ -100,53 +89,71 @@ const AddTransactionScreen: React.FC = () => {
   const creditAccount = accounts.find(a => a.id === creditAccountId);
 
   /**
-   * Get available accounts for selection based on transaction type and picker type
-   * 
-   * ACCOUNTING RULES:
-   * - Expense: Debit = expense account, Credit = asset/liability account
-   * - Income: Debit = asset account, Credit = income account
-   * - Transfer: Both = asset/liability accounts
+   * Determine transaction type based on selected accounts
+   * Priority:
+   * 1. Return: Credit to expense (money coming back from expense/refund)
+   * 2. Expense: Debit to expense (money going to expense category)
+   * 3. Income: Credit to income (money coming from income source)
+   * 4. Transfer: Both asset/liability or any other combination
    */
-  const availableAccounts = useMemo(() => {
-    const activeAccounts = accounts.filter(a => a.isActive);
-    
-    if (transactionType === 'expense') {
-      if (accountPickerType === 'debit') {
-        // Expense account (where money goes)
-        return activeAccounts.filter(a => a.accountType === 'expense');
-      } else {
-        // Asset or liability account (where money comes from)
-        return activeAccounts.filter(a => a.accountType === 'asset' || a.accountType === 'liability');
-      }
-    } else if (transactionType === 'income') {
-      if (accountPickerType === 'debit') {
-        // Asset account (where money goes)
-        return activeAccounts.filter(a => a.accountType === 'asset');
-      } else {
-        // Income account (source of income)
-        return activeAccounts.filter(a => a.accountType === 'income');
-      }
-    } else {
-      // Transfer - both are asset/liability accounts
-      return activeAccounts.filter(a => a.accountType === 'asset' || a.accountType === 'liability');
+  const transactionType = useMemo(() => {
+    if (!debitAccount || !creditAccount) {
+      return null;
     }
-  }, [accounts, transactionType, accountPickerType]);
+
+    // Return: Credit to expense account (money coming back from expense/refund)
+    // This takes priority because credit to expense means money is being returned
+    if (creditAccount.accountType === 'expense') {
+      return 'return';
+    }
+    
+    // Expense: Debit to expense account (money going out to expense)
+    if (debitAccount.accountType === 'expense') {
+      return 'expense';
+    }
+    
+    // Income: Credit to income account (money coming from income source)
+    if (creditAccount.accountType === 'income') {
+      return 'income';
+    }
+    
+    // Transfer: Both are asset or liability accounts, or any other combination
+    return 'transfer';
+  }, [debitAccount, creditAccount]);
 
   /**
-   * Handle transaction type change
-   * Reset selected accounts when type changes
+   * Get available accounts for selection
+   * Allow any active account to be selected for debit or credit
+   * Sorted by name in ascending order
    */
-  const handleTypeChange = (type: TransactionType) => {
-    setTransactionType(type);
-    setDebitAccountId(null);
-    setCreditAccountId(null);
-  };
+  const availableAccounts = useMemo(() => {
+    return accounts
+      .filter(a => a.isActive)
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [accounts]);
+
+  /**
+   * Filter accounts based on search query
+   */
+  const filteredAccounts = useMemo(() => {
+    if (!accountSearchQuery.trim()) {
+      return availableAccounts;
+    }
+
+    const query = accountSearchQuery.toLowerCase();
+    return availableAccounts.filter(account =>
+      account.name.toLowerCase().includes(query) ||
+      account.parentCategory.toLowerCase().includes(query) ||
+      account.subCategory.toLowerCase().includes(query)
+    );
+  }, [availableAccounts, accountSearchQuery]);
 
   /**
    * Open account picker modal
    */
   const openAccountPicker = (type: 'debit' | 'credit') => {
     setAccountPickerType(type);
+    setAccountSearchQuery(''); // Reset search when opening picker
     setShowAccountPicker(true);
   };
 
@@ -211,13 +218,19 @@ const AddTransactionScreen: React.FC = () => {
   };
 
   /**
-   * Get label for account selector based on transaction type
+   * Get label for account selector based on detected transaction type
    */
   const getAccountLabel = (type: 'debit' | 'credit'): string => {
+    if (!transactionType) {
+      return type === 'debit' ? 'Debit Account' : 'Credit Account';
+    }
+
     if (transactionType === 'expense') {
       return type === 'debit' ? 'Expense Category' : 'Paid From';
     } else if (transactionType === 'income') {
       return type === 'debit' ? 'Received In' : 'Income Source';
+    } else if (transactionType === 'return') {
+      return type === 'debit' ? 'Received In' : 'Return From';
     } else {
       return type === 'debit' ? 'To Account' : 'From Account';
     }
@@ -235,55 +248,6 @@ const AddTransactionScreen: React.FC = () => {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Transaction Type Selector */}
-        <View style={styles.typeSelector}>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              transactionType === 'expense' && styles.typeButtonActive,
-              transactionType === 'expense' && { backgroundColor: getAccountTypeBgColor('expense') },
-            ]}
-            onPress={() => handleTypeChange('expense')}
-          >
-            <Text style={[
-              styles.typeButtonText,
-              transactionType === 'expense' && { color: colors.expense },
-            ]}>
-              Expense
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              transactionType === 'income' && styles.typeButtonActive,
-              transactionType === 'income' && { backgroundColor: getAccountTypeBgColor('income') },
-            ]}
-            onPress={() => handleTypeChange('income')}
-          >
-            <Text style={[
-              styles.typeButtonText,
-              transactionType === 'income' && { color: colors.income },
-            ]}>
-              Income
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              transactionType === 'transfer' && styles.typeButtonActive,
-              transactionType === 'transfer' && { backgroundColor: getAccountTypeBgColor('asset') },
-            ]}
-            onPress={() => handleTypeChange('transfer')}
-          >
-            <Text style={[
-              styles.typeButtonText,
-              transactionType === 'transfer' && { color: colors.asset },
-            ]}>
-              Transfer
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Amount Input */}
         <View style={styles.amountContainer}>
           <Text style={styles.currencySymbol}>{currency === 'INR' ? '₹' : '$'}</Text>
@@ -297,6 +261,32 @@ const AddTransactionScreen: React.FC = () => {
             autoFocus
           />
         </View>
+
+        {/* Transaction Type Indicator */}
+        {transactionType && (
+          <View style={styles.transactionTypeIndicator}>
+            <View style={[
+              styles.transactionTypeBadge,
+              { backgroundColor: transactionType === 'expense' ? getAccountTypeBgColor('expense') : 
+                                   transactionType === 'income' ? getAccountTypeBgColor('income') :
+                                   transactionType === 'return' ? getAccountTypeBgColor('expense') :
+                                   getAccountTypeBgColor('asset') }
+            ]}>
+              <Text style={[
+                styles.transactionTypeText,
+                { color: transactionType === 'expense' ? colors.expense :
+                         transactionType === 'income' ? colors.income :
+                         transactionType === 'return' ? colors.expense :
+                         colors.asset }
+              ]}>
+                {transactionType === 'expense' ? 'Expense' :
+                 transactionType === 'income' ? 'Income' :
+                 transactionType === 'return' ? 'Return' :
+                 'Transfer'}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Account Selectors */}
         <View style={styles.formSection}>
@@ -400,15 +390,34 @@ const AddTransactionScreen: React.FC = () => {
         visible={showAccountPicker}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowAccountPicker(false)}
+        onRequestClose={() => {
+          setShowAccountPicker(false);
+          setAccountSearchQuery(''); // Reset search when closing modal
+        }}
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowAccountPicker(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+            <TouchableOpacity onPress={() => {
+              setShowAccountPicker(false);
+              setAccountSearchQuery(''); // Reset search when closing modal
+            }}>
+              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{getAccountLabel(accountPickerType)}</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{getAccountLabel(accountPickerType)}</Text>
             <View style={{ width: 60 }} />
+          </View>
+
+          {/* Search Box */}
+          <View style={styles.accountSearchContainer}>
+            <TextInput
+              style={styles.accountSearchInput}
+              placeholder="Search accounts..."
+              placeholderTextColor={colors.neutral[400]}
+              value={accountSearchQuery}
+              onChangeText={setAccountSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
           </View>
 
           {availableAccounts.length === 0 ? (
@@ -418,9 +427,16 @@ const AddTransactionScreen: React.FC = () => {
                 Add accounts in the Accounts tab first
               </Text>
             </View>
+          ) : filteredAccounts.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No accounts found</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Try a different search term
+              </Text>
+            </View>
           ) : (
             <FlatList
-              data={availableAccounts}
+              data={filteredAccounts}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -519,27 +535,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.base,
   },
-  typeSelector: {
-    flexDirection: 'row',
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xs,
-    marginBottom: spacing.xl,
-  },
-  typeButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    borderRadius: borderRadius.md,
-  },
-  typeButtonActive: {
-    // Background color set dynamically
-  },
-  typeButtonText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.secondary,
-  },
   amountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -558,6 +553,22 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     minWidth: 150,
     textAlign: 'center',
+  },
+  transactionTypeIndicator: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.base,
+  },
+  transactionTypeBadge: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  transactionTypeText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   formSection: {
     backgroundColor: colors.background.elevated,
@@ -669,16 +680,40 @@ const styles = StyleSheet.create({
   modalCancel: {
     fontSize: typography.fontSize.base,
     color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
   },
   modalDone: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+    textAlign: 'right',
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
+    flex: 1,
+    textAlign: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  accountSearchContainer: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  accountSearchInput: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
   emptyState: {
     flex: 1,

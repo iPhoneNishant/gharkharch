@@ -3,7 +3,7 @@
  * Lists all accounts organized by type (Assets, Liabilities, Income, Expenses)
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -45,10 +45,25 @@ const AccountsScreen: React.FC = () => {
   const { 
     accounts, 
     isLoading,
+    subscribeToAccounts,
     getTotalAssets,
     getTotalLiabilities,
   } = useAccountStore();
-  const { transactions } = useTransactionStore();
+  const { transactions, subscribeToTransactions } = useTransactionStore();
+
+  // Subscribe to accounts and transactions when user is available
+  // This ensures data is loaded even if this screen loads before Dashboard
+  useEffect(() => {
+    if (user?.id) {
+      const unsubAccounts = subscribeToAccounts(user.id);
+      const unsubTransactions = subscribeToTransactions(user.id);
+      
+      return () => {
+        unsubAccounts();
+        unsubTransactions();
+      };
+    }
+  }, [user?.id, subscribeToAccounts, subscribeToTransactions]);
 
   const [activeTab, setActiveTab] = useState<TabType>('balance');
   

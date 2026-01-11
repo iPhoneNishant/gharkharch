@@ -55,7 +55,7 @@ const AddAccountScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   
-  const { createAccount, isLoading } = useAccountStore();
+  const { createAccount, isLoading, error: accountError } = useAccountStore();
 
   // Form state
   const [accountType, setAccountType] = useState<AccountType>('asset');
@@ -217,10 +217,15 @@ const AddAccountScreen: React.FC = () => {
     let balance: number | undefined;
     if (hasBalance && openingBalance.trim()) {
       balance = parseFloat(openingBalance);
-      if (isNaN(balance) || balance < 0) {
+      if (isNaN(balance)) {
         Alert.alert('Error', 'Please enter a valid opening balance');
         return;
       }
+      // Allow negative balances for liability accounts (representing debts)
+      // and for asset accounts (representing overdrafts)
+    } else if (hasBalance) {
+      // Default to 0 if no balance is provided for asset/liability accounts
+      balance = 0;
     }
 
     try {
@@ -234,8 +239,10 @@ const AddAccountScreen: React.FC = () => {
       });
 
       navigation.goBack();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create account. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error?.message || accountError || 'Failed to create account. Please try again.';
+      console.error('Account creation error:', error);
+      Alert.alert('Error', errorMessage);
     }
   };
 
@@ -669,6 +676,12 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     width: 100,
+  },
+  inputLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   selectorValue: {
     flex: 1,

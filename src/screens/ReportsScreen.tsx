@@ -3,7 +3,7 @@
  * Displays monthly reports with category and sub-category breakdowns
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -194,6 +194,31 @@ const ReportsScreen: React.FC = () => {
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  
+  // Refs for FlatList scrolling
+  const yearListRef = useRef<FlatList>(null);
+  const monthListRef = useRef<FlatList>(null);
+  
+  // Scroll to selected items when picker modal opens
+  useEffect(() => {
+    if (showMonthYearPicker) {
+      // Scroll year list
+      setTimeout(() => {
+        const yearIndex = availableYears.findIndex(y => y === selectedYear);
+        if (yearIndex >= 0 && yearListRef.current) {
+          yearListRef.current.scrollToIndex({ index: yearIndex, animated: false });
+        }
+      }, 100);
+      
+      // Scroll month list
+      setTimeout(() => {
+        const monthIndex = selectedMonth - 1;
+        if (monthIndex >= 0 && monthListRef.current) {
+          monthListRef.current.scrollToIndex({ index: monthIndex, animated: false });
+        }
+      }, 150);
+    }
+  }, [showMonthYearPicker, selectedYear, selectedMonth, availableYears]);
 
   // Generate report based on date range mode
   const dateRangeReport = useMemo(() => {
@@ -553,7 +578,9 @@ const ReportsScreen: React.FC = () => {
             >
               <Text style={styles.filterLabel}>Month</Text>
               <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                {availableMonths.find(m => m.year === selectedYear && m.month === selectedMonth)?.displayName || 'Select Month'}
+                {selectedMonth && selectedYear 
+                  ? `${new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-US', { month: 'long' })} ${selectedYear}`
+                  : 'Select Month'}
               </Text>
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
@@ -919,6 +946,8 @@ const ReportsScreen: React.FC = () => {
             <View style={styles.pickerColumn}>
               <Text style={styles.pickerColumnLabel}>Year</Text>
               <FlatList
+                ref={yearListRef}
+                key={`year-${showMonthYearPicker}`}
                 data={availableYears}
                 keyExtractor={(item) => item.toString()}
                 renderItem={({ item }) => (
@@ -943,12 +972,19 @@ const ReportsScreen: React.FC = () => {
                 )}
                 contentContainerStyle={{ paddingVertical: spacing.base }}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews={false}
                 getItemLayout={(data, index) => ({
                   length: 50,
                   offset: 50 * index,
                   index,
                 })}
-                initialScrollIndex={Math.max(0, availableYears.findIndex(y => y === selectedYear))}
+                onScrollToIndexFailed={(info) => {
+                  setTimeout(() => {
+                    if (yearListRef.current) {
+                      yearListRef.current.scrollToIndex({ index: info.index, animated: false });
+                    }
+                  }, 100);
+                }}
               />
             </View>
             
@@ -956,32 +992,28 @@ const ReportsScreen: React.FC = () => {
             <View style={styles.pickerColumn}>
               <Text style={styles.pickerColumnLabel}>Month</Text>
               <FlatList
+                ref={monthListRef}
+                key={`month-${showMonthYearPicker}-${selectedYear}`}
                 data={Array.from({ length: 12 }, (_, i) => i + 1)}
                 keyExtractor={(item) => item.toString()}
                 renderItem={({ item }) => {
                   const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString('en-US', { month: 'long' });
                   const isSelected = selectedMonth === item;
-                  const isAvailable = monthsForSelectedYear.some(m => m.year === selectedYear && m.month === item);
                   
                   return (
                     <TouchableOpacity
                       style={[
                         styles.pickerOption,
                         isSelected && styles.pickerOptionSelected,
-                        !isAvailable && styles.pickerOptionDisabled
                       ]}
                       onPress={() => {
-                        if (isAvailable) {
-                          setSelectedMonth(item);
-                        }
+                        setSelectedMonth(item);
                       }}
-                      disabled={!isAvailable}
                     >
                       <Text 
                         style={[
                           styles.pickerOptionText,
                           isSelected && styles.pickerOptionTextSelected,
-                          !isAvailable && styles.pickerOptionTextDisabled
                         ]}
                         numberOfLines={1}
                         ellipsizeMode="tail"
@@ -993,12 +1025,19 @@ const ReportsScreen: React.FC = () => {
                 }}
                 contentContainerStyle={{ paddingVertical: spacing.base }}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews={false}
                 getItemLayout={(data, index) => ({
                   length: 50,
                   offset: 50 * index,
                   index,
                 })}
-                initialScrollIndex={Math.max(0, selectedMonth - 1)}
+                onScrollToIndexFailed={(info) => {
+                  setTimeout(() => {
+                    if (monthListRef.current) {
+                      monthListRef.current.scrollToIndex({ index: info.index, animated: false });
+                    }
+                  }, 100);
+                }}
               />
             </View>
           </View>
