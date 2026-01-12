@@ -23,6 +23,7 @@ import {
   Platform,
   Modal,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -379,11 +380,32 @@ const AddTransactionScreen: React.FC = () => {
           onPress={handleSubmit}
           disabled={isLoading}
         >
-          <Text style={styles.submitButtonText}>
-            {isLoading ? 'Saving...' : isEditing ? 'Update Transaction' : 'Save Transaction'}
-          </Text>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color={colors.neutral[0]} size="small" />
+              <Text style={styles.submitButtonText}>
+                {isEditing ? 'Updating...' : 'Saving...'}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.submitButtonText}>
+              {isEditing ? 'Update Transaction' : 'Save Transaction'}
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color={colors.primary[500]} />
+            <Text style={styles.loadingText}>
+              {isEditing ? 'Updating Transaction...' : 'Saving Transaction...'}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Account Picker Modal */}
       <Modal
@@ -774,6 +796,31 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: colors.border.light,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContent: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    minWidth: 200,
+    ...shadows.lg,
+  },
+  loadingText: {
+    marginTop: spacing.base,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
   },
 });
 

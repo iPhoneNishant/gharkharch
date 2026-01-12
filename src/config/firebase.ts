@@ -74,9 +74,9 @@ export const initializeFirebase = (): {
     // Initialize Auth with React Native persistence
     // Use try-catch to handle case where auth might already be initialized
     try {
-      auth = initializeAuth(app, {
-        persistence: getReactNativePersistence(AsyncStorage),
-      });
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
     } catch (error: any) {
       // If auth is already initialized, get the existing instance
       if (error?.code === 'auth/already-initialized' || error?.message?.includes('already initialized')) {
@@ -106,7 +106,7 @@ export const initializeFirebase = (): {
       } catch (initError: any) {
         // If initializeAuth also fails, try getAuth again (might work after initialization attempt)
         if (initError?.code === 'auth/already-initialized' || initError?.message?.includes('already initialized')) {
-          auth = getAuth(app);
+    auth = getAuth(app);
         } else {
           console.error('Firebase Auth initialization error:', initError);
           throw initError;

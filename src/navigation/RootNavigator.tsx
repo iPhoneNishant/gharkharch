@@ -22,6 +22,8 @@ import AddAccountScreen from '../screens/AddAccountScreen';
 import AccountDetailScreen from '../screens/AccountDetailScreen';
 import TransactionDetailScreen from '../screens/TransactionDetailScreen';
 import ReportsScreen from '../screens/ReportsScreen';
+import MonthToMonthReportScreen from '../screens/MonthToMonthReportScreen';
+import DayToDayReportScreen from '../screens/DayToDayReportScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -209,6 +211,28 @@ const RootNavigator: React.FC = () => {
               options={{
                 headerShown: true,
                 headerTitle: 'Transactions Custom Range',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+                headerBackTitleVisible: true,
+              }}
+            />
+            <Stack.Screen 
+              name="MonthToMonthReport" 
+              component={MonthToMonthReportScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Month-to-Month Report',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+                headerBackTitleVisible: true,
+              }}
+            />
+            <Stack.Screen 
+              name="DayToDayReport" 
+              component={DayToDayReportScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Day-to-Day Report',
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
                 headerBackTitleVisible: true,

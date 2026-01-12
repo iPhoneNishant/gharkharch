@@ -224,6 +224,33 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
     }
   };
 
+  const handleForgotPin = () => {
+    Alert.alert(
+      'Forgot PIN?',
+      'If you have forgotten your PIN, you can log out and log back in to set up a new PIN. This will clear your current PIN.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              // User will be logged out and taken to auth screen
+              // They can log in again and set up a new PIN
+            } catch (error) {
+              console.error('Error signing out:', error);
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.content}>
@@ -286,6 +313,15 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
               ) : (
                 <Text style={styles.continueButtonText}>Continue</Text>
               )}
+            </TouchableOpacity>
+
+            {/* Forgot PIN Link */}
+            <TouchableOpacity
+              style={styles.forgotPinButton}
+              onPress={handleForgotPin}
+              disabled={isVerifying}
+            >
+              <Text style={styles.forgotPinText}>Forgot PIN?</Text>
             </TouchableOpacity>
           </>
         )}
@@ -400,6 +436,17 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.neutral[0],
+  },
+  forgotPinButton: {
+    marginTop: spacing.lg,
+    padding: spacing.base,
+    alignItems: 'center',
+  },
+  forgotPinText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary[500],
+    textDecorationLine: 'underline',
   },
 });
 

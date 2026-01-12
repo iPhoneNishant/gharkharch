@@ -73,8 +73,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               await clearPinAuth();
               
               // Reset PIN auth store state
-              const { usePinAuthStore } = await import('./pinAuthStore');
-              usePinAuthStore.getState().reset();
+              const pinAuthStoreModule = await import('./pinAuthStore');
+              pinAuthStoreModule.usePinAuthStore.getState().reset();
             } catch (pinError) {
               console.error('Error clearing PIN on login:', pinError);
               // Continue with authentication even if PIN clear fails
@@ -260,8 +260,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await clearPinAuth();
       
       // Reset PIN auth store state
-      const { usePinAuthStore } = await import('./pinAuthStore');
-      usePinAuthStore.getState().reset();
+      const pinAuthStoreModule = await import('./pinAuthStore');
+      pinAuthStoreModule.usePinAuthStore.getState().reset();
       
       // Sign out from Firebase
       await firebaseSignOut(firebaseAuth);

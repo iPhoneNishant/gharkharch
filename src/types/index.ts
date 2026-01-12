@@ -174,6 +174,8 @@ export type RootStackParamList = {
   SummaryCustomReport: undefined;
   TransactionsMonthReport: undefined;
   TransactionsCustomReport: undefined;
+  MonthToMonthReport: undefined;
+  DayToDayReport: undefined;
 };
 
 export type MainTabParamList = {

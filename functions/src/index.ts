@@ -204,6 +204,24 @@ export const createAccount = onCall(
     }
   }
 
+  // Check for duplicate account name (case-insensitive) for the same user
+  const trimmedName = data.name.trim();
+  const existingAccountsQuery = await db.collection('accounts')
+    .where('userId', '==', userId)
+    .where('isActive', '==', true)
+    .get();
+  
+  // Firestore doesn't support case-insensitive queries, so we filter in memory
+  const duplicateAccount = existingAccountsQuery.docs.find(doc => {
+    const accountData = doc.data() as Account;
+    return accountData.name.trim().toLowerCase() === trimmedName.toLowerCase();
+  });
+
+  if (duplicateAccount) {
+    const duplicateName = (duplicateAccount.data() as Account).name;
+    throw new HttpsError('already-exists', `An account with the name "${duplicateName}" already exists. Please use a different name.`);
+  }
+
   // Create the account
   const accountRef = db.collection('accounts').doc();
   const now = admin.firestore.Timestamp.now();

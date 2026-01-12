@@ -59,6 +59,20 @@ const ReportsListScreen: React.FC = () => {
       icon: '📑',
       screen: 'TransactionsCustomReport' as keyof RootStackParamList,
     },
+    {
+      id: 'month-to-month',
+      title: 'Month-to-Month Report',
+      description: 'View income and expenses breakdown by month',
+      icon: '📅',
+      screen: 'MonthToMonthReport' as keyof RootStackParamList,
+    },
+    {
+      id: 'day-to-day',
+      title: 'Day-to-Day Report',
+      description: 'View income and expenses breakdown by day (max 90 days)',
+      icon: '📆',
+      screen: 'DayToDayReport' as keyof RootStackParamList,
+    },
   ];
 
   const handleReportPress = (screen: keyof RootStackParamList) => {

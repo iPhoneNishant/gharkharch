@@ -24,6 +24,7 @@ import {
   Platform,
   Modal,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -55,7 +56,7 @@ const AddAccountScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   
-  const { createAccount, isLoading, error: accountError } = useAccountStore();
+  const { createAccount, accounts, isLoading, error: accountError } = useAccountStore();
 
   // Form state
   const [accountType, setAccountType] = useState<AccountType>('asset');
@@ -204,6 +205,19 @@ const AddAccountScreen: React.FC = () => {
     // Validate name
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter an account name');
+      return;
+    }
+
+    // Check for duplicate account name (case-insensitive)
+    const trimmedName = name.trim();
+    const duplicateAccount = accounts.find(
+      account => account.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicateAccount) {
+      Alert.alert(
+        'Duplicate Account Name',
+        `An account with the name "${duplicateAccount.name}" already exists. Please use a different name.`
+      );
       return;
     }
 
@@ -418,11 +432,26 @@ const AddAccountScreen: React.FC = () => {
           onPress={handleSubmit}
           disabled={isLoading}
         >
-          <Text style={styles.submitButtonText}>
-            {isLoading ? 'Creating...' : 'Create Account'}
-          </Text>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color={colors.neutral[0]} size="small" />
+              <Text style={styles.submitButtonText}>Creating...</Text>
+            </View>
+          ) : (
+            <Text style={styles.submitButtonText}>Create Account</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color={colors.primary[500]} />
+            <Text style={styles.loadingText}>Creating Account...</Text>
+          </View>
+        </View>
+      )}
 
       {/* Category Picker Modal */}
       <Modal
@@ -830,6 +859,31 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.primary[500],
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContent: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    minWidth: 200,
+    ...shadows.lg,
+  },
+  loadingText: {
+    marginTop: spacing.base,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
   },
 });
 

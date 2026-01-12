@@ -18,9 +18,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import { useRoute } from '@react-navigation/native';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
-import { MonthlyReport, CategoryReport, SubCategoryReport, AccountType, Transaction } from '../types';
+import { MonthlyReport, CategoryReport, SubCategoryReport, AccountType, Transaction, RootStackParamList } from '../types';
 import {
   colors,
   typography,
@@ -37,11 +37,15 @@ import {
   getAvailableMonths,
   getTransactionsForDateRange,
   getTransactionsForMonth,
+  generateMonthToMonthBreakdown,
+  MonthToMonthBreakdown,
 } from '../utils/reports';
+
+type ReportsScreenRouteProp = RouteProp<RootStackParamList, 'SummaryMonthReport' | 'SummaryCustomReport' | 'TransactionsMonthReport' | 'TransactionsCustomReport'>;
 
 const ReportsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const route = useRoute();
+  const route = useRoute<ReportsScreenRouteProp>();
   const { user } = useAuthStore();
   const { accounts } = useAccountStore();
   const { transactions } = useTransactionStore();
@@ -58,7 +62,8 @@ const ReportsScreen: React.FC = () => {
   const currency = user?.currency ?? DEFAULT_CURRENCY;
   
   // Get viewMode from route name and determine date range mode
-  const viewMode = getViewModeFromRoute(route.name);
+  const routeName = (route.name || '') as keyof RootStackParamList;
+  const viewMode = getViewModeFromRoute(routeName);
   const isMonthMode = viewMode.includes('month');
   const dateRangeMode = isMonthMode ? 'month' : 'custom';
   
@@ -95,6 +100,72 @@ const ReportsScreen: React.FC = () => {
     return new Date().getFullYear();
   });
   
+  // Get months for a specific year (helper function)
+  const getMonthsForYear = (year: number) => {
+    if (transactions.length === 0) {
+      const now = new Date();
+      if (year === now.getFullYear()) {
+        return [{
+          year: now.getFullYear(),
+          month: now.getMonth() + 1,
+          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-US', { month: 'long' }),
+        }];
+      }
+      return [];
+    }
+
+    // Find the earliest transaction date
+    const dates = transactions.map(txn => new Date(txn.date));
+    const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const startYear = earliestDate.getFullYear();
+    const startMonth = earliestDate.getMonth() + 1;
+    const now = new Date();
+    const endYear = now.getFullYear();
+    const endMonth = now.getMonth() + 1;
+
+    const months: { year: number; month: number; displayName: string }[] = [];
+
+    if (year === startYear && year === endYear) {
+      // Same year - from start month to end month
+      for (let month = endMonth; month >= startMonth; month--) {
+        months.push({
+          year,
+          month,
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+        });
+      }
+    } else if (year === startYear) {
+      // First year - from start month to December
+      for (let month = 12; month >= startMonth; month--) {
+        months.push({
+          year,
+          month,
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+        });
+      }
+    } else if (year === endYear) {
+      // Current year - from January to end month
+      for (let month = endMonth; month >= 1; month--) {
+        months.push({
+          year,
+          month,
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+        });
+      }
+    } else if (year > startYear && year < endYear) {
+      // Middle years - all 12 months
+      for (let month = 12; month >= 1; month--) {
+        months.push({
+          year,
+          month,
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+        });
+      }
+    }
+
+    return months;
+  };
+
   // Get months for selected year (all months from first transaction month to current month)
   const monthsForSelectedYear = useMemo(() => {
     if (transactions.length === 0) {
@@ -177,12 +248,17 @@ const ReportsScreen: React.FC = () => {
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
 
+  // Month-to-month report state (from/to months)
+  // Default to first available month or current month if no transactions
+
   // Filter state
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   
   // Refs for FlatList scrolling
@@ -218,7 +294,7 @@ const ReportsScreen: React.FC = () => {
     } else {
       return generateDateRangeReport(accounts, transactions, fromDate, toDate);
     }
-  }, [accounts, transactions, selectedYear, selectedMonth, dateRangeMode, fromDate, toDate, viewMode]);
+  }, [accounts, transactions, selectedYear, selectedMonth, dateRangeMode, fromDate, toDate]);
 
   // Get filtered transactions
   const filteredTransactions = useMemo(() => {
@@ -653,7 +729,6 @@ const ReportsScreen: React.FC = () => {
       >
         {/* Filters */}
         <View style={styles.filtersContainer}>
-
           {dateRangeMode === 'month' ? (
             <TouchableOpacity
               style={styles.filterButton}
@@ -668,68 +743,78 @@ const ReportsScreen: React.FC = () => {
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
           ) : (
-            <>
-              <TouchableOpacity
-                style={styles.filterButton}
+            <View style={styles.dateSelectionRow}>
+              <TouchableOpacity 
+                style={styles.dateSelectionContainer}
                 onPress={() => setShowFromDatePicker(true)}
+                activeOpacity={0.7}
               >
-                <Text style={styles.filterLabel}>From Date</Text>
-                <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                  {fromDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                <View style={styles.labelRow}>
+                  <Text style={styles.dateSelectionLabel}>From</Text>
+                </View>
+                <Text style={styles.selectedDateText}>
+                  {fromDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Text>
-                <Text style={styles.chevron}>›</Text>
+                <View style={styles.chevronContainer}>
+                  <Text style={styles.dateSelectionChevron}>›</Text>
+                </View>
               </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.dateSelectionContainer}
+                onPress={() => setShowToDatePicker(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.labelRow}>
+                  <Text style={styles.dateSelectionLabel}>To</Text>
+                </View>
+                <Text style={styles.selectedDateText}>
+                  {toDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </Text>
+                <View style={styles.chevronContainer}>
+                  <Text style={styles.dateSelectionChevron}>›</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Filters */}
+          <>
               <TouchableOpacity
                 style={styles.filterButton}
-                onPress={() => setShowToDatePicker(true)}
+                onPress={() => setShowCategoryPicker(true)}
               >
-                <Text style={styles.filterLabel}>To Date</Text>
+                <Text style={styles.filterLabel}>Category</Text>
                 <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                  {toDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {selectedCategory || 'All Categories'}
                 </Text>
                 <Text style={styles.chevron}>›</Text>
               </TouchableOpacity>
+
+              {selectedCategory && (
+                <TouchableOpacity
+                  style={styles.filterButton}
+                  onPress={() => setShowSubCategoryPicker(true)}
+                >
+                  <Text style={styles.filterLabel}>Sub-Category</Text>
+                  <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
+                    {selectedSubCategory || 'All Sub-Categories'}
+                  </Text>
+                  <Text style={styles.chevron}>›</Text>
+                </TouchableOpacity>
+              )}
+
+              {(selectedCategory || selectedSubCategory) && (
+                <TouchableOpacity
+                  style={styles.clearFiltersButton}
+                  onPress={() => {
+                    setSelectedCategory(null);
+                    setSelectedSubCategory(null);
+                  }}
+                >
+                  <Text style={styles.clearFiltersText}>Clear Filters</Text>
+                </TouchableOpacity>
+              )}
             </>
-          )}
-
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setShowCategoryPicker(true)}
-          >
-            <Text style={styles.filterLabel}>Category</Text>
-            <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-              {selectedCategory || 'All Categories'}
-            </Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-
-          {selectedCategory && (
-            <TouchableOpacity
-              style={styles.filterButton}
-              onPress={() => {
-                setShowSubCategoryPicker(true);
-                // Show sub-category picker
-              }}
-            >
-              <Text style={styles.filterLabel}>Sub-Category</Text>
-              <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                {selectedSubCategory || 'All Sub-Categories'}
-              </Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
-          )}
-
-          {(selectedCategory || selectedSubCategory) && (
-            <TouchableOpacity
-              style={styles.clearFiltersButton}
-              onPress={() => {
-                setSelectedCategory(null);
-                setSelectedSubCategory(null);
-              }}
-            >
-              <Text style={styles.clearFiltersText}>Clear Filters</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Summary Card */}
@@ -1145,7 +1230,10 @@ const ReportsScreen: React.FC = () => {
             <View style={{ width: 60 }} />
           </View>
           <FlatList
-            data={[{ category: null, displayName: 'All Categories' }, ...availableCategories.map(c => ({ category: c, displayName: c }))]}
+            data={[
+              { category: null, displayName: 'All Categories' },
+              ...availableCategories.map(c => ({ category: c, displayName: c }))
+            ]}
             keyExtractor={(item) => item.category || 'all'}
             renderItem={({ item }) => (
               <TouchableOpacity
@@ -1190,7 +1278,7 @@ const ReportsScreen: React.FC = () => {
           <FlatList
             data={[
               { subCategory: null, displayName: 'All Sub-Categories' },
-              ...subCategoriesForSelectedCategory.map(sc => ({ subCategory: sc, displayName: sc }))
+              ...subCategoriesForSelectedCategory.map((sc: string) => ({ subCategory: sc, displayName: sc }))
             ]}
             keyExtractor={(item) => item.subCategory || 'all'}
             renderItem={({ item }) => (
@@ -1214,6 +1302,52 @@ const ReportsScreen: React.FC = () => {
           />
         </View>
       </Modal>
+
+      {/* Account Picker Modal */}
+      <Modal
+        visible={showAccountPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAccountPicker(false)}
+      >
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowAccountPicker(false)}>
+              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Account</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <FlatList
+            data={[
+              { accountId: null, displayName: 'All Accounts' }, 
+              ...accounts.filter(acc => acc.isActive).map(acc => ({ accountId: acc.id, displayName: acc.name }))
+            ]}
+            keyExtractor={(item) => item.accountId || 'all'}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.categoryOption}
+                onPress={() => {
+                  setSelectedAccountId(item.accountId);
+                  setShowAccountPicker(false);
+                }}
+              >
+                <Text style={styles.categoryOptionText} numberOfLines={1} ellipsizeMode="tail">
+                  {item.displayName}
+                </Text>
+                {selectedAccountId === item.accountId && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            contentContainerStyle={{ paddingBottom: insets.bottom }}
+          />
+        </View>
+      </Modal>
+
     </View>
   );
 };
@@ -1244,6 +1378,49 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.elevated,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
+  },
+  dateSelectionRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  dateSelectionContainer: {
+    flex: 1,
+    padding: spacing.sm,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.md,
+    borderWidth: 2,
+    borderColor: colors.primary[200],
+    ...shadows.md,
+    position: 'relative',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs / 2,
+  },
+  dateSelectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  selectedDateText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+    textAlign: 'left',
+  },
+  chevronContainer: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+  },
+  dateSelectionChevron: {
+    fontSize: typography.fontSize.xl,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.bold,
   },
   filterButton: {
     flexDirection: 'row',
@@ -1725,6 +1902,61 @@ const styles = StyleSheet.create({
   emptyTransactionsText: {
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
+  },
+  monthToMonthContainer: {
+    marginTop: spacing.lg,
+  },
+  dateRangeText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  monthToMonthList: {
+    gap: spacing.md,
+  },
+  monthToMonthItem: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    ...shadows.sm,
+  },
+  monthToMonthHeader: {
+    marginBottom: spacing.sm,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  monthToMonthName: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+  },
+  monthToMonthDetails: {
+    gap: spacing.xs,
+  },
+  monthToMonthRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  monthToMonthNetRow: {
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+  },
+  monthToMonthLabel: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+  },
+  monthToMonthValue: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+  },
+  monthToMonthNet: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
   },
   modalDone: {
     fontSize: typography.fontSize.base,

@@ -130,7 +130,7 @@ The app supports four types of accounts:
 
 ## Making Transactions
 
-Once you have accounts set up, you can start recording transactions.
+Once you have accounts set up, you can start recording transactions. This section provides detailed instructions for creating various types of transactions.
 
 ### Step-by-Step: Creating a Transaction
 
@@ -141,66 +141,316 @@ Once you have accounts set up, you can start recording transactions.
 2. **Add a New Transaction**
    - Tap the **"+"** button (usually in the top right corner)
    - Or tap **"Add Transaction"** button
+   - The transaction form will open
 
 3. **Fill in Transaction Details**
-   - **Date**: Select the date of the transaction (defaults to today)
-   - **Amount**: Enter the transaction amount (always positive)
-   - **Debit Account**: Select the account **receiving** value (where money is going)
-   - **Credit Account**: Select the account **giving** value (where money is coming from)
-   - **Note** (optional): Add a description or memo for the transaction
+   - **Date**: 
+     - Tap the date field to open the date picker
+     - Select the date of the transaction (defaults to today)
+     - You can select past dates or future dates (up to 1 year ahead)
+   - **Amount**: 
+     - Enter the transaction amount using the number pad
+     - Amount is always positive (the system handles debits/credits)
+     - Example: Enter "1500" for ₹1,500.00
+   - **Debit Account**: 
+     - Tap "Select Debit Account" to open the account picker
+     - Choose the account **receiving** value (where money/value is going)
+     - You can search for accounts by name
+   - **Credit Account**: 
+     - Tap "Select Credit Account" to open the account picker
+     - Choose the account **giving** value (where money/value is coming from)
+     - You can search for accounts by name
+   - **Note** (optional): 
+     - Add a description or memo for the transaction
+     - This helps you remember what the transaction was for
+     - Example: "Grocery shopping at Big Bazaar", "Salary for January 2024"
 
-4. **Save the Transaction**
+4. **Review and Save**
+   - Review all the details before saving
+   - Make sure the debit and credit accounts are correct
    - Tap **"Save"** or **"Create Transaction"**
    - The transaction is recorded and account balances are automatically updated
-
-### Transaction Examples
-
-**Example 1: Salary Received**
-- **Date**: January 1, 2024
-- **Amount**: 5000.00
-- **Debit Account**: Chase Checking (Asset) ← Money coming in
-- **Credit Account**: Monthly Salary (Income) ← Source of money
-- **Note**: "January salary"
-
-**Example 2: Rent Paid**
-- **Date**: January 5, 2024
-- **Amount**: 1500.00
-- **Debit Account**: Monthly Rent (Expense) ← Money going out
-- **Credit Account**: Chase Checking (Asset) ← Money coming from
-- **Note**: "January rent payment"
-
-**Example 3: Credit Card Payment**
-- **Date**: January 10, 2024
-- **Amount**: 500.00
-- **Debit Account**: Visa Credit Card (Liability) ← Reducing debt
-- **Credit Account**: Chase Checking (Asset) ← Money coming from
-- **Note**: "Credit card payment"
-
-**Example 4: Transfer Between Accounts**
-- **Date**: January 15, 2024
-- **Amount**: 1000.00
-- **Debit Account**: Savings Account (Asset) ← Money going to
-- **Credit Account**: Chase Checking (Asset) ← Money coming from
-- **Note**: "Monthly savings transfer"
+   - You'll be taken back to the transactions list
 
 ### Understanding Debit and Credit
 
-**Quick Guide:**
-- **Debit Account** = Where the money/value is **going**
-- **Credit Account** = Where the money/value is **coming from**
+**The Golden Rule:**
+- **Debit Account** = Where the money/value is **going** (destination)
+- **Credit Account** = Where the money/value is **coming from** (source)
 
-**For Common Transactions:**
-- **Income**: Debit = Asset (bank), Credit = Income
-- **Expense**: Debit = Expense, Credit = Asset (bank)
-- **Transfer**: Debit = Destination account, Credit = Source account
-- **Payment**: Debit = Liability (if paying debt) or Expense, Credit = Asset
+**Think of it like this:**
+- When you receive money → It goes **TO** your bank (Debit) **FROM** income source (Credit)
+- When you spend money → It goes **TO** expense category (Debit) **FROM** your bank (Credit)
+- When you transfer → It goes **TO** destination account (Debit) **FROM** source account (Credit)
+
+### Comprehensive Transaction Examples
+
+#### Income Transactions
+
+**Example 1: Salary Received**
+- **Scenario**: Your monthly salary of ₹50,000 is credited to your bank account
+- **Date**: January 1, 2024
+- **Amount**: 50000.00
+- **Debit Account**: HDFC Savings Account (Asset) ← Money is going TO your bank
+- **Credit Account**: Monthly Salary (Income) ← Money is coming FROM your salary
+- **Note**: "January 2024 salary"
+- **Result**: Your bank balance increases by ₹50,000
+
+**Example 2: Freelance Income**
+- **Scenario**: You received ₹15,000 for a freelance project
+- **Date**: January 10, 2024
+- **Amount**: 15000.00
+- **Debit Account**: HDFC Savings Account (Asset)
+- **Credit Account**: Freelance Income (Income)
+- **Note**: "Website development project - Client ABC"
+- **Result**: Your bank balance increases by ₹15,000
+
+**Example 3: Interest Earned**
+- **Scenario**: You earned ₹500 interest on your fixed deposit
+- **Date**: January 15, 2024
+- **Amount**: 500.00
+- **Debit Account**: HDFC Savings Account (Asset)
+- **Credit Account**: Interest Income (Income)
+- **Note**: "FD interest for Q4 2023"
+- **Result**: Your bank balance increases by ₹500
+
+#### Expense Transactions
+
+**Example 4: Rent Paid**
+- **Scenario**: You paid ₹15,000 rent for your apartment
+- **Date**: January 5, 2024
+- **Amount**: 15000.00
+- **Debit Account**: Monthly Rent (Expense) ← Money is going TO rent expense
+- **Credit Account**: HDFC Savings Account (Asset) ← Money is coming FROM your bank
+- **Note**: "January 2024 rent - Apartment 302"
+- **Result**: Your bank balance decreases by ₹15,000, rent expense increases
+
+**Example 5: Grocery Shopping**
+- **Scenario**: You spent ₹3,500 on groceries
+- **Date**: January 8, 2024
+- **Amount**: 3500.00
+- **Debit Account**: Groceries (Expense)
+- **Credit Account**: HDFC Savings Account (Asset)
+- **Note**: "Weekly groceries - Big Bazaar"
+- **Result**: Your bank balance decreases by ₹3,500
+
+**Example 6: Utility Bill Payment**
+- **Scenario**: You paid ₹2,000 for electricity bill
+- **Date**: January 12, 2024
+- **Amount**: 2000.00
+- **Debit Account**: Electricity (Expense)
+- **Credit Account**: HDFC Savings Account (Asset)
+- **Note**: "Electricity bill - January 2024"
+- **Result**: Your bank balance decreases by ₹2,000
+
+**Example 7: Restaurant Meal**
+- **Scenario**: You spent ₹800 on dinner at a restaurant
+- **Date**: January 20, 2024
+- **Amount**: 800.00
+- **Debit Account**: Restaurants (Expense)
+- **Credit Account**: HDFC Savings Account (Asset)
+- **Note**: "Dinner at Olive Garden"
+- **Result**: Your bank balance decreases by ₹800
+
+#### Credit Card Transactions
+
+**Example 8: Credit Card Purchase**
+- **Scenario**: You bought a laptop for ₹60,000 using your credit card
+- **Date**: January 18, 2024
+- **Amount**: 60000.00
+- **Debit Account**: Electronics (Expense) ← Money going TO expense
+- **Credit Account**: SBI Credit Card (Liability) ← Money coming FROM credit (you owe more)
+- **Note**: "MacBook Pro purchase"
+- **Result**: Your credit card debt increases by ₹60,000
+
+**Example 9: Credit Card Payment**
+- **Scenario**: You paid ₹25,000 towards your credit card bill
+- **Date**: January 25, 2024
+- **Amount**: 25000.00
+- **Debit Account**: SBI Credit Card (Liability) ← Reducing your debt
+- **Credit Account**: HDFC Savings Account (Asset) ← Money coming FROM your bank
+- **Note**: "Credit card bill payment - January"
+- **Result**: Your credit card debt decreases by ₹25,000, bank balance decreases
+
+#### Transfer Transactions
+
+**Example 10: Transfer to Savings**
+- **Scenario**: You transferred ₹10,000 from checking to savings account
+- **Date**: January 15, 2024
+- **Amount**: 10000.00
+- **Debit Account**: HDFC Savings Account (Asset) ← Money going TO savings
+- **Credit Account**: HDFC Current Account (Asset) ← Money coming FROM checking
+- **Note**: "Monthly savings transfer"
+- **Result**: Savings balance increases, checking balance decreases (net worth unchanged)
+
+**Example 11: Transfer Between Banks**
+- **Scenario**: You transferred ₹5,000 from HDFC to ICICI bank
+- **Date**: January 22, 2024
+- **Amount**: 5000.00
+- **Debit Account**: ICICI Savings Account (Asset)
+- **Credit Account**: HDFC Savings Account (Asset)
+- **Note**: "Transfer to ICICI for investment"
+- **Result**: ICICI balance increases, HDFC balance decreases
+
+#### Loan Transactions
+
+**Example 12: Taking a Loan**
+- **Scenario**: You took a personal loan of ₹2,00,000
+- **Date**: January 1, 2024
+- **Amount**: 200000.00
+- **Debit Account**: HDFC Savings Account (Asset) ← Money coming TO you
+- **Credit Account**: Personal Loan (Liability) ← Money coming FROM loan (you owe it)
+- **Note**: "Personal loan from HDFC Bank"
+- **Result**: Bank balance increases, loan liability increases
+
+**Example 13: Loan EMI Payment**
+- **Scenario**: You paid ₹15,000 as EMI for your home loan
+- **Date**: January 5, 2024
+- **Amount**: 15000.00
+- **Debit Account**: Home Loan (Liability) ← Reducing your loan
+- **Credit Account**: HDFC Savings Account (Asset) ← Money coming FROM bank
+- **Note**: "Home loan EMI - January 2024"
+- **Result**: Loan balance decreases, bank balance decreases
+
+#### Investment Transactions
+
+**Example 14: Buying Stocks**
+- **Scenario**: You invested ₹50,000 in stocks
+- **Date**: January 10, 2024
+- **Amount**: 50000.00
+- **Debit Account**: Stocks Investment (Asset) ← Money going TO investment
+- **Credit Account**: HDFC Savings Account (Asset) ← Money coming FROM bank
+- **Note**: "Stock purchase - Reliance Industries"
+- **Result**: Investment value increases, bank balance decreases
+
+**Example 15: Investment Returns**
+- **Scenario**: You received ₹5,000 dividend from your investments
+- **Date**: January 20, 2024
+- **Amount**: 5000.00
+- **Debit Account**: HDFC Savings Account (Asset)
+- **Credit Account**: Dividends (Income)
+- **Note**: "Dividend from mutual funds"
+- **Result**: Bank balance increases
+
+#### Refund and Return Transactions
+
+**Example 16: Product Return/Refund**
+- **Scenario**: You returned a product and got ₹3,000 refund
+- **Date**: January 25, 2024
+- **Amount**: 3000.00
+- **Debit Account**: HDFC Savings Account (Asset) ← Money coming TO you
+- **Credit Account**: Shopping (Expense) ← Reversing the expense
+- **Note**: "Refund for returned product"
+- **Result**: Bank balance increases, expense decreases (net effect: cancels original purchase)
+
+### Transaction Type Quick Reference
+
+| Transaction Type | Debit Account | Credit Account | When to Use |
+|----------------|---------------|----------------|-------------|
+| **Income Received** | Asset (Bank) | Income | Salary, freelance, interest, dividends |
+| **Expense Paid** | Expense | Asset (Bank) | Rent, groceries, bills, shopping |
+| **Credit Card Purchase** | Expense | Liability (Credit Card) | Buying something with credit card |
+| **Credit Card Payment** | Liability (Credit Card) | Asset (Bank) | Paying credit card bill |
+| **Transfer** | Asset (Destination) | Asset (Source) | Moving money between accounts |
+| **Loan Taken** | Asset (Bank) | Liability (Loan) | Receiving loan money |
+| **Loan Payment** | Liability (Loan) | Asset (Bank) | Paying loan EMI |
+| **Investment Made** | Asset (Investment) | Asset (Bank) | Buying stocks, mutual funds |
+| **Refund Received** | Asset (Bank) | Expense | Getting money back from purchase |
+
+### Common Transaction Patterns
+
+**Pattern 1: Daily Expenses**
+- Debit: Specific expense category (Groceries, Restaurants, etc.)
+- Credit: Your bank account or cash
+- Use this for: Food, shopping, entertainment, utilities
+
+**Pattern 2: Monthly Bills**
+- Debit: Bill category (Rent, Electricity, Internet, etc.)
+- Credit: Your bank account
+- Use this for: Recurring monthly expenses
+
+**Pattern 3: Income**
+- Debit: Your bank account
+- Credit: Income source (Salary, Freelance, etc.)
+- Use this for: All money you receive
+
+**Pattern 4: Credit Card Usage**
+- Debit: Expense category
+- Credit: Credit card account
+- Use this for: Purchases made with credit card
+
+**Pattern 5: Credit Card Payment**
+- Debit: Credit card account
+- Credit: Your bank account
+- Use this for: Paying your credit card bill
+
+**Pattern 6: Savings/Investment**
+- Debit: Investment account or savings account
+- Credit: Your checking/current account
+- Use this for: Moving money to savings or investments
 
 ### Tips for Creating Transactions
 
-- **Always think in terms of where money is going (Debit) and where it's coming from (Credit)**
-- **Use notes** to add context - they help you understand transactions later
-- **Enter transactions promptly** to keep your records accurate
-- **Double-check amounts** before saving - transactions update balances automatically
+1. **Think Before You Enter**
+   - Ask yourself: "Where is the money going?" (Debit)
+   - Ask yourself: "Where is the money coming from?" (Credit)
+
+2. **Use Descriptive Notes**
+   - Always add notes to remember the context
+   - Include vendor names, purpose, or reference numbers
+   - Example: "Amazon purchase - Electronics", "Salary - January 2024"
+
+3. **Enter Transactions Promptly**
+   - Record transactions as soon as possible
+   - Don't wait days or weeks - you might forget details
+   - Set a daily or weekly reminder to update transactions
+
+4. **Double-Check Before Saving**
+   - Verify the amount is correct
+   - Ensure debit and credit accounts are correct
+   - Check the date is accurate
+   - Review the note for clarity
+
+5. **Use Consistent Account Names**
+   - Use the same account names consistently
+   - This makes it easier to find accounts when creating transactions
+   - Example: Always use "HDFC Savings" not "HDFC Bank" or "Savings HDFC"
+
+6. **Categorize Expenses Properly**
+   - Use specific expense categories for better reporting
+   - Example: Use "Groceries" not "Food" for grocery shopping
+   - Use "Restaurants" for dining out, not "Food"
+
+7. **Handle Credit Cards Correctly**
+   - When buying with credit card: Debit = Expense, Credit = Credit Card
+   - When paying credit card: Debit = Credit Card, Credit = Bank Account
+   - Don't mix these up!
+
+8. **Review Balances After Transactions**
+   - Check that account balances updated correctly
+   - Verify your net worth makes sense
+   - If something looks wrong, review the transaction
+
+### Editing and Deleting Transactions
+
+**To Edit a Transaction:**
+1. Go to the Transactions screen
+2. Tap on the transaction you want to edit
+3. Tap "Edit" button
+4. Make your changes
+5. Tap "Save"
+
+**To Delete a Transaction:**
+1. Go to the Transactions screen
+2. Tap on the transaction you want to delete
+3. Tap "Delete" button
+4. Confirm the deletion
+5. The transaction is removed and balances are automatically adjusted
+
+**Important Notes:**
+- Editing or deleting a transaction will automatically update account balances
+- Be careful when deleting transactions - this action cannot be undone
+- If you delete a transaction by mistake, you'll need to recreate it manually
 
 ---
 
@@ -327,6 +577,7 @@ PIN authentication is a security feature that requires you to enter a 4-6 digit 
    - Enter your 4-6 digit PIN using the on-screen keypad
    - Tap "Continue" to verify your PIN
    - If correct, you'll be taken to the main app screen
+   - If you've forgotten your PIN, tap **"Forgot PIN?"** below the Continue button to log out and set up a new PIN
 
 3. **PIN Requirements**
    - PIN must be 4-6 digits long
@@ -434,19 +685,26 @@ For your security, the app will automatically log you out if you enter an incorr
 
 ### Resetting Your PIN
 
-If you've forgotten your PIN:
+If you've forgotten your PIN, you have several options:
 
-1. **Log Out and Log Back In**
-   - Go to Settings
+1. **Use "Forgot PIN?" Option (Recommended)**
+   - On the PIN verification screen, tap **"Forgot PIN?"** link below the Continue button
+   - Confirm that you want to log out
+   - You'll be logged out and taken to the login screen
+   - Log in again with your email and password
+   - You'll be prompted to set up a new PIN
+
+2. **Log Out from Settings**
+   - Go to Settings (if you're already logged in)
    - Tap "Sign Out"
    - Log in again with your email and password
    - You'll be prompted to set up a new PIN
 
-2. **After 5 Failed Attempts**
+3. **After 5 Failed Attempts**
    - If you enter the wrong PIN 5 times, you'll be automatically logged out
    - Log in again and set up a new PIN
 
-**Note:** There is no "Forgot PIN" option because your PIN is stored securely on your device. If you can't remember it, logging out and back in will allow you to set a new one.
+**Note:** Your PIN is stored securely on your device. If you can't remember it, logging out and back in will allow you to set a new one.
 
 ---
 
@@ -536,9 +794,16 @@ If you've forgotten your PIN:
 
 ### Q: What happens if I forget my PIN?
 
-**A:** If you forget your PIN, you have two options:
-1. Enter the wrong PIN 5 times to trigger automatic logout, then log back in and set a new PIN
-2. If you're already logged in, go to Settings and sign out, then log back in to set a new PIN
+**A:** If you forget your PIN, you can use the "Forgot PIN?" option on the PIN verification screen:
+1. On the PIN verification screen, tap **"Forgot PIN?"** link below the Continue button
+2. Confirm that you want to log out
+3. You'll be logged out and taken to the login screen
+4. Log back in with your email and password
+5. Set up a new PIN when prompted
+
+**Alternative methods:**
+- Enter the wrong PIN 5 times to trigger automatic logout, then log back in and set a new PIN
+- If you're already logged in, go to Settings and sign out, then log back in to set a new PIN
 
 ### Q: Can I disable PIN authentication?
 

@@ -242,6 +242,8 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         errorMessage = 'Unauthorized. Please sign in and try again.';
       } else if (error?.code === 'functions/invalid-argument' || error?.code === 'invalid-argument') {
         errorMessage = error?.message || 'Invalid input. Please check all fields and try again.';
+      } else if (error?.code === 'functions/already-exists' || error?.code === 'already-exists') {
+        errorMessage = error?.message || 'An account with this name already exists. Please use a different name.';
       } else if (error?.message) {
         errorMessage = error.message;
       } else if (error?.code) {
