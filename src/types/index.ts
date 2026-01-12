@@ -163,6 +163,8 @@ export interface CloudFunctionResponse<T = unknown> {
  */
 export type RootStackParamList = {
   Auth: undefined;
+  PinSetup: { onComplete?: () => void; allowBack?: boolean } | undefined;
+  PinVerification: undefined;
   Main: undefined;
   AddTransaction: { editTransactionId?: string } | undefined;
   AddAccount: { editAccountId?: string } | undefined;

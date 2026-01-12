@@ -3,17 +3,19 @@
  * Handles authentication flow and main app navigation
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
-import { useAuthStore } from '../stores';
+import { useAuthStore, usePinAuthStore } from '../stores';
 import { RootStackParamList } from '../types';
 import { colors } from '../config/theme';
 
 // Screens
 import AuthScreen from '../screens/AuthScreen';
+import PinSetupScreen from '../screens/PinSetupScreen';
+import PinVerificationScreen from '../screens/PinVerificationScreen';
 import MainTabNavigator from './MainTabNavigator';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import AddAccountScreen from '../screens/AddAccountScreen';
@@ -25,13 +27,70 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  // Use individual selectors for values that trigger re-renders
+  const isPinVerified = usePinAuthStore(state => state.isPinVerified);
+  const isPinSetup = usePinAuthStore(state => state.isPinSetup);
+  const checkPinSetup = usePinAuthStore(state => state.checkPinSetup);
+  const setPinVerified = usePinAuthStore(state => state.setPinVerified);
+  const [isCheckingPin, setIsCheckingPin] = useState(false);
+  const hasCheckedPinRef = useRef(false);
+  const previousAuthRef = useRef(false);
+
+  // Debug: Log when isPinVerified changes
+  useEffect(() => {
+    console.log('[RootNavigator] isPinVerified changed:', isPinVerified);
+    console.log('[RootNavigator] isAuthenticated:', isAuthenticated);
+    console.log('[RootNavigator] isPinSetup:', isPinSetup);
+  }, [isPinVerified, isAuthenticated, isPinSetup]);
 
   useEffect(() => {
     const unsubscribe = initialize();
     return () => unsubscribe();
   }, [initialize]);
 
-  if (isLoading) {
+  // Reset PIN check ref when authentication state changes from false to true
+  useEffect(() => {
+    if (isAuthenticated && !previousAuthRef.current) {
+      // User just logged in - reset PIN check ref to allow new PIN setup
+      hasCheckedPinRef.current = false;
+      console.log('[RootNavigator] User logged in - resetting PIN check');
+    }
+    previousAuthRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
+  // Check PIN setup when authenticated (only once per session)
+  useEffect(() => {
+    if (isAuthenticated && !hasCheckedPinRef.current && isPinSetup === null) {
+      hasCheckedPinRef.current = true;
+      setIsCheckingPin(true);
+      checkPinSetup().finally(() => {
+        setIsCheckingPin(false);
+      });
+    }
+  }, [isAuthenticated, isPinSetup, checkPinSetup]);
+
+  // Determine initial route based on auth and PIN state
+  const currentRoute = useMemo((): string => {
+    if (!isAuthenticated) return 'Auth';
+    if (isPinSetup === false) return 'PinSetup';
+    if (!isPinVerified) return 'PinVerification';
+    return 'Main';
+  }, [isAuthenticated, isPinSetup, isPinVerified]);
+
+  // Memoize callbacks to prevent re-renders
+  const handlePinSetupComplete = useCallback(() => {
+    checkPinSetup();
+    setPinVerified(true);
+  }, [checkPinSetup, setPinVerified]);
+
+  // Memoize initial params
+  const pinSetupParams = useMemo(
+    () => ({ onComplete: handlePinSetupComplete }),
+    [handlePinSetupComplete]
+  );
+
+
+  if (isLoading || (isAuthenticated && isCheckingPin)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
@@ -40,8 +99,9 @@ const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer key={currentRoute}>
       <Stack.Navigator
+        initialRouteName={currentRoute}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background.primary },
@@ -52,6 +112,29 @@ const RootNavigator: React.FC = () => {
             name="Auth" 
             component={AuthScreen}
             options={{ animationTypeForReplace: 'pop' }}
+          />
+        ) : isPinSetup === false ? (
+          // PIN not setup - show PIN setup screen
+          <Stack.Screen 
+            name="PinSetup" 
+            component={PinSetupScreen}
+            options={{ 
+              animationTypeForReplace: 'pop',
+              gestureEnabled: false, // Disable swipe back gesture
+              headerBackVisible: false, // Hide back button
+            }}
+            initialParams={pinSetupParams}
+          />
+        ) : !isPinVerified ? (
+          // PIN setup but not verified - show PIN verification screen
+          <Stack.Screen 
+            name="PinVerification" 
+            component={PinVerificationScreen}
+            options={{ 
+              animationTypeForReplace: 'pop', 
+              gestureEnabled: false, // Disable swipe back gesture
+              headerBackVisible: false, // Hide back button
+            }}
           />
         ) : (
           <>
@@ -136,6 +219,24 @@ const RootNavigator: React.FC = () => {
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
                 headerBackTitleVisible: true,
+              }}
+            />
+            <Stack.Screen 
+              name="PinSetup" 
+              component={PinSetupScreen}
+              options={{
+                presentation: 'modal',
+                headerShown: true,
+                headerTitle: 'Setup PIN',
+                headerTintColor: colors.primary[500],
+              }}
+            />
+            <Stack.Screen 
+              name="PinVerification" 
+              component={PinVerificationScreen}
+              options={{
+                gestureEnabled: false,
+                headerShown: false,
               }}
             />
           </>

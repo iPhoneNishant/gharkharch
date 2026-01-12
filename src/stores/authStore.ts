@@ -23,6 +23,7 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  isFreshLogin: boolean; // Track if this is a fresh login (not auto re-auth)
   
   // Actions
   initialize: () => () => void;
@@ -52,6 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
   isAuthenticated: false,
   error: null,
+  isFreshLogin: false,
 
   /**
    * Initialize auth state listener
@@ -61,6 +63,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          const currentState = get();
+          const isFreshLogin = currentState.isFreshLogin;
+          
+          // Clear PIN only on fresh login (explicit signIn/signUp), not on auto re-auth
+          if (isFreshLogin) {
+            try {
+              const { clearPinAuth } = await import('../services/pinAuthService');
+              await clearPinAuth();
+              
+              // Reset PIN auth store state
+              const { usePinAuthStore } = await import('./pinAuthStore');
+              usePinAuthStore.getState().reset();
+              console.log('✅ PIN cleared on fresh login - new PIN setup required');
+            } catch (pinError) {
+              console.error('Error clearing PIN on login:', pinError);
+              // Continue with authentication even if PIN clear fails
+            }
+            // Reset the flag after processing
+            set({ isFreshLogin: false });
+          }
+          
           // Fetch user profile from Firestore
           const userDocRef = doc(firestore, COLLECTIONS.USERS, firebaseUser.uid);
           const userDoc = await getDoc(userDocRef);
@@ -150,11 +173,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Sign in with email and password
    */
   signIn: async (email: string, password: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, isFreshLogin: true });
     
     try {
       await signInWithEmailAndPassword(firebaseAuth, email, password);
-      // Auth state listener will handle the rest
+      // Auth state listener will handle the rest (including PIN clearing)
     } catch (error: any) {
       console.error('Sign in error:', error);
       
@@ -177,7 +200,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         errorMessage = error.message;
       }
       
-      set({ isLoading: false, error: errorMessage });
+      set({ isLoading: false, error: errorMessage, isFreshLogin: false });
       throw new Error(errorMessage);
     }
   },
@@ -186,7 +209,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Sign up with email and password
    */
   signUp: async (email: string, password: string, displayName?: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, isFreshLogin: true });
     
     try {
       const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
@@ -221,7 +244,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         errorMessage = error.message;
       }
       
-      set({ isLoading: false, error: errorMessage });
+      set({ isLoading: false, error: errorMessage, isFreshLogin: false });
       throw new Error(errorMessage);
     }
   },
@@ -233,6 +256,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      // Clear PIN and biometric settings from device storage
+      const { clearPinAuth } = await import('../services/pinAuthService');
+      await clearPinAuth();
+      
+      // Reset PIN auth store state
+      const { usePinAuthStore } = await import('./pinAuthStore');
+      usePinAuthStore.getState().reset();
+      
+      // Sign out from Firebase
       await firebaseSignOut(firebaseAuth);
       // Auth state listener will handle the rest
     } catch (error) {
