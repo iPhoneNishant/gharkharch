@@ -75,7 +75,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               // Reset PIN auth store state
               const { usePinAuthStore } = await import('./pinAuthStore');
               usePinAuthStore.getState().reset();
-              console.log('✅ PIN cleared on fresh login - new PIN setup required');
             } catch (pinError) {
               console.error('Error clearing PIN on login:', pinError);
               // Continue with authentication even if PIN clear fails

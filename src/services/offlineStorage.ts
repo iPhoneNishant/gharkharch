@@ -25,7 +25,6 @@ export const saveAccountsToLocal = async (accounts: Account[]): Promise<void> =>
   try {
     const jsonValue = JSON.stringify(accounts);
     await AsyncStorage.setItem(STORAGE_KEYS.ACCOUNTS, jsonValue);
-    console.log(`✅ Saved ${accounts.length} accounts to local storage`);
   } catch (error) {
     console.error('❌ Error saving accounts to local storage:', error);
     throw error;
@@ -61,7 +60,6 @@ export const saveTransactionsToLocal = async (transactions: Transaction[]): Prom
   try {
     const jsonValue = JSON.stringify(transactions);
     await AsyncStorage.setItem(STORAGE_KEYS.TRANSACTIONS, jsonValue);
-    console.log(`✅ Saved ${transactions.length} transactions to local storage`);
   } catch (error) {
     console.error('❌ Error saving transactions to local storage:', error);
     throw error;
@@ -151,7 +149,6 @@ export const clearOfflineStorage = async (): Promise<void> => {
       AsyncStorage.removeItem(STORAGE_KEYS.LAST_SYNC),
       AsyncStorage.removeItem(STORAGE_KEYS.USER_ID),
     ]);
-    console.log('✅ Cleared offline storage');
   } catch (error) {
     console.error('❌ Error clearing offline storage:', error);
     throw error;

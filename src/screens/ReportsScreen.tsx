@@ -62,17 +62,7 @@ const ReportsScreen: React.FC = () => {
   const isMonthMode = viewMode.includes('month');
   const dateRangeMode = isMonthMode ? 'month' : 'custom';
   
-  // Debug: Log to console (visible in terminal where expo start is running)
-  useEffect(() => {
-    console.log('🔍 ReportsScreen Debug:', {
-      routeName: route.name,
-      viewMode,
-      isMonthMode,
-      dateRangeMode,
-    });
-    // Uncomment below to see Alert popup (for debugging)
-    // Alert.alert('Debug Info', `Route: ${route.name}\nViewMode: ${viewMode}\nDateRangeMode: ${dateRangeMode}`);
-  }, [route.name, viewMode, isMonthMode, dateRangeMode]);
+  // Debug logging removed
 
   // Get available months
   const availableMonths = useMemo(() => getAvailableMonths(transactions), [transactions]);

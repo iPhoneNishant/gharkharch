@@ -74,7 +74,6 @@ export const setupPin = async (pin: string): Promise<void> => {
     const hashedPin = await hashPin(pin);
     await SecureStore.setItemAsync(PIN_KEY, hashedPin);
     await SecureStore.setItemAsync(PIN_SETUP_KEY, 'true');
-    console.log('✅ PIN setup complete');
   } catch (error) {
     console.error('Error setting up PIN:', error);
     throw error;
@@ -110,7 +109,6 @@ export const changePin = async (currentPin: string, newPin: string): Promise<voi
     }
 
     await setupPin(newPin);
-    console.log('✅ PIN changed successfully');
   } catch (error) {
     console.error('Error changing PIN:', error);
     throw error;
@@ -141,7 +139,6 @@ export const enableBiometric = async (): Promise<void> => {
     }
 
     await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'true');
-    console.log('✅ Biometric authentication enabled');
   } catch (error) {
     console.error('Error enabling biometric:', error);
     throw error;
@@ -154,7 +151,6 @@ export const enableBiometric = async (): Promise<void> => {
 export const disableBiometric = async (): Promise<void> => {
   try {
     await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'false');
-    console.log('✅ Biometric authentication disabled');
   } catch (error) {
     console.error('Error disabling biometric:', error);
     throw error;
@@ -213,7 +209,6 @@ export const clearPinAuth = async (): Promise<void> => {
       SecureStore.deleteItemAsync(BIOMETRIC_ENABLED_KEY),
       SecureStore.deleteItemAsync(PIN_SETUP_KEY),
     ]);
-    console.log('✅ PIN and biometric settings cleared');
   } catch (error) {
     console.error('Error clearing PIN auth:', error);
     throw error;
@@ -230,7 +225,6 @@ export const resetPin = async (): Promise<void> => {
       SecureStore.deleteItemAsync(PIN_KEY),
       SecureStore.deleteItemAsync(PIN_SETUP_KEY),
     ]);
-    console.log('✅ PIN reset');
   } catch (error) {
     console.error('Error resetting PIN:', error);
     throw error;

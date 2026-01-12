@@ -211,14 +211,12 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
 
   const handleVerificationSuccess = async () => {
     try {
-      console.log('[PinVerificationScreen] Calling setPinVerified(true)...');
       // Reset error counts on successful verification
       setErrorCount(0);
       setDisplayErrorCount(0);
       // Update the store directly to ensure state change triggers re-render
       // The RootNavigator will automatically navigate when isPinVerified becomes true
       setPinVerified(true);
-      console.log('[PinVerificationScreen] setPinVerified(true) called successfully');
     } catch (error) {
       console.error('Error in handleVerificationSuccess:', error);
       Alert.alert('Error', 'Failed to complete verification. Please try again.');

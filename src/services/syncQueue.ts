@@ -88,7 +88,6 @@ export const addToSyncQueue = async (
     };
     queue.push(operation);
     await saveSyncQueue(queue);
-    console.log(`✅ Added ${type} operation to sync queue:`, operation.id);
     return operation.id;
   } catch (error) {
     console.error('❌ Error adding to sync queue:', error);
@@ -104,7 +103,6 @@ export const removeFromSyncQueue = async (operationId: string): Promise<void> =>
     const queue = await loadSyncQueue();
     const filtered = queue.filter(op => op.id !== operationId);
     await saveSyncQueue(filtered);
-    console.log(`✅ Removed operation from sync queue:`, operationId);
   } catch (error) {
     console.error('❌ Error removing from sync queue:', error);
     throw error;
@@ -140,7 +138,6 @@ export const incrementRetryCount = async (operationId: string): Promise<void> =>
 export const clearSyncQueue = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(QUEUE_KEY);
-    console.log('✅ Cleared sync queue');
   } catch (error) {
     console.error('❌ Error clearing sync queue:', error);
     throw error;

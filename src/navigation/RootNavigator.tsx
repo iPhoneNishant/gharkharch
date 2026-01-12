@@ -36,12 +36,6 @@ const RootNavigator: React.FC = () => {
   const hasCheckedPinRef = useRef(false);
   const previousAuthRef = useRef(false);
 
-  // Debug: Log when isPinVerified changes
-  useEffect(() => {
-    console.log('[RootNavigator] isPinVerified changed:', isPinVerified);
-    console.log('[RootNavigator] isAuthenticated:', isAuthenticated);
-    console.log('[RootNavigator] isPinSetup:', isPinSetup);
-  }, [isPinVerified, isAuthenticated, isPinSetup]);
 
   useEffect(() => {
     const unsubscribe = initialize();
@@ -53,7 +47,6 @@ const RootNavigator: React.FC = () => {
     if (isAuthenticated && !previousAuthRef.current) {
       // User just logged in - reset PIN check ref to allow new PIN setup
       hasCheckedPinRef.current = false;
-      console.log('[RootNavigator] User logged in - resetting PIN check');
     }
     previousAuthRef.current = isAuthenticated;
   }, [isAuthenticated]);

@@ -179,9 +179,6 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         throw new Error('Failed to get authentication token');
       }
 
-      console.log('Calling createAccount with user:', currentUser.uid);
-      console.log('Auth token available:', !!idToken);
-      console.log('Function data:', JSON.stringify(data, null, 2));
 
       // In React Native, httpsCallable should automatically include auth token
       // But there's a known issue where it doesn't always work
@@ -189,14 +186,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       const { getFunctions } = await import('firebase/functions');
       const functionsWithAuth = getFunctions(firebaseAuth.app);
       
-      console.log('Functions instance app name:', cloudFunctions.app.name);
-      console.log('Auth instance app name:', firebaseAuth.app.name);
-      console.log('Same app instance:', cloudFunctions.app === firebaseAuth.app);
-      console.log('Current user:', currentUser.uid);
       
       // Force token refresh to ensure we have a valid token
       const freshToken = await currentUser.getIdToken(true);
-      console.log('Fresh token obtained:', !!freshToken);
       
       // Workaround for React Native: pass token in data since httpsCallable isn't passing it
       const dataWithToken = {
@@ -209,11 +201,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         'createAccount'
       );
       
-      console.log('Calling function with token in data...');
       let result;
       try {
         result = await createAccountFn(dataWithToken);
-        console.log('Function call successful, result:', JSON.stringify(result.data, null, 2));
       } catch (callError: any) {
         console.error('Function call error details:', {
           code: callError?.code,
@@ -224,10 +214,6 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         throw callError;
       }
       
-      console.log('Checking result data...');
-      console.log('Result success:', result.data.success);
-      console.log('Result data:', result.data.data);
-      console.log('Result error:', result.data.error);
       
       if (!result.data.success || !result.data.data) {
         const errorMsg = result.data.error ?? 'Failed to create account';
@@ -235,7 +221,6 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         throw new Error(errorMsg);
       }
       
-      console.log('Account created successfully, ID:', result.data.data.accountId);
       return result.data.data.accountId;
     } catch (error: any) {
       console.error('Create account error:', error);
