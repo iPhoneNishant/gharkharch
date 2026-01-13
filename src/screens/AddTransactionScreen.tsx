@@ -53,7 +53,7 @@ const AddTransactionScreen: React.FC = () => {
   
   const { user } = useAuthStore();
   const { accounts } = useAccountStore();
-  const { createTransaction, updateTransaction, getTransactionById, isLoading } = useTransactionStore();
+  const { createTransaction, updateTransaction, getTransactionById } = useTransactionStore();
 
   const editTransactionId = route.params?.editTransactionId;
   const isEditing = !!editTransactionId;
@@ -65,6 +65,7 @@ const AddTransactionScreen: React.FC = () => {
   const [creditAccountId, setCreditAccountId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date());
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load existing transaction data when editing
   React.useEffect(() => {
@@ -192,6 +193,7 @@ const AddTransactionScreen: React.FC = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       if (isEditing && editTransactionId) {
         await updateTransaction({
@@ -214,6 +216,7 @@ const AddTransactionScreen: React.FC = () => {
 
       navigation.goBack();
     } catch (error) {
+      setIsSaving(false);
       Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'create'} transaction. Please try again.`);
     }
   };
@@ -376,11 +379,11 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+          style={[styles.submitButton, isSaving && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={isLoading}
+          disabled={isSaving}
         >
-          {isLoading ? (
+          {isSaving ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator color={colors.neutral[0]} size="small" />
               <Text style={styles.submitButtonText}>
@@ -396,7 +399,7 @@ const AddTransactionScreen: React.FC = () => {
       </ScrollView>
 
       {/* Loading Overlay */}
-      {isLoading && (
+      {isSaving && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingContent}>
             <ActivityIndicator size="large" color={colors.primary[500]} />
@@ -679,6 +682,12 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: {
     opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   submitButtonText: {
     fontSize: typography.fontSize.base,

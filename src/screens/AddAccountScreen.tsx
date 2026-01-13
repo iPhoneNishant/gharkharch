@@ -56,7 +56,7 @@ const AddAccountScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   
-  const { createAccount, accounts, isLoading, error: accountError } = useAccountStore();
+  const { createAccount, accounts, error: accountError } = useAccountStore();
 
   // Form state
   const [accountType, setAccountType] = useState<AccountType>('asset');
@@ -65,6 +65,7 @@ const AddAccountScreen: React.FC = () => {
   const [subCategory, setSubCategory] = useState<string | null>(null);
   const [openingBalance, setOpeningBalance] = useState('');
   const [selectedColor, setSelectedColor] = useState(ACCOUNT_COLORS[0]);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Modal state
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -243,6 +244,7 @@ const AddAccountScreen: React.FC = () => {
       balance = 0;
     }
 
+    setIsCreating(true);
     try {
       await createAccount({
         name: name.trim(),
@@ -257,6 +259,7 @@ const AddAccountScreen: React.FC = () => {
     } catch (error: any) {
       const errorMessage = error?.message || accountError || 'Failed to create account. Please try again.';
       console.error('Account creation error:', error);
+      setIsCreating(false);
       Alert.alert('Error', errorMessage);
     }
   };
@@ -437,11 +440,11 @@ const AddAccountScreen: React.FC = () => {
 
         {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+          style={[styles.submitButton, isCreating && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={isLoading}
+          disabled={isCreating}
         >
-          {isLoading ? (
+          {isCreating ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator color={colors.neutral[0]} size="small" />
               <Text style={styles.submitButtonText}>Creating...</Text>
@@ -453,7 +456,7 @@ const AddAccountScreen: React.FC = () => {
       </ScrollView>
 
       {/* Loading Overlay */}
-      {isLoading && (
+      {isCreating && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingContent}>
             <ActivityIndicator size="large" color={colors.primary[500]} />
@@ -926,6 +929,12 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: {
     opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   submitButtonText: {
     fontSize: typography.fontSize.base,
