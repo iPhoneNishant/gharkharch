@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     right: spacing.sm,
   },
   chevron: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.lg,
     color: colors.primary[500],
     fontWeight: typography.fontWeight.bold,
   },
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[500],
   },
   radioButtonText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.text.primary,
     includeFontPadding: false,
     textAlignVertical: 'center',
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   },
   filterValue: {
     flex: 1,
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.text.primary,
     fontWeight: typography.fontWeight.medium,
   },
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing.md,
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyTransactionsText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     textAlign: 'center',
   },
@@ -767,13 +767,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.elevated,
   },
   modalTitle: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     flex: 1,
   },
   modalDone: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.primary[600],
   },
@@ -786,12 +786,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.light,
   },
   categoryOptionText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.text.primary,
     flex: 1,
   },
   checkmark: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     color: colors.primary[600],
     fontWeight: typography.fontWeight.bold,
   },

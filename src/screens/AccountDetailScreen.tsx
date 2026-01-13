@@ -788,6 +788,7 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+    minHeight: 80,
   },
   summaryItem: {
     flex: 1,
@@ -799,17 +800,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   summaryLabel: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
     marginBottom: spacing.xs,
     textAlign: 'center',
     width: '100%',
+    flexShrink: 1,
   },
   summaryValue: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
     width: '100%',
+    flexShrink: 0,
+    minHeight: 24,
   },
   modalContainer: {
     flex: 1,
