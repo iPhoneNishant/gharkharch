@@ -9,7 +9,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SectionList,
   TouchableOpacity,
   TextInput,
   Modal,
@@ -205,39 +204,9 @@ const TransactionsScreen: React.FC = () => {
     });
   }, [transactions, selectedYear, selectedMonth, searchQuery, getAccountById]);
 
-  /**
-   * Group transactions by date for SectionList
-   * Each section contains a single item (array of transactions) to group them together
-   */
-  const sectionedTransactions = useMemo(() => {
-    const sections: { title: string; data: Transaction[][] }[] = [];
-    let currentDate = '';
-    let currentGroup: Transaction[] = [];
-
-    filteredTransactions.forEach((txn) => {
-      const dateStr = txn.date.toLocaleDateString('en-IN', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      });
-
-      if (dateStr !== currentDate) {
-        if (currentGroup.length > 0) {
-          sections.push({ title: currentDate, data: [currentGroup] });
-        }
-        currentDate = dateStr;
-        currentGroup = [txn];
-      } else {
-        currentGroup.push(txn);
-      }
-    });
-
-    if (currentGroup.length > 0) {
-      sections.push({ title: currentDate, data: [currentGroup] });
-    }
-
-    return sections;
+  // Create flat list with transactions
+  const flatTransactions = useMemo(() => {
+    return filteredTransactions;
   }, [filteredTransactions]);
 
   const handleAddTransaction = () => {
@@ -250,6 +219,11 @@ const TransactionsScreen: React.FC = () => {
 
   const renderTransaction = ({ item: transaction }: { item: Transaction }) => {
     const displayInfo = getTransactionDisplayInfo(transaction);
+    const dateStr = transaction.date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
     
     return (
       <TouchableOpacity
@@ -274,6 +248,9 @@ const TransactionsScreen: React.FC = () => {
           <Text style={styles.transactionSubtitle} numberOfLines={1}>
             {transaction.note || displayInfo.subtitle}
           </Text>
+          <Text style={styles.transactionDate} numberOfLines={1}>
+            {dateStr}
+          </Text>
         </View>
         <Text style={[
           styles.transactionAmount,
@@ -285,25 +262,9 @@ const TransactionsScreen: React.FC = () => {
     );
   };
 
-  const renderSectionHeader = ({ section }: { section: { title: string; data: Transaction[][] } }) => (
-    <View style={styles.dateHeaderContainer}>
-      <Text style={styles.dateHeader}>{section.title}</Text>
-    </View>
-  );
-
-  const renderTransactionGroup = ({ item: transactions }: { item: Transaction[] }) => (
-    <View style={styles.transactionsList}>
-      {transactions.map((txn, index) => (
-        <View key={txn.id}>
-          {renderTransaction({ item: txn })}
-        </View>
-      ))}
-    </View>
-  );
-
-  const renderSectionFooter = () => (
-    <View style={styles.sectionFooter} />
-  );
+  const renderItem = ({ item }: { item: Transaction }) => {
+    return renderTransaction({ item });
+  };
 
 
   const getMonthDisplayName = () => {
@@ -360,7 +321,7 @@ const TransactionsScreen: React.FC = () => {
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>Loading...</Text>
         </View>
-      ) : sectionedTransactions.length === 0 ? (
+      ) : flatTransactions.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateIcon}>📝</Text>
           <Text style={styles.emptyStateText}>
@@ -371,14 +332,12 @@ const TransactionsScreen: React.FC = () => {
           </Text>
         </View>
       ) : (
-        <SectionList
-          sections={sectionedTransactions}
-          renderItem={renderTransactionGroup}
-          renderSectionHeader={renderSectionHeader}
-          keyExtractor={(item, index) => `group-${index}`}
+        <FlatList
+          data={flatTransactions}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
           showsVerticalScrollIndicator={false}
-          stickySectionHeadersEnabled={true}
         />
       )}
 

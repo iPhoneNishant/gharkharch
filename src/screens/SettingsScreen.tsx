@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { useAuthStore } from '../stores';
 import { RootStackParamList } from '../types';
-import { spacing } from '../config/theme';
+import { colors, spacing } from '../config/theme';
 import { settingsScreenStyles as styles } from '../styles/screens/SettingsScreen.styles';
 import {
   isPinSetup,

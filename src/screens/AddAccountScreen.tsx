@@ -71,6 +71,7 @@ const AddAccountScreen: React.FC = () => {
   const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
+  const [showAccountTypeInfo, setShowAccountTypeInfo] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newSubCategoryName, setNewSubCategoryName] = useState('');
 
@@ -290,7 +291,15 @@ const AddAccountScreen: React.FC = () => {
       >
         {/* Account Type Selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Type</Text>
+          <View style={styles.sectionTitleRow}>
+            <Text style={styles.sectionTitle}>Account Type</Text>
+            <TouchableOpacity
+              style={styles.infoButton}
+              onPress={() => setShowAccountTypeInfo(true)}
+            >
+              <Text style={styles.infoButtonText}>i</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.typeGrid}>
             {(['asset', 'liability', 'income', 'expense'] as AccountType[]).map((type) => (
               <TouchableOpacity
@@ -462,11 +471,14 @@ const AddAccountScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+            <TouchableOpacity 
+              onPress={() => setShowCategoryPicker(false)}
+              style={styles.modalCancelButton}
+            >
+              <Text style={styles.modalCancel}>Cancel </Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Select Category</Text>
-            <View style={{ width: 60 }} />
+            <View style={{ width: 90 }} />
           </View>
 
           <FlatList
@@ -512,11 +524,14 @@ const AddAccountScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowSubCategoryPicker(false)}>
+            <TouchableOpacity 
+              onPress={() => setShowSubCategoryPicker(false)}
+              style={styles.modalCancelButton}
+            >
               <Text style={styles.modalCancel}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Select Sub-category</Text>
-            <View style={{ width: 60 }} />
+            <View style={{ width: 90 }} />
           </View>
 
           <FlatList
@@ -637,6 +652,92 @@ const AddAccountScreen: React.FC = () => {
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Account Type Info Modal */}
+      <Modal
+        visible={showAccountTypeInfo}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAccountTypeInfo(false)}
+      >
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <View style={{ width: 90 }} />
+            <Text style={styles.modalTitle}>Account Types</Text>
+            <TouchableOpacity onPress={() => setShowAccountTypeInfo(false)}>
+              <Text style={styles.modalDone}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            contentContainerStyle={[styles.modalContent, styles.infoModalContent]}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.infoCard}>
+              <View style={[styles.infoCardHeader, { backgroundColor: getAccountTypeBgColor('asset') }]}>
+                <View style={styles.infoIcon}>
+                  <Text style={[styles.infoIconText, { color: getAccountTypeColor('asset') }]}>
+                    ↗
+                  </Text>
+                </View>
+                <Text style={styles.infoTitle}>Assets – What you own</Text>
+              </View>
+              <View style={styles.infoCardBody}>
+                <Text style={styles.infoDescription}>
+                  Money you have, like bank balance, cash, gold, or investments. These accounts track what you own and can have opening balances. Examples include savings accounts, checking accounts, fixed deposits, stocks, mutual funds, gold, property, and cash in hand.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <View style={[styles.infoCardHeader, { backgroundColor: getAccountTypeBgColor('liability') }]}>
+                <View style={styles.infoIcon}>
+                  <Text style={[styles.infoIconText, { color: getAccountTypeColor('liability') }]}>
+                    ↙
+                  </Text>
+                </View>
+                <Text style={styles.infoTitle}>Liabilities – What you owe</Text>
+              </View>
+              <View style={styles.infoCardBody}>
+                <Text style={styles.infoDescription}>
+                  Loans, credit card dues, or any money you need to pay. These accounts track what you owe to others and can have opening balances. Examples include home loans, car loans, personal loans, credit card balances, education loans, and any other debts you need to repay.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <View style={[styles.infoCardHeader, { backgroundColor: getAccountTypeBgColor('income') }]}>
+                <View style={styles.infoIcon}>
+                  <Text style={[styles.infoIconText, { color: getAccountTypeColor('income') }]}>
+                    ↓
+                  </Text>
+                </View>
+                <Text style={styles.infoTitle}>Income – Money you receive</Text>
+              </View>
+              <View style={styles.infoCardBody}>
+                <Text style={styles.infoDescription}>
+                  Salary, business income, rent, or any money coming in. These accounts track sources of money you receive. Examples include salary, freelance income, business profits, rental income, dividends, interest earned, gifts received, and any other money coming into your accounts.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <View style={[styles.infoCardHeader, { backgroundColor: getAccountTypeBgColor('expense') }]}>
+                <View style={styles.infoIcon}>
+                  <Text style={[styles.infoIconText, { color: getAccountTypeColor('expense') }]}>
+                    ↑
+                  </Text>
+                </View>
+                <Text style={styles.infoTitle}>Expenses – Money you spend</Text>
+              </View>
+              <View style={styles.infoCardBody}>
+                <Text style={styles.infoDescription}>
+                  Daily costs like food, bills, travel, shopping, etc. These accounts track where your money goes. Examples include groceries, utilities, rent, transportation, entertainment, medical expenses, education fees, shopping, dining out, and any other money you spend.
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -652,14 +753,32 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.xl,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    marginLeft: spacing.sm,
+  },
   sectionTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.sm,
+  },
+  infoButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.xs,
+  },
+  infoButtonText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.neutral[0],
   },
   typeGrid: {
     flexDirection: 'row',
@@ -822,19 +941,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
+  modalCancelButton: {
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.sm,
+    paddingVertical: spacing.xs,
+    minWidth: 90,
+    width: 90,
+    flexShrink: 0,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
   modalCancel: {
     fontSize: typography.fontSize.base,
     color: colors.primary[500],
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    flexShrink: 0,
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: spacing.sm,
   },
   optionItem: {
     padding: spacing.base,
@@ -896,6 +1031,53 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
+  },
+  infoModalContent: {
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.base,
+  },
+  infoCard: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  infoCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  infoCardBody: {
+    padding: spacing.sm,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  infoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    backgroundColor: 'transparent',
+  },
+  infoIconText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+  },
+  infoTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  infoDescription: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+    lineHeight: 18,
+    marginTop: spacing.xs / 2,
   },
 });
 

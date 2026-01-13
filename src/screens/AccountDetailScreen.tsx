@@ -3,7 +3,7 @@
  * Shows account details and transaction history for a specific account
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -50,10 +50,13 @@ const AccountDetailScreen: React.FC = () => {
   
   const { user } = useAuthStore();
   const { getAccountById, deleteAccount, accounts } = useAccountStore();
-  const { transactions, getTransactionsByAccount } = useTransactionStore();
+  const { transactions, getTransactionsByAccount, subscribeToTransactions } = useTransactionStore();
 
   const account = getAccountById(accountId);
   const allAccountTransactions = getTransactionsByAccount(accountId);
+  
+  const [transactionLimit, setTransactionLimit] = useState(50);
+  const flatListRef = useRef<FlatList>(null);
   
   // Date range state - use passed dates or calculate defaults
   const [fromDate, setFromDate] = useState(() => {
@@ -76,6 +79,20 @@ const AccountDetailScreen: React.FC = () => {
   });
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
+
+  // Subscribe to transactions with limit
+  useEffect(() => {
+    if (user?.id) {
+      const unsubscribe = subscribeToTransactions(user.id, transactionLimit);
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [user?.id, subscribeToTransactions, transactionLimit]);
+
+  const handleLoadMore = () => {
+    setTransactionLimit(prev => prev + 50);
+  };
 
   // Filter transactions for date range
   const accountTransactions = useMemo(() => {
@@ -323,24 +340,28 @@ const AccountDetailScreen: React.FC = () => {
             onPress={() => setShowFromDatePicker(true)}
           >
             <View style={styles.dateButtonContent}>
-              <Text style={styles.dateLabel}>From Date</Text>
-              <Text style={styles.dateValue} numberOfLines={1} ellipsizeMode="tail">
+              <View style={styles.labelRow}>
+                <Text style={styles.chevron}>‹</Text>
+                <Text style={styles.dateLabel}>From</Text>
+              </View>
+              <Text style={styles.dateValue} numberOfLines={1}>
                 {fromDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dateButton}
             onPress={() => setShowToDatePicker(true)}
           >
             <View style={styles.dateButtonContent}>
-              <Text style={styles.dateLabel}>To Date</Text>
-              <Text style={styles.dateValue} numberOfLines={1} ellipsizeMode="tail">
+              <View style={styles.labelRow}>
+                <Text style={styles.chevron}>‹</Text>
+                <Text style={styles.dateLabel}>To</Text>
+              </View>
+              <Text style={styles.dateValue} numberOfLines={1}>
                 {toDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -437,15 +458,31 @@ const AccountDetailScreen: React.FC = () => {
   return (
     <>
       <FlatList
+        ref={flatListRef}
         style={styles.container}
         data={accountTransactions}
         renderItem={renderTransaction}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={ListEmpty}
-        ListFooterComponent={ListFooter}
+        ListFooterComponent={() => (
+          <>
+            {transactions.length >= transactionLimit && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={handleLoadMore}
+              >
+                <Text style={styles.loadMoreButtonText}>Load More</Text>
+              </TouchableOpacity>
+            )}
+            <ListFooter />
+          </>
+        )}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
         showsVerticalScrollIndicator={false}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       />
 
       {/* From Date Picker Modal */}
@@ -549,30 +586,30 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     margin: spacing.base,
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
+    padding: spacing.base,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
-    ...shadows.lg,
+    ...shadows.md,
   },
   headerIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   headerIconText: {
-    fontSize: typography.fontSize['2xl'],
+    fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[0],
   },
   accountName: {
-    fontSize: typography.fontSize['2xl'],
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[0],
-    marginBottom: spacing.xs,
+    marginBottom: spacing.xs / 2,
   },
   accountCategoryContainer: {
     width: '100%',
@@ -581,7 +618,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   accountCategory: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     width: '100%',
@@ -641,16 +678,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   transactionsTitle: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
   },
   transactionsCount: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
   },
   transactionItem: {
@@ -659,7 +696,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.elevated,
     marginHorizontal: spacing.base,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
@@ -667,17 +704,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   transactionTitle: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
   },
   transactionDate: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
-    marginTop: 2,
+    marginTop: 1,
   },
   transactionAmount: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
   },
   inflowText: {
@@ -689,25 +726,25 @@ const styles = StyleSheet.create({
   emptyTransactions: {
     backgroundColor: colors.background.elevated,
     marginHorizontal: spacing.base,
-    padding: spacing.xl,
-    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   emptyTransactionsText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.text.tertiary,
   },
   deleteButton: {
     marginHorizontal: spacing.base,
-    marginTop: spacing['2xl'],
-    paddingVertical: spacing.base,
-    borderRadius: borderRadius.lg,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     backgroundColor: colors.background.elevated,
     ...shadows.sm,
   },
   deleteButtonText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.error,
   },
@@ -723,34 +760,38 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.base,
+    padding: spacing.sm,
     backgroundColor: colors.background.primary,
     borderRadius: borderRadius.md,
+    borderWidth: 2,
+    borderColor: colors.primary[200],
+    ...shadows.md,
   },
   dateButtonContent: {
     flex: 1,
-    flexShrink: 1,
-    marginRight: spacing.sm,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs / 2,
   },
   dateLabel: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semiBold,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginLeft: spacing.xs,
   },
   dateValue: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
-    flexShrink: 1,
   },
   chevron: {
-    fontSize: typography.fontSize.xl,
-    color: colors.neutral[400],
-    flexShrink: 0,
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.bold,
   },
   balanceSection: {
     padding: spacing.base,
@@ -764,18 +805,18 @@ const styles = StyleSheet.create({
   },
   balanceItem: {
     flex: 1,
-    padding: spacing.base,
+    padding: spacing.sm,
     backgroundColor: colors.background.primary,
     borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   balanceItemLabel: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.xs / 2,
   },
   balanceItemValue: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
   },
@@ -788,12 +829,11 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    minHeight: 80,
   },
   summaryItem: {
     flex: 1,
     minWidth: 0,
-    padding: spacing.base,
+    padding: spacing.sm,
     backgroundColor: colors.background.primary,
     borderRadius: borderRadius.md,
     alignItems: 'center',
@@ -802,18 +842,17 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.xs / 2,
     textAlign: 'center',
     width: '100%',
     flexShrink: 1,
   },
   summaryValue: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     textAlign: 'center',
     width: '100%',
     flexShrink: 0,
-    minHeight: 24,
   },
   modalContainer: {
     flex: 1,
@@ -851,6 +890,20 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minWidth: 60,
     textAlign: 'right',
+  },
+  loadMoreButton: {
+    marginHorizontal: spacing.base,
+    marginTop: spacing.md,
+    backgroundColor: colors.primary[500],
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    ...shadows.md,
+  },
+  loadMoreButtonText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.neutral[0],
   },
 });
 

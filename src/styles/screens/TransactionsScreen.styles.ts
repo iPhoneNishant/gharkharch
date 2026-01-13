@@ -106,6 +106,11 @@ export const transactionsScreenStyles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 1,
   },
+  transactionDate: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
   transactionAmount: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
@@ -262,5 +267,20 @@ export const transactionsScreenStyles = StyleSheet.create({
   },
   pickerOptionTextDisabled: {
     color: colors.text.secondary,
+  },
+  loadMoreButton: {
+    marginHorizontal: spacing.base,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.primary[500],
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    ...shadows.md,
+  },
+  loadMoreButtonText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.neutral[0],
   },
 });
