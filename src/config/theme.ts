@@ -1,7 +1,54 @@
 /**
  * Theme configuration for Gharkharch
  * A fintech-grade design system with a premium, trustworthy aesthetic
+ * 
+ * To customize colors, modify the values below. All colors are centralized here
+ * for easy theming and future dark mode support.
  */
+
+// ============================================================================
+// COLOR CUSTOMIZATION - Change these values to customize the app's appearance
+// ============================================================================
+
+// Primary brand color (main green)
+const PRIMARY_COLOR = '#2E7D32';
+
+// Secondary accent color (gold)
+const SECONDARY_COLOR = '#FFB300';
+
+// Account type colors
+const ASSET_COLOR = '#2E7D32';      // Green - things you own
+const LIABILITY_COLOR = '#C62828';  // Red - things you owe
+const INCOME_COLOR = '#1565C0';      // Blue - money coming in
+const EXPENSE_COLOR = '#F57C00';     // Orange - money going out
+
+// Semantic colors
+const SUCCESS_COLOR = '#2E7D32';
+const WARNING_COLOR = '#F57C00';
+const ERROR_COLOR = '#C62828';
+const INFO_COLOR = '#1565C0';
+
+// Background colors
+const BACKGROUND_PRIMARY = '#FAFAFA';
+const BACKGROUND_SECONDARY = '#FFFFFF';
+const BACKGROUND_TERTIARY = '#F5F5F5';
+const BACKGROUND_ELEVATED = '#FFFFFF';
+
+// Text colors
+const TEXT_PRIMARY = '#212121';
+const TEXT_SECONDARY = '#616161';
+const TEXT_TERTIARY = '#9E9E9E';
+const TEXT_INVERSE = '#FFFFFF';
+const TEXT_LINK = '#1565C0';
+
+// Border colors
+const BORDER_LIGHT = '#E0E0E0';
+const BORDER_MEDIUM = '#BDBDBD';
+const BORDER_DARK = '#9E9E9E';
+
+// ============================================================================
+// EXPORTED COLOR SYSTEM
+// ============================================================================
 
 export const colors = {
   // Primary palette - Deep forest green for financial trust
@@ -11,8 +58,8 @@ export const colors = {
     200: '#A5D6A7',
     300: '#81C784',
     400: '#66BB6A',
-    500: '#2E7D32', // Main brand color
-    600: '#2E7D32',
+    500: PRIMARY_COLOR, // Main brand color
+    600: PRIMARY_COLOR,
     700: '#1B5E20',
     800: '#1B5E20',
     900: '#0D3D12',
@@ -25,7 +72,7 @@ export const colors = {
     200: '#FFE082',
     300: '#FFD54F',
     400: '#FFCA28',
-    500: '#FFB300',
+    500: SECONDARY_COLOR,
     600: '#FFA000',
     700: '#FF8F00',
     800: '#FF6F00',
@@ -33,16 +80,16 @@ export const colors = {
   },
   
   // Semantic colors
-  success: '#2E7D32',
-  warning: '#F57C00',
-  error: '#C62828',
-  info: '#1565C0',
+  success: SUCCESS_COLOR,
+  warning: WARNING_COLOR,
+  error: ERROR_COLOR,
+  info: INFO_COLOR,
   
   // Account type colors
-  asset: '#2E7D32',      // Green - things you own
-  liability: '#C62828',   // Red - things you owe
-  income: '#1565C0',      // Blue - money coming in
-  expense: '#F57C00',     // Orange - money going out
+  asset: ASSET_COLOR,      // Green - things you own
+  liability: LIABILITY_COLOR,   // Red - things you owe
+  income: INCOME_COLOR,      // Blue - money coming in
+  expense: EXPENSE_COLOR,     // Orange - money going out
   
   // Neutral palette
   neutral: {
@@ -62,26 +109,26 @@ export const colors = {
   
   // Background colors
   background: {
-    primary: '#FAFAFA',
-    secondary: '#FFFFFF',
-    tertiary: '#F5F5F5',
-    elevated: '#FFFFFF',
+    primary: BACKGROUND_PRIMARY,
+    secondary: BACKGROUND_SECONDARY,
+    tertiary: BACKGROUND_TERTIARY,
+    elevated: BACKGROUND_ELEVATED,
   },
   
   // Text colors
   text: {
-    primary: '#212121',
-    secondary: '#616161',
-    tertiary: '#9E9E9E',
-    inverse: '#FFFFFF',
-    link: '#1565C0',
+    primary: TEXT_PRIMARY,
+    secondary: TEXT_SECONDARY,
+    tertiary: TEXT_TERTIARY,
+    inverse: TEXT_INVERSE,
+    link: TEXT_LINK,
   },
   
   // Border colors
   border: {
-    light: '#E0E0E0',
-    medium: '#BDBDBD',
-    dark: '#9E9E9E',
+    light: BORDER_LIGHT,
+    medium: BORDER_MEDIUM,
+    dark: BORDER_DARK,
   },
 };
 
@@ -194,13 +241,14 @@ export const getAccountTypeColor = (accountType: 'asset' | 'liability' | 'income
 
 /**
  * Get background color for account type (lighter shade)
+ * These are light tints of the account type colors
  */
 export const getAccountTypeBgColor = (accountType: 'asset' | 'liability' | 'income' | 'expense'): string => {
   const bgColors = {
-    asset: '#E8F5E9',
-    liability: '#FFEBEE',
-    income: '#E3F2FD',
-    expense: '#FFF3E0',
+    asset: colors.primary[50],      // Light green
+    liability: '#FFEBEE',            // Light red
+    income: '#E3F2FD',               // Light blue
+    expense: '#FFF3E0',              // Light orange
   };
   return bgColors[accountType];
 };

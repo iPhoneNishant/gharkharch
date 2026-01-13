@@ -1,0 +1,266 @@
+/**
+ * Styles for TransactionsScreen
+ * Extracted for better organization and maintainability
+ */
+
+import { StyleSheet } from 'react-native';
+import { colors, typography, spacing, borderRadius, shadows } from '../../config/theme';
+
+export const transactionsScreenStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  searchInput: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+  },
+  emptyStateIcon: {
+    fontSize: 36,
+    marginBottom: spacing.sm,
+  },
+  emptyStateText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  emptyStateSubtext: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+  },
+  dateHeaderContainer: {
+    backgroundColor: colors.background.primary,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+    zIndex: 10,
+  },
+  dateHeader: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionFooter: {
+    height: spacing.sm,
+  },
+  transactionsList: {
+    backgroundColor: colors.background.elevated,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    paddingVertical: spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  transactionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  transactionIconText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+  },
+  transactionInfo: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  transactionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+  },
+  transactionSubtitle: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: 1,
+  },
+  transactionAmount: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+  },
+  expenseText: {
+    color: colors.expense,
+  },
+  incomeText: {
+    color: colors.income,
+  },
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.lg,
+  },
+  fabIcon: {
+    fontSize: 28,
+    color: colors.neutral[0],
+    fontWeight: typography.fontWeight.medium,
+  },
+  errorContainer: {
+    margin: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: '#FFEBEE',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#EF9A9A',
+  },
+  errorText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: '#C62828',
+    marginBottom: spacing.xs,
+  },
+  errorSubtext: {
+    fontSize: typography.fontSize.sm,
+    color: '#D32F2F',
+    fontFamily: 'monospace',
+  },
+  monthSelectorContainer: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.background.elevated,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  monthSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
+    position: 'relative',
+  },
+  monthSelectorValue: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  editIconButton: {
+    position: 'absolute',
+    right: 0,
+    padding: spacing.xs,
+  },
+  editIcon: {
+    fontSize: typography.fontSize.base,
+    color: colors.primary[500],
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  modalCancel: {
+    fontSize: typography.fontSize.base,
+    color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+  },
+  modalTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+    flex: 1,
+    textAlign: 'center',
+    flexShrink: 1,
+    marginHorizontal: spacing.sm,
+  },
+  modalDone: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+  },
+  monthYearPickerContainer: {
+    flexDirection: 'row',
+    flex: 1,
+    paddingHorizontal: spacing.sm,
+  },
+  pickerColumn: {
+    flex: 1,
+    marginHorizontal: spacing.xs,
+    minWidth: 140,
+  },
+  pickerColumnLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  pickerOption: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+    width: '100%',
+  },
+  pickerOptionSelected: {
+    backgroundColor: colors.primary[50],
+  },
+  pickerOptionDisabled: {
+    opacity: 0.3,
+  },
+  pickerOptionText: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    textAlign: 'center',
+    width: '100%',
+    flexShrink: 0,
+    paddingHorizontal: spacing.xs,
+  },
+  pickerOptionTextSelected: {
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.semiBold,
+  },
+  pickerOptionTextDisabled: {
+    color: colors.text.secondary,
+  },
+});
