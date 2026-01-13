@@ -9,9 +9,12 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  SectionList,
   TouchableOpacity,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -205,10 +208,11 @@ const TransactionsScreen: React.FC = () => {
   }, [transactions, selectedYear, selectedMonth, searchQuery, getAccountById]);
 
   /**
-   * Group transactions by date
+   * Group transactions by date for SectionList
+   * Each section contains a single item (array of transactions) to group them together
    */
-  const groupedTransactions = useMemo(() => {
-    const groups: { date: string; transactions: Transaction[] }[] = [];
+  const sectionedTransactions = useMemo(() => {
+    const sections: { title: string; data: Transaction[][] }[] = [];
     let currentDate = '';
     let currentGroup: Transaction[] = [];
 
@@ -222,7 +226,7 @@ const TransactionsScreen: React.FC = () => {
 
       if (dateStr !== currentDate) {
         if (currentGroup.length > 0) {
-          groups.push({ date: currentDate, transactions: currentGroup });
+          sections.push({ title: currentDate, data: [currentGroup] });
         }
         currentDate = dateStr;
         currentGroup = [txn];
@@ -232,10 +236,10 @@ const TransactionsScreen: React.FC = () => {
     });
 
     if (currentGroup.length > 0) {
-      groups.push({ date: currentDate, transactions: currentGroup });
+      sections.push({ title: currentDate, data: [currentGroup] });
     }
 
-    return groups;
+    return sections;
   }, [filteredTransactions]);
 
   const handleAddTransaction = () => {
@@ -283,17 +287,24 @@ const TransactionsScreen: React.FC = () => {
     );
   };
 
-  const renderDateGroup = ({ item }: { item: { date: string; transactions: Transaction[] } }) => (
-    <View style={styles.dateGroup}>
-      <Text style={styles.dateHeader}>{item.date}</Text>
-      <View style={styles.transactionsList}>
-        {item.transactions.map((txn) => (
-          <View key={txn.id}>
-            {renderTransaction({ item: txn })}
-          </View>
-        ))}
-      </View>
+  const renderSectionHeader = ({ section }: { section: { title: string; data: Transaction[][] } }) => (
+    <View style={styles.dateHeaderContainer}>
+      <Text style={styles.dateHeader}>{section.title}</Text>
     </View>
+  );
+
+  const renderTransactionGroup = ({ item: transactions }: { item: Transaction[] }) => (
+    <View style={styles.transactionsList}>
+      {transactions.map((txn, index) => (
+        <View key={txn.id}>
+          {renderTransaction({ item: txn })}
+        </View>
+      ))}
+    </View>
+  );
+
+  const renderSectionFooter = () => (
+    <View style={styles.sectionFooter} />
   );
 
 
@@ -302,7 +313,11 @@ const TransactionsScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       {/* Month/Year Selector */}
       <View style={styles.monthSelectorContainer}>
         <TouchableOpacity
@@ -347,7 +362,7 @@ const TransactionsScreen: React.FC = () => {
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>Loading...</Text>
         </View>
-      ) : groupedTransactions.length === 0 ? (
+      ) : sectionedTransactions.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateIcon}>📝</Text>
           <Text style={styles.emptyStateText}>
@@ -358,12 +373,14 @@ const TransactionsScreen: React.FC = () => {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={groupedTransactions}
-          renderItem={renderDateGroup}
-          keyExtractor={(item) => item.date}
+        <SectionList
+          sections={sectionedTransactions}
+          renderItem={renderTransactionGroup}
+          renderSectionHeader={renderSectionHeader}
+          keyExtractor={(item, index) => `group-${index}`}
           contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
           showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={true}
         />
       )}
 
@@ -500,7 +517,7 @@ const TransactionsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -515,10 +532,10 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSize.base,
+    paddingVertical: spacing.sm,
+    fontSize: typography.fontSize.sm,
     color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.border.light,
@@ -527,74 +544,85 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.base,
   },
   emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: spacing.md,
+    fontSize: 36,
+    marginBottom: spacing.sm,
   },
   emptyStateText: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
     textAlign: 'center',
   },
-  dateGroup: {
-    marginBottom: spacing.lg,
+  dateHeaderContainer: {
+    backgroundColor: colors.background.primary,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+    zIndex: 10,
   },
   dateHeader: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.secondary,
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionFooter: {
+    height: spacing.sm,
   },
   transactionsList: {
     backgroundColor: colors.background.elevated,
     marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
     borderRadius: borderRadius.lg,
+    overflow: 'hidden',
     ...shadows.sm,
   },
   transactionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.base,
+    padding: spacing.sm,
+    paddingVertical: spacing.base,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
   transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   transactionIconText: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
   },
   transactionInfo: {
     flex: 1,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   transactionTitle: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
   },
   transactionSubtitle: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
-    marginTop: 2,
+    marginTop: 1,
   },
   transactionAmount: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
   },
   expenseText: {
@@ -639,7 +667,7 @@ const styles = StyleSheet.create({
   },
   monthSelectorContainer: {
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     backgroundColor: colors.background.elevated,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
@@ -648,11 +676,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     position: 'relative',
   },
   monthSelectorValue: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
     textAlign: 'center',

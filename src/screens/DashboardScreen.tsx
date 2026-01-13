@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { useAuthStore, useAccountStore } from '../stores';
+import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
 import { RootStackParamList, AccountType } from '../types';
 import { 
   colors, 
@@ -28,6 +28,7 @@ import {
   getAccountTypeBgColor,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
+import { getClosingBalance } from '../utils/reports';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -40,22 +41,22 @@ const DashboardScreen: React.FC = () => {
     accounts,
     isLoading: accountsLoading, 
     subscribeToAccounts,
-    getTotalAssets,
-    getTotalLiabilities,
-    getNetWorth,
   } = useAccountStore();
+  const { transactions, subscribeToTransactions } = useTransactionStore();
 
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
     if (user?.id) {
       const unsubAccounts = subscribeToAccounts(user.id);
+      const unsubTransactions = subscribeToTransactions(user.id);
       
       return () => {
         unsubAccounts();
+        unsubTransactions();
       };
     }
-  }, [user?.id, subscribeToAccounts]);
+  }, [user?.id, subscribeToAccounts, subscribeToTransactions]);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -64,9 +65,26 @@ const DashboardScreen: React.FC = () => {
   }, []);
 
   const currency = user?.currency ?? DEFAULT_CURRENCY;
-  const totalAssets = getTotalAssets();
-  const totalLiabilities = getTotalLiabilities();
-  const netWorth = getNetWorth();
+  
+  // Calculate balances from transactions up to today's date for consistency
+  const today = new Date();
+  const totalAssets = React.useMemo(() => {
+    return accounts
+      .filter(a => a.isActive && a.accountType === 'asset')
+      .reduce((sum, account) => {
+        return sum + getClosingBalance(account, transactions, today);
+      }, 0);
+  }, [accounts, transactions]);
+
+  const totalLiabilities = React.useMemo(() => {
+    return accounts
+      .filter(a => a.isActive && a.accountType === 'liability')
+      .reduce((sum, account) => {
+        return sum + getClosingBalance(account, transactions, today);
+      }, 0);
+  }, [accounts, transactions]);
+
+  const netWorth = totalAssets - totalLiabilities;
 
   const handleAddTransaction = () => {
     navigation.navigate('AddTransaction');
@@ -176,7 +194,7 @@ const DashboardScreen: React.FC = () => {
                     styles.accountBalance,
                     account.accountType === 'liability' && styles.liabilityBalance
                   ]}>
-                    {formatCurrency(account.currentBalance ?? 0, currency)}
+                    {formatCurrency(getClosingBalance(account, transactions, today), currency)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -194,21 +212,25 @@ const styles = StyleSheet.create({
   },
   netWorthCard: {
     backgroundColor: colors.primary[500],
-    margin: spacing.base,
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
-    ...shadows.lg,
+    margin: spacing.sm,
+    marginHorizontal: spacing.base,
+    padding: spacing.base,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    ...shadows.md,
   },
   netWorthLabel: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.primary[100],
-    marginBottom: spacing.xs,
+    marginBottom: spacing.xs / 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   netWorthValue: {
-    fontSize: typography.fontSize['4xl'],
+    fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[0],
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   negativeValue: {
     color: '#FFCDD2',
@@ -232,31 +254,31 @@ const styles = StyleSheet.create({
     color: colors.primary[200],
   },
   summaryValue: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.neutral[0],
   },
   quickActions: {
     paddingHorizontal: spacing.base,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   addButton: {
     backgroundColor: colors.secondary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    ...shadows.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    ...shadows.sm,
   },
   addButtonIcon: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.neutral[900],
-    marginRight: spacing.sm,
+    marginRight: spacing.xs,
   },
   addButtonText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.neutral[900],
   },
@@ -268,67 +290,70 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   emptyState: {
     backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
+    borderRadius: borderRadius.md,
+    padding: spacing.base,
     alignItems: 'center',
     ...shadows.sm,
   },
   emptyStateText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
     textAlign: 'center',
   },
   accountsList: {
     backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     ...shadows.sm,
   },
   accountItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.base,
+    padding: spacing.sm,
+    paddingVertical: spacing.base,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
   accountIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   accountIconText: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
   },
   accountInfo: {
     flex: 1,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   accountName: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
   },
   accountCategory: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
-    marginTop: 2,
+    marginTop: 1,
   },
   accountBalance: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.asset,
   },

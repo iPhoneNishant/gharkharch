@@ -304,14 +304,12 @@ const AccountsScreen: React.FC = () => {
             >
               {balance ? formatCurrency(balance.closing, currency) : formatCurrency(account.currentBalance ?? 0, currency)}
             </Text>
-            {showBalance && (
-              <Text 
-                style={styles.balanceLabel}
-                allowFontScaling={true}
-              >
-                Opening: {balance ? formatCurrency(balance.opening ?? 0, currency) : formatCurrency(account.openingBalance ?? 0, currency)}
-              </Text>
-            )}
+            <Text 
+              style={styles.balanceLabel}
+              allowFontScaling={true}
+            >
+              Opening: {balance ? formatCurrency(balance.opening ?? 0, currency) : formatCurrency(account.openingBalance ?? 0, currency)}
+            </Text>
           </View>
         )}
         {showAccountTotal && (
@@ -566,21 +564,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.background.elevated,
     marginHorizontal: spacing.base,
-    marginVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xs,
+    marginVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    padding: spacing.xs / 2,
   },
   tab: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     alignItems: 'center',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.sm,
   },
   activeTab: {
     backgroundColor: colors.primary[500],
   },
   tabText: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.secondary,
   },
@@ -594,17 +592,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: spacing.md,
+    fontSize: 36,
+    marginBottom: spacing.sm,
   },
   emptyStateText: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
     textAlign: 'center',
   },
@@ -613,7 +611,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.background.primary,
   },
   sectionTitleRow: {
@@ -621,18 +619,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.sm,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: spacing.xs,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   sectionTotal: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.asset,
   },
@@ -653,63 +653,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background.elevated,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   accountIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   accountIconText: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
   },
   accountInfo: {
     flex: 1,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
     minWidth: 0,
     flexShrink: 1,
+    maxWidth: '40%',
   },
   accountName: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
   },
   accountCategory: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
-    marginTop: 2,
+    marginTop: 1,
   },
   balanceContainer: {
     alignItems: 'flex-end',
     justifyContent: 'center',
     marginRight: spacing.sm,
     flexShrink: 0,
-    width: 150,
+    minWidth: 160,
   },
   accountBalance: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.asset,
     textAlign: 'right',
-    width: '100%',
   },
   balanceLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-    marginTop: spacing.xs,
+    color: colors.text.primary,
+    marginTop: spacing.xs / 2,
     textAlign: 'right',
-    width: '100%',
+    fontWeight: typography.fontWeight.medium,
   },
   liabilityBalance: {
     color: colors.liability,
   },
   chevron: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.lg,
     color: colors.neutral[400],
+    marginLeft: spacing.xs,
+    flexShrink: 0,
   },
   periodSection: {
     padding: spacing.base,

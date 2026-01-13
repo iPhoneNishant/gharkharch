@@ -15,6 +15,8 @@ import {
   Keyboard,
   BackHandler,
   Platform,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -252,94 +254,104 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.logo}>₹</Text>
-          <Text style={styles.title}>Gharkharch</Text>
-          <Text style={styles.subtitle}>
-            {biometricEnabled && !biometricAttempted
-              ? `Authenticate with ${biometricType || 'Biometric'} to continue`
-              : 'Enter your PIN to continue'}
-          </Text>
-        </View>
-
-        {/* Show biometric loading when attempting biometric first */}
-        {biometricEnabled && !biometricAttempted && isVerifying && (
-          <View style={styles.biometricLoadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary[500]} />
-            <Text style={styles.biometricLoadingText}>
-              Authenticating with {biometricType || 'Biometric'}...
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.logo}>₹</Text>
+            <Text style={styles.title}>Gharkharch</Text>
+            <Text style={styles.subtitle}>
+              {biometricEnabled && !biometricAttempted
+                ? `Authenticate with ${biometricType || 'Biometric'} to continue`
+                : 'Enter your PIN to continue'}
             </Text>
           </View>
-        )}
 
-        {/* PIN Input - Only show if biometric is not enabled, or if biometric was attempted and failed */}
-        {(!biometricEnabled || biometricAttempted) && (
-          <>
-            <View style={styles.inputContainer}>
-              <TextInput
-                ref={pinInputRef}
-                style={styles.pinInput}
-                value={pin}
-                onChangeText={handlePinChange}
-                placeholder="••••"
-                placeholderTextColor={colors.neutral[400]}
-                keyboardType="number-pad"
-                secureTextEntry
-                maxLength={6}
-                autoFocus={biometricAttempted}
-                editable={!isVerifying}
-              />
-              {displayErrorCount > 0 && (
-                <Text style={styles.errorText}>
-                  Incorrect PIN. {5 - displayErrorCount} attempts remaining.
-                </Text>
-              )}
+          {/* Show biometric loading when attempting biometric first */}
+          {biometricEnabled && !biometricAttempted && isVerifying && (
+            <View style={styles.biometricLoadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary[500]} />
+              <Text style={styles.biometricLoadingText}>
+                Authenticating with {biometricType || 'Biometric'}...
+              </Text>
             </View>
+          )}
 
-            {/* Continue Button */}
-            <TouchableOpacity
-              style={[
-                styles.continueButton,
-                (pin.length < 4 || pin.length > 6 || isVerifying) && styles.continueButtonDisabled,
-              ]}
-              onPress={handleVerify}
-              disabled={pin.length < 4 || pin.length > 6 || isVerifying}
-            >
-              {isVerifying ? (
-                <ActivityIndicator color={colors.neutral[0]} />
-              ) : (
-                <Text style={styles.continueButtonText}>Continue</Text>
-              )}
-            </TouchableOpacity>
+          {/* PIN Input - Only show if biometric is not enabled, or if biometric was attempted and failed */}
+          {(!biometricEnabled || biometricAttempted) && (
+            <>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  ref={pinInputRef}
+                  style={styles.pinInput}
+                  value={pin}
+                  onChangeText={handlePinChange}
+                  placeholder="••••"
+                  placeholderTextColor={colors.neutral[400]}
+                  keyboardType="number-pad"
+                  secureTextEntry
+                  maxLength={6}
+                  autoFocus={biometricAttempted}
+                  editable={!isVerifying}
+                />
+                {displayErrorCount > 0 && (
+                  <Text style={styles.errorText}>
+                    Incorrect PIN. {5 - displayErrorCount} attempts remaining.
+                  </Text>
+                )}
+              </View>
 
-            {/* Forgot PIN Link */}
+              {/* Continue Button */}
+              <TouchableOpacity
+                style={[
+                  styles.continueButton,
+                  (pin.length < 4 || pin.length > 6 || isVerifying) && styles.continueButtonDisabled,
+                ]}
+                onPress={handleVerify}
+                disabled={pin.length < 4 || pin.length > 6 || isVerifying}
+              >
+                {isVerifying ? (
+                  <ActivityIndicator color={colors.neutral[0]} />
+                ) : (
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Forgot PIN Link */}
+              <TouchableOpacity
+                style={styles.forgotPinButton}
+                onPress={handleForgotPin}
+                disabled={isVerifying}
+              >
+                <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Biometric Button - Show as fallback if biometric failed */}
+          {biometricEnabled && biometricAttempted && !isVerifying && (
             <TouchableOpacity
-              style={styles.forgotPinButton}
-              onPress={handleForgotPin}
+              style={styles.biometricButton}
+              onPress={handleBiometricAuth}
               disabled={isVerifying}
             >
-              <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+              <Text style={styles.biometricButtonText}>
+                Use {biometricType || 'Biometric'} instead
+              </Text>
             </TouchableOpacity>
-          </>
-        )}
-
-        {/* Biometric Button - Show as fallback if biometric failed */}
-        {biometricEnabled && biometricAttempted && !isVerifying && (
-          <TouchableOpacity
-            style={styles.biometricButton}
-            onPress={handleBiometricAuth}
-            disabled={isVerifying}
-          >
-            <Text style={styles.biometricButtonText}>
-              Use {biometricType || 'Biometric'} instead
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -347,6 +359,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xl,
   },
   content: {
     flex: 1,

@@ -15,6 +15,8 @@ import {
   Keyboard,
   BackHandler,
   Platform,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -173,86 +175,96 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
   const canSubmit = pin.length >= 4 && pin.length <= 6 && confirmPin.length >= 4 && confirmPin.length <= 6 && pin === confirmPin;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Setup MPIN</Text>
-          <Text style={styles.subtitle}>
-            Enter a 4-6 digit PIN to secure your app
-          </Text>
-        </View>
-
-        {/* PIN Input */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Enter PIN</Text>
-          <TextInput
-            style={styles.pinInput}
-            value={pin}
-            onChangeText={handlePinChange}
-            placeholder="••••"
-            placeholderTextColor={colors.neutral[400]}
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={6}
-            autoFocus
-            editable={!isSettingUp}
-          />
-          <Text style={styles.hint}>
-            {pin.length < 4 ? 'Enter 4-6 digits' : `${pin.length}/6 digits`}
-          </Text>
-        </View>
-
-        {/* Confirm PIN Input */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Confirm PIN</Text>
-          <TextInput
-            ref={confirmPinRef}
-            style={styles.pinInput}
-            value={confirmPin}
-            onChangeText={handleConfirmPinChange}
-            placeholder="••••"
-            placeholderTextColor={colors.neutral[400]}
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={6}
-            editable={!isSettingUp}
-          />
-          {confirmPin.length > 0 && pin !== confirmPin && (
-            <Text style={styles.errorText}>PINs do not match</Text>
-          )}
-        </View>
-
-        {/* Biometric Option */}
-        {biometricAvailable && (
-          <TouchableOpacity
-            style={styles.biometricOption}
-            onPress={() => setEnableBiometricOption(!enableBiometricOption)}
-            disabled={isSettingUp}
-          >
-            <View style={styles.checkbox}>
-              {enableBiometricOption && <View style={styles.checkboxChecked} />}
-            </View>
-            <Text style={styles.biometricText}>
-              Enable {biometricType || 'Biometric'} authentication
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Setup MPIN</Text>
+            <Text style={styles.subtitle}>
+              Enter a 4-6 digit PIN to secure your app
             </Text>
-          </TouchableOpacity>
-        )}
+          </View>
 
-        {/* Setup Button */}
-        <TouchableOpacity
-          style={[styles.button, !canSubmit && styles.buttonDisabled]}
-          onPress={handleSetup}
-          disabled={!canSubmit || isSettingUp}
-        >
-          {isSettingUp ? (
-            <ActivityIndicator color={colors.neutral[0]} />
-          ) : (
-            <Text style={styles.buttonText}>Setup PIN</Text>
+          {/* PIN Input */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Enter PIN</Text>
+            <TextInput
+              style={styles.pinInput}
+              value={pin}
+              onChangeText={handlePinChange}
+              placeholder="••••"
+              placeholderTextColor={colors.neutral[400]}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              autoFocus
+              editable={!isSettingUp}
+            />
+            <Text style={styles.hint}>
+              {pin.length < 4 ? 'Enter 4-6 digits' : `${pin.length}/6 digits`}
+            </Text>
+          </View>
+
+          {/* Confirm PIN Input */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Confirm PIN</Text>
+            <TextInput
+              ref={confirmPinRef}
+              style={styles.pinInput}
+              value={confirmPin}
+              onChangeText={handleConfirmPinChange}
+              placeholder="••••"
+              placeholderTextColor={colors.neutral[400]}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              editable={!isSettingUp}
+            />
+            {confirmPin.length > 0 && pin !== confirmPin && (
+              <Text style={styles.errorText}>PINs do not match</Text>
+            )}
+          </View>
+
+          {/* Biometric Option */}
+          {biometricAvailable && (
+            <TouchableOpacity
+              style={styles.biometricOption}
+              onPress={() => setEnableBiometricOption(!enableBiometricOption)}
+              disabled={isSettingUp}
+            >
+              <View style={styles.checkbox}>
+                {enableBiometricOption && <View style={styles.checkboxChecked} />}
+              </View>
+              <Text style={styles.biometricText}>
+                Enable {biometricType || 'Biometric'} authentication
+              </Text>
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
-      </View>
-    </View>
+
+          {/* Setup Button */}
+          <TouchableOpacity
+            style={[styles.button, !canSubmit && styles.buttonDisabled]}
+            onPress={handleSetup}
+            disabled={!canSubmit || isSettingUp}
+          >
+            {isSettingUp ? (
+              <ActivityIndicator color={colors.neutral[0]} />
+            ) : (
+              <Text style={styles.buttonText}>Setup PIN</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -260,6 +272,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xl,
   },
   content: {
     flex: 1,

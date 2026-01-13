@@ -560,7 +560,10 @@ const AddAccountScreen: React.FC = () => {
           setNewCategoryName('');
         }}
       >
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+        <KeyboardAvoidingView
+          style={[styles.modalContainer, { paddingTop: insets.top }]}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => {
               setShowAddCategoryModal(false);
@@ -573,7 +576,10 @@ const AddAccountScreen: React.FC = () => {
               <Text style={styles.modalDone}>Done</Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.modalContent}>
+          <ScrollView
+            contentContainerStyle={styles.modalContent}
+            keyboardShouldPersistTaps="handled"
+          >
             <Text style={styles.inputLabel}>Category Name</Text>
             <TextInput
               style={styles.textInput}
@@ -584,8 +590,8 @@ const AddAccountScreen: React.FC = () => {
               autoCapitalize="words"
               autoFocus
             />
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Add Custom Sub-category Modal */}
@@ -598,7 +604,10 @@ const AddAccountScreen: React.FC = () => {
           setNewSubCategoryName('');
         }}
       >
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+        <KeyboardAvoidingView
+          style={[styles.modalContainer, { paddingTop: insets.top }]}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => {
               setShowAddSubCategoryModal(false);
@@ -611,7 +620,10 @@ const AddAccountScreen: React.FC = () => {
               <Text style={styles.modalDone}>Done</Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.modalContent}>
+          <ScrollView
+            contentContainerStyle={styles.modalContent}
+            keyboardShouldPersistTaps="handled"
+          >
             <Text style={styles.inputLabel}>Sub-category Name</Text>
             <TextInput
               style={styles.textInput}
@@ -622,8 +634,8 @@ const AddAccountScreen: React.FC = () => {
               autoCapitalize="words"
               autoFocus
             />
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </KeyboardAvoidingView>
   );

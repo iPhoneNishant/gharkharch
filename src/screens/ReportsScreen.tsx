@@ -731,16 +731,21 @@ const ReportsScreen: React.FC = () => {
         <View style={styles.filtersContainer}>
           {dateRangeMode === 'month' ? (
             <TouchableOpacity
-              style={styles.filterButton}
+              style={styles.dateSelectionContainer}
               onPress={() => setShowMonthYearPicker(true)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.filterLabel}>Month</Text>
-              <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
+              <View style={styles.labelRow}>
+                <Text style={styles.dateSelectionLabel}>Month</Text>
+              </View>
+              <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
                 {selectedMonth && selectedYear 
                   ? `${new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-US', { month: 'long' })} ${selectedYear}`
                   : 'Select Month'}
               </Text>
-              <Text style={styles.chevron}>›</Text>
+              <View style={styles.chevronContainer}>
+                <Text style={styles.dateSelectionChevron}>›</Text>
+              </View>
             </TouchableOpacity>
           ) : (
             <View style={styles.dateSelectionRow}>
@@ -780,26 +785,36 @@ const ReportsScreen: React.FC = () => {
           {/* Filters */}
           <>
               <TouchableOpacity
-                style={styles.filterButton}
+                style={styles.dateSelectionContainer}
                 onPress={() => setShowCategoryPicker(true)}
+                activeOpacity={0.7}
               >
-                <Text style={styles.filterLabel}>Category</Text>
-                <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
+                <View style={styles.labelRow}>
+                  <Text style={styles.dateSelectionLabel}>Category</Text>
+                </View>
+                <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
                   {selectedCategory || 'All Categories'}
                 </Text>
-                <Text style={styles.chevron}>›</Text>
+                <View style={styles.chevronContainer}>
+                  <Text style={styles.dateSelectionChevron}>›</Text>
+                </View>
               </TouchableOpacity>
 
               {selectedCategory && (
                 <TouchableOpacity
-                  style={styles.filterButton}
+                  style={styles.dateSelectionContainer}
                   onPress={() => setShowSubCategoryPicker(true)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.filterLabel}>Sub-Category</Text>
-                  <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
+                  <View style={styles.labelRow}>
+                    <Text style={styles.dateSelectionLabel}>Sub-Category</Text>
+                  </View>
+                  <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
                     {selectedSubCategory || 'All Sub-Categories'}
                   </Text>
-                  <Text style={styles.chevron}>›</Text>
+                  <View style={styles.chevronContainer}>
+                    <Text style={styles.dateSelectionChevron}>›</Text>
+                  </View>
                 </TouchableOpacity>
               )}
 
@@ -821,59 +836,65 @@ const ReportsScreen: React.FC = () => {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Period Summary</Text>
           <View style={styles.summaryGrid}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryItemLabel}>Opening Balance</Text>
-              <Text style={styles.summaryItemValue}>
-                {formatCurrency(filteredReport.totalOpeningBalance, currency)}
-              </Text>
+            {/* Row 1: Opening, Closing, Net */}
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryItemLabel}>Opening</Text>
+                <Text style={styles.summaryItemValue}>
+                  {formatCurrency(filteredReport.totalOpeningBalance, currency)}
+                </Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryItemLabel}>Closing</Text>
+                <Text style={styles.summaryItemValue}>
+                  {formatCurrency(filteredReport.totalClosingBalance, currency)}
+                </Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryItemLabel}>Net</Text>
+                <Text style={[
+                  styles.summaryItemValue,
+                  {
+                    color: (filteredReport.totalClosingBalance - filteredReport.totalOpeningBalance) >= 0
+                      ? colors.income
+                      : colors.expense
+                  }
+                ]}>
+                  {formatCurrency(
+                    filteredReport.totalClosingBalance - filteredReport.totalOpeningBalance,
+                    currency
+                  )}
+                </Text>
+              </View>
             </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryItemLabel}>Closing Balance</Text>
-              <Text style={styles.summaryItemValue}>
-                {formatCurrency(filteredReport.totalClosingBalance, currency)}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryItemLabel}>Total Income</Text>
-              <Text style={[styles.summaryItemValue, { color: colors.income }]}>
-                {formatCurrency(
-                  Array.from(expenseIncomeTotals.income.values()).reduce((sum, item) => sum + item.total, 0),
-                  currency,
-                  true
-                )}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryItemLabel}>Total Expenses</Text>
-              <Text style={[styles.summaryItemValue, { color: colors.expense }]}>
-                {formatCurrency(
-                  -Array.from(expenseIncomeTotals.expenses.values()).reduce((sum, item) => sum + item.total, 0),
-                  currency,
-                  false
-                )}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryItemLabel}>Net Change</Text>
-              <Text style={[
-                styles.summaryItemValue,
-                {
-                  color: (filteredReport.totalClosingBalance - filteredReport.totalOpeningBalance) >= 0
-                    ? colors.income
-                    : colors.expense
-                }
-              ]}>
-                {formatCurrency(
-                  filteredReport.totalClosingBalance - filteredReport.totalOpeningBalance,
-                  currency
-                )}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryItemLabel}>Transactions</Text>
-              <Text style={styles.summaryItemValue}>
-                {filteredTransactions.length}
-              </Text>
+            {/* Row 2: Income, Expenses, Txn */}
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryItemLabel}>Income</Text>
+                <Text style={[styles.summaryItemValue, { color: colors.income }]}>
+                  {formatCurrency(
+                    Array.from(expenseIncomeTotals.income.values()).reduce((sum, item) => sum + item.total, 0),
+                    currency,
+                    true
+                  )}
+                </Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryItemLabel}>Expenses</Text>
+                <Text style={[styles.summaryItemValue, { color: colors.expense }]}>
+                  {formatCurrency(
+                    -Array.from(expenseIncomeTotals.expenses.values()).reduce((sum, item) => sum + item.total, 0),
+                    currency,
+                    false
+                  )}
+                </Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryItemLabel}>Txn</Text>
+                <Text style={styles.summaryItemValue}>
+                  {filteredTransactions.length}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -1378,6 +1399,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.elevated,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
+    gap: spacing.sm,
   },
   dateSelectionRow: {
     flexDirection: 'row',
@@ -1461,34 +1483,45 @@ const styles = StyleSheet.create({
     color: colors.primary[500],
   },
   summaryCard: {
-    margin: spacing.base,
-    padding: spacing.lg,
+    margin: spacing.sm,
+    marginHorizontal: spacing.base,
+    padding: spacing.sm,
+    paddingVertical: spacing.base,
     backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.xl,
-    ...shadows.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.primary[100],
+    ...shadows.sm,
   },
   summaryTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
   summaryGrid: {
+    gap: spacing.sm,
+  },
+  summaryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   summaryItem: {
     flex: 1,
-    minWidth: '45%',
+    padding: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   summaryItemLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginBottom: spacing.xs / 2,
+    fontWeight: typography.fontWeight.medium,
   },
   summaryItemValue: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
   },
