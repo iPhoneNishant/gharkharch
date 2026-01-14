@@ -18,7 +18,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
 import { MonthlyReport, CategoryReport, SubCategoryReport, AccountType, Transaction, RootStackParamList } from '../types';
 import {
@@ -42,10 +43,12 @@ import {
 } from '../utils/reports';
 
 type ReportsScreenRouteProp = RouteProp<RootStackParamList, 'SummaryMonthReport' | 'SummaryCustomReport' | 'TransactionsMonthReport' | 'TransactionsCustomReport'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ReportsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<ReportsScreenRouteProp>();
+  const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const { accounts } = useAccountStore();
   const { transactions } = useTransactionStore();
@@ -445,17 +448,7 @@ const ReportsScreen: React.FC = () => {
     });
   }, [filteredReport, filteredTransactions, accounts]);
 
-  // Expand all categories by default when filtered report changes
-  useEffect(() => {
-    if (categoryReportsWithFilteredCounts && categoryReportsWithFilteredCounts.length > 0) {
-      const allCategoryKeys = new Set<string>();
-      categoryReportsWithFilteredCounts.forEach(cr => {
-        const categoryKey = `${cr.accountType}-${cr.category}`;
-        allCategoryKeys.add(categoryKey);
-      });
-      setExpandedCategories(allCategoryKeys);
-    }
-  }, [categoryReportsWithFilteredCounts]);
+  // Categories are closed by default - users can expand them manually
 
   // Group category reports by account type
   const categoryReportsByAccountType = useMemo(() => {
@@ -515,8 +508,42 @@ const ReportsScreen: React.FC = () => {
   const renderSubCategoryReport = (subCategoryReport: SubCategoryReport, categoryName: string, accountType: AccountType) => {
     const isIncomeOrExpense = accountType === 'income' || accountType === 'expense';
     
+    // Calculate date range for navigation
+    const getDateRange = () => {
+      if (dateRangeMode === 'month' && selectedYear && selectedMonth) {
+        const startDate = new Date(selectedYear, selectedMonth - 1, 1);
+        const endDate = new Date(selectedYear, selectedMonth, 0); // Last day of month
+        endDate.setHours(23, 59, 59, 999);
+        return { fromDate: startDate, toDate: endDate };
+      } else {
+        return { fromDate, toDate };
+      }
+    };
+
+    const handleSubCategoryPress = () => {
+      if (subCategoryReport.transactionCount === 0) return;
+      
+      const { fromDate: navFromDate, toDate: navToDate } = getDateRange();
+      navigation.navigate('SubCategoryTransactions', {
+        subCategory: subCategoryReport.subCategory,
+        category: categoryName,
+        accountType,
+        fromDate: navFromDate,
+        toDate: navToDate,
+      });
+    };
+    
     return (
-      <View key={subCategoryReport.subCategory} style={styles.subCategoryCard}>
+      <TouchableOpacity 
+        key={subCategoryReport.subCategory} 
+        style={[
+          styles.subCategoryCard,
+          subCategoryReport.transactionCount === 0 && styles.subCategoryCardDisabled
+        ]}
+        onPress={handleSubCategoryPress}
+        disabled={subCategoryReport.transactionCount === 0}
+        activeOpacity={subCategoryReport.transactionCount > 0 ? 0.7 : 1}
+      >
         <View style={styles.subCategoryHeader}>
           <Text style={styles.subCategoryName} numberOfLines={1} ellipsizeMode="tail">
             {subCategoryReport.subCategory}
@@ -539,6 +566,7 @@ const ReportsScreen: React.FC = () => {
                     )}
                   </Text>
                 </View>
+                <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Transactions</Text>
                   <Text style={styles.statValue}>{subCategoryReport.transactionCount}</Text>
@@ -552,12 +580,14 @@ const ReportsScreen: React.FC = () => {
                     {formatCurrency(subCategoryReport.openingBalance, currency)}
                   </Text>
                 </View>
+                <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Closing</Text>
                   <Text style={styles.statValue}>
                     {formatCurrency(subCategoryReport.closingBalance, currency)}
                   </Text>
                 </View>
+                <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Transactions</Text>
                   <Text style={styles.statValue}>{subCategoryReport.transactionCount}</Text>
@@ -618,7 +648,7 @@ const ReportsScreen: React.FC = () => {
             </View>
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -1625,43 +1655,58 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   subCategoryCard: {
-    backgroundColor: colors.background.primary,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    marginTop: spacing.xs,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.primary[300],
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.base,
+    marginTop: spacing.sm,
+    marginHorizontal: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
+  },
+  subCategoryCardDisabled: {
+    opacity: 0.9,
   },
   subCategoryHeader: {
     marginBottom: spacing.xs,
   },
   subCategoryName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
     flexShrink: 1,
   },
   subCategoryStats: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   statItem: {
     flex: 1,
+    minWidth: 0,
   },
   statLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.text.secondary,
-    marginBottom: 1,
+    color: colors.text.tertiary,
+    marginBottom: spacing.xs / 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    fontWeight: typography.fontWeight.medium,
   },
   statValue: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semiBold,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
   },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: colors.border.light,
+  },
   transactionSummary: {
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
   },
@@ -1669,22 +1714,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs / 2,
-    minHeight: 20,
+    marginBottom: spacing.xs,
+    paddingVertical: spacing.xs / 2,
+    minHeight: 24,
   },
   summaryLabel: {
     fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
     flex: 1,
     marginRight: spacing.sm,
+    fontWeight: typography.fontWeight.medium,
   },
   summaryValue: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
     flexShrink: 0,
     textAlign: 'right',
-    minWidth: 80,
+    minWidth: 90,
   },
   modalContainer: {
     flex: 1,

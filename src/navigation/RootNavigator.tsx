@@ -27,6 +27,7 @@ import DayToDayReportScreen from '../screens/DayToDayReportScreen';
 import AddRecurringTransactionScreen from '../screens/AddRecurringTransactionScreen';
 import RecurringTransactionsScreen from '../screens/RecurringTransactionsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import SubCategoryTransactionsScreen from '../screens/SubCategoryTransactionsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -288,6 +289,16 @@ const RootNavigator: React.FC = () => {
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
               }}
+            />
+            <Stack.Screen 
+              name="SubCategoryTransactions" 
+              component={SubCategoryTransactionsScreen}
+              options={({ route }) => ({
+                headerShown: true,
+                headerTitle: (route.params as any)?.subCategory || 'Transactions',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              })}
             />
           </>
         )}

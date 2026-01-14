@@ -238,6 +238,13 @@ export type RootStackParamList = {
   DayToDayReport: undefined;
   AddRecurringTransaction: { editRecurringTransactionId?: string } | undefined;
   RecurringTransactions: undefined;
+  SubCategoryTransactions: { 
+    subCategory: string; 
+    category: string; 
+    accountType: AccountType;
+    fromDate?: Date;
+    toDate?: Date;
+  };
 };
 
 export type MainTabParamList = {
