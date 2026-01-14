@@ -14,6 +14,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -213,6 +214,7 @@ const TransactionsScreen: React.FC = () => {
     navigation.navigate('AddTransaction');
   };
 
+
   const handleTransactionPress = (transactionId: string) => {
     navigation.navigate('TransactionDetail', { transactionId });
   };
@@ -343,11 +345,12 @@ const TransactionsScreen: React.FC = () => {
 
       {/* FAB */}
       <TouchableOpacity
-        style={[styles.fab, { bottom: insets.bottom + spacing.lg }]}
+        style={[styles.fab, { bottom: insets.bottom + spacing.lg, zIndex: 1000 }]}
         onPress={handleAddTransaction}
       >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
+
 
       {/* Month/Year Picker */}
       <Modal

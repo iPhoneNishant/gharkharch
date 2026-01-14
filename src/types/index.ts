@@ -159,6 +159,65 @@ export interface CloudFunctionResponse<T = unknown> {
 }
 
 /**
+ * Recurrence frequency for recurring transactions
+ */
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * Recurring Transaction represents a template for automatically creating transactions
+ */
+export interface RecurringTransaction {
+  id: string;
+  amount: number;
+  debitAccountId: string;
+  creditAccountId: string;
+  note?: string;
+  frequency: RecurrenceFrequency;
+  dayOfRecurrence: number; // Day of week (0-6) for weekly, day of month (1-31) for monthly/yearly
+  startDate: Date;
+  endDate?: Date;
+  nextOccurrence: Date;
+  isActive: boolean;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  notifyBeforeDays?: number;
+  lastCreatedDate?: Date;
+}
+
+/**
+ * Request payload for creating a recurring transaction via Cloud Function
+ */
+export interface CreateRecurringTransactionRequest {
+  amount: number;
+  debitAccountId: string;
+  creditAccountId: string;
+  note?: string;
+  frequency: RecurrenceFrequency;
+  dayOfRecurrence: number;
+  startDate: string; // ISO date string
+  endDate?: string; // ISO date string
+  notifyBeforeDays?: number;
+}
+
+/**
+ * Request payload for updating a recurring transaction via Cloud Function
+ */
+export interface UpdateRecurringTransactionRequest {
+  recurringTransactionId: string;
+  amount?: number;
+  debitAccountId?: string;
+  creditAccountId?: string;
+  note?: string;
+  frequency?: RecurrenceFrequency;
+  dayOfRecurrence?: number;
+  startDate?: string; // ISO date string
+  endDate?: string | null; // ISO date string or null to remove
+  isActive?: boolean;
+  notifyBeforeDays?: number | null;
+}
+
+/**
  * Navigation param types
  */
 export type RootStackParamList = {
@@ -172,10 +231,13 @@ export type RootStackParamList = {
   TransactionDetail: { transactionId: string };
   SummaryMonthReport: undefined;
   SummaryCustomReport: undefined;
+  Settings: undefined;
   TransactionsMonthReport: undefined;
   TransactionsCustomReport: undefined;
   MonthToMonthReport: undefined;
   DayToDayReport: undefined;
+  AddRecurringTransaction: { editRecurringTransactionId?: string } | undefined;
+  RecurringTransactions: undefined;
 };
 
 export type MainTabParamList = {
@@ -183,7 +245,7 @@ export type MainTabParamList = {
   Transactions: undefined;
   Accounts: undefined;
   Reports: undefined;
-  Settings: undefined;
+  More: undefined;
 };
 
 /**

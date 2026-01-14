@@ -227,6 +227,7 @@ export const formatCurrency = (amount: number, currency: string = DEFAULT_CURREN
  * Firestore collection names
  */
 export const COLLECTIONS = {
+  RECURRING_TRANSACTIONS: 'recurringTransactions',
   USERS: 'users',
   ACCOUNTS: 'accounts',
   TRANSACTIONS: 'transactions',

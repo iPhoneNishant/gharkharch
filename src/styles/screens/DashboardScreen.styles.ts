@@ -161,4 +161,39 @@ export const dashboardScreenStyles = StyleSheet.create({
   liabilityBalance: {
     color: colors.liability,
   },
+  addMenu: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.xs,
+    minWidth: 180,
+    alignSelf: 'flex-end',
+    ...shadows.lg,
+  },
+  addMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  addMenuItemIcon: {
+    fontSize: typography.fontSize.lg,
+    marginRight: spacing.sm,
+  },
+  addMenuItemText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 999,
+  },
 });

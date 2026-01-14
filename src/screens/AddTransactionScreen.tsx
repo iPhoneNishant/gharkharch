@@ -222,22 +222,10 @@ const AddTransactionScreen: React.FC = () => {
   };
 
   /**
-   * Get label for account selector based on detected transaction type
+   * Get label for account selector
    */
   const getAccountLabel = (type: 'debit' | 'credit'): string => {
-    if (!transactionType) {
-      return type === 'debit' ? 'Debit Account' : 'Credit Account';
-    }
-
-    if (transactionType === 'expense') {
-      return type === 'debit' ? 'Expense Category' : 'Paid From';
-    } else if (transactionType === 'income') {
-      return type === 'debit' ? 'Received In' : 'Income Source';
-    } else if (transactionType === 'return') {
-      return type === 'debit' ? 'Received In' : 'Return From';
-    } else {
-      return type === 'debit' ? 'To Account' : 'From Account';
-    }
+    return type === 'debit' ? 'To Account' : 'From Account';
   };
 
   return (
@@ -299,19 +287,23 @@ const AddTransactionScreen: React.FC = () => {
             style={styles.accountSelector}
             onPress={() => openAccountPicker('credit')}
           >
-            <Text style={styles.accountLabel}>{getAccountLabel('credit')}</Text>
-            {creditAccount ? (
-              <View style={styles.selectedAccount}>
-                <View style={[
-                  styles.accountDot,
-                  { backgroundColor: getAccountTypeColor(creditAccount.accountType) }
-                ]} />
-                <Text style={styles.accountName}>{creditAccount.name}</Text>
+            <View style={styles.accountSelectorContent}>
+              <View style={styles.accountSelectorLeft}>
+                <Text style={styles.accountLabel}>{getAccountLabel('credit')} </Text>
+                {creditAccount ? (
+                  <View style={styles.selectedAccount}>
+                    <View style={[
+                      styles.accountDot,
+                      { backgroundColor: getAccountTypeColor(creditAccount.accountType) }
+                    ]} />
+                    <Text style={styles.accountName}>{creditAccount.name}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.accountPlaceholder}>Select account</Text>
+                )}
               </View>
-            ) : (
-              <Text style={styles.accountPlaceholder}>Select account</Text>
-            )}
-            <Text style={styles.chevron}>›</Text>
+              <Text style={styles.chevron}>›</Text>
+            </View>
           </TouchableOpacity>
 
           {/* Arrow indicator */}
@@ -324,19 +316,23 @@ const AddTransactionScreen: React.FC = () => {
             style={styles.accountSelector}
             onPress={() => openAccountPicker('debit')}
           >
-            <Text style={styles.accountLabel}>{getAccountLabel('debit')}</Text>
-            {debitAccount ? (
-              <View style={styles.selectedAccount}>
-                <View style={[
-                  styles.accountDot,
-                  { backgroundColor: getAccountTypeColor(debitAccount.accountType) }
-                ]} />
-                <Text style={styles.accountName}>{debitAccount.name}</Text>
+            <View style={styles.accountSelectorContent}>
+              <View style={styles.accountSelectorLeft}>
+                <Text style={styles.accountLabel}>{getAccountLabel('debit')} </Text>
+                {debitAccount ? (
+                  <View style={styles.selectedAccount}>
+                    <View style={[
+                      styles.accountDot,
+                      { backgroundColor: getAccountTypeColor(debitAccount.accountType) }
+                    ]} />
+                    <Text style={styles.accountName}>{debitAccount.name}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.accountPlaceholder}>Select account</Text>
+                )}
               </View>
-            ) : (
-              <Text style={styles.accountPlaceholder}>Select account</Text>
-            )}
-            <Text style={styles.chevron}>›</Text>
+              <Text style={styles.chevron}>›</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -602,35 +598,48 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   accountSelector: {
+    padding: spacing.base,
+  },
+  accountSelectorContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.base,
+    justifyContent: 'space-between',
+  },
+  accountSelectorLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
   },
   accountLabel: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
-    width: 100,
+    flexShrink: 0,
   },
   selectedAccount: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
   },
   accountDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     marginRight: spacing.sm,
+    flexShrink: 0,
   },
   accountName: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
+    flexShrink: 1,
   },
   accountPlaceholder: {
-    flex: 1,
     fontSize: typography.fontSize.base,
     color: colors.text.tertiary,
+    flexShrink: 1,
   },
   chevron: {
     fontSize: typography.fontSize.xl,

@@ -24,6 +24,9 @@ import TransactionDetailScreen from '../screens/TransactionDetailScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import MonthToMonthReportScreen from '../screens/MonthToMonthReportScreen';
 import DayToDayReportScreen from '../screens/DayToDayReportScreen';
+import AddRecurringTransactionScreen from '../screens/AddRecurringTransactionScreen';
+import RecurringTransactionsScreen from '../screens/RecurringTransactionsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -254,6 +257,36 @@ const RootNavigator: React.FC = () => {
               options={{
                 gestureEnabled: false,
                 headerShown: false,
+              }}
+            />
+            <Stack.Screen 
+              name="AddRecurringTransaction" 
+              component={AddRecurringTransactionScreen}
+              options={({ route }) => ({
+                presentation: 'modal',
+                headerShown: true,
+                headerTitle: (route.params as any)?.editRecurringTransactionId ? 'Edit Repeat Transaction' : 'Add Repeat Transaction',
+                headerTintColor: colors.primary[500],
+              })}
+            />
+            <Stack.Screen 
+              name="RecurringTransactions" 
+              component={RecurringTransactionsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Repeat Transactions',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen 
+              name="Settings" 
+              component={SettingsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Settings',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
               }}
             />
           </>

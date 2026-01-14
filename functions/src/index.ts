@@ -89,6 +89,51 @@ interface UpdateTransactionRequest {
   tags?: string[];
 }
 
+interface RecurringTransaction {
+  id: string;
+  amount: number;
+  debitAccountId: string;
+  creditAccountId: string;
+  note?: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  dayOfRecurrence: number;
+  startDate: admin.firestore.Timestamp;
+  endDate?: admin.firestore.Timestamp;
+  nextOccurrence: admin.firestore.Timestamp;
+  isActive: boolean;
+  userId: string;
+  createdAt: admin.firestore.Timestamp;
+  updatedAt: admin.firestore.Timestamp;
+  notifyBeforeDays?: number;
+  lastCreatedDate?: admin.firestore.Timestamp;
+}
+
+interface CreateRecurringTransactionRequest {
+  amount: number;
+  debitAccountId: string;
+  creditAccountId: string;
+  note?: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  dayOfRecurrence: number;
+  startDate: string;
+  endDate?: string;
+  notifyBeforeDays?: number;
+}
+
+interface UpdateRecurringTransactionRequest {
+  recurringTransactionId: string;
+  amount?: number;
+  debitAccountId?: string;
+  creditAccountId?: string;
+  note?: string;
+  frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  dayOfRecurrence?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+  notifyBeforeDays?: number;
+}
+
 // Helper functions
 
 /**
@@ -817,3 +862,375 @@ export const deleteTransaction = onCall(
 
   return { success: true };
 });
+
+/**
+ * Helper function to calculate next occurrence date
+ */
+function calculateNextOccurrence(
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly',
+  dayOfRecurrence: number,
+  startDate: Date,
+  lastCreatedDate?: Date
+): Date {
+  const baseDate = lastCreatedDate || startDate;
+  const nextDate = new Date(baseDate);
+
+  switch (frequency) {
+    case 'daily':
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+    
+    case 'weekly':
+      // dayOfRecurrence is day of week (0-6, Sunday=0)
+      const currentDay = nextDate.getDay();
+      let daysUntilNext = (dayOfRecurrence - currentDay + 7) % 7;
+      if (daysUntilNext === 0) daysUntilNext = 7; // Next week if same day
+      nextDate.setDate(nextDate.getDate() + daysUntilNext);
+      break;
+    
+    case 'monthly':
+      // dayOfRecurrence is day of month (1-31)
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      // Handle edge cases for months with fewer days
+      const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+      nextDate.setDate(Math.min(dayOfRecurrence, maxDay));
+      break;
+    
+    case 'yearly':
+      // dayOfRecurrence is day of month (1-31)
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      // Handle leap year edge case
+      const maxDayYear = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+      nextDate.setDate(Math.min(dayOfRecurrence, maxDayYear));
+      break;
+  }
+
+  return nextDate;
+}
+
+/**
+ * Create a new recurring transaction
+ */
+export const createRecurringTransaction = onCall(
+  {
+    cors: true,
+    enforceAppCheck: false,
+  },
+  async (request: CallableRequest<CreateRecurringTransactionRequest & { idToken?: string }>) => {
+    // Workaround for React Native: manually verify token if passed in data
+    let userId: string;
+    if (request.auth) {
+      userId = request.auth.uid;
+    } else if (request.data.idToken) {
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(request.data.idToken);
+        userId = decodedToken.uid;
+      } catch (error) {
+        throw new HttpsError('unauthenticated', 'Invalid authentication token');
+      }
+    } else {
+      throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    
+    // Remove idToken from data
+    const { idToken: _, ...data } = request.data;
+
+    // Validate required fields
+    if (!data.amount || data.amount <= 0) {
+      throw new HttpsError('invalid-argument', 'Amount must be greater than 0');
+    }
+
+    if (!data.debitAccountId || !data.creditAccountId) {
+      throw new HttpsError('invalid-argument', 'Both debit and credit accounts are required');
+    }
+
+    if (data.debitAccountId === data.creditAccountId) {
+      throw new HttpsError('invalid-argument', 'Debit and credit accounts must be different');
+    }
+
+    if (!data.frequency || !['daily', 'weekly', 'monthly', 'yearly'].includes(data.frequency)) {
+      throw new HttpsError('invalid-argument', 'Invalid frequency');
+    }
+
+    // Validate accounts exist and belong to user
+    const debitAccountDoc = await db.collection('accounts').doc(data.debitAccountId).get();
+    const creditAccountDoc = await db.collection('accounts').doc(data.creditAccountId).get();
+
+    if (!debitAccountDoc.exists || !creditAccountDoc.exists) {
+      throw new HttpsError('not-found', 'One or both accounts not found');
+    }
+
+    const debitAccount = debitAccountDoc.data() as Account;
+    const creditAccount = creditAccountDoc.data() as Account;
+
+    if (debitAccount.userId !== userId || creditAccount.userId !== userId) {
+      throw new HttpsError('permission-denied', 'You do not own one or both accounts');
+    }
+
+    // Parse dates
+    const startDate = new Date(data.startDate);
+    const endDate = data.endDate ? new Date(data.endDate) : undefined;
+
+    if (isNaN(startDate.getTime())) {
+      throw new HttpsError('invalid-argument', 'Invalid start date');
+    }
+
+    if (endDate && isNaN(endDate.getTime())) {
+      throw new HttpsError('invalid-argument', 'Invalid end date');
+    }
+
+    if (endDate && endDate <= startDate) {
+      throw new HttpsError('invalid-argument', 'End date must be after start date');
+    }
+
+    // Calculate next occurrence
+    const nextOccurrence = calculateNextOccurrence(data.frequency, data.dayOfRecurrence, startDate);
+
+    // Create the recurring transaction
+    const recurringTransactionRef = db.collection('recurringTransactions').doc();
+    const now = admin.firestore.Timestamp.now();
+
+    const recurringTransaction: any = {
+      amount: data.amount,
+      debitAccountId: data.debitAccountId,
+      creditAccountId: data.creditAccountId,
+      frequency: data.frequency,
+      dayOfRecurrence: data.dayOfRecurrence,
+      startDate: admin.firestore.Timestamp.fromDate(startDate),
+      nextOccurrence: admin.firestore.Timestamp.fromDate(nextOccurrence),
+      isActive: true,
+      userId,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (data.note && data.note.trim() !== '') {
+      recurringTransaction.note = data.note.trim();
+    }
+
+    if (endDate) {
+      recurringTransaction.endDate = admin.firestore.Timestamp.fromDate(endDate);
+    }
+
+    if (data.notifyBeforeDays && data.notifyBeforeDays > 0) {
+      recurringTransaction.notifyBeforeDays = data.notifyBeforeDays;
+    }
+
+    await recurringTransactionRef.set(recurringTransaction);
+
+    return {
+      success: true,
+      data: { recurringTransactionId: recurringTransactionRef.id },
+    };
+  }
+);
+
+/**
+ * Update an existing recurring transaction
+ */
+export const updateRecurringTransaction = onCall(
+  {
+    cors: true,
+    enforceAppCheck: false,
+  },
+  async (request: CallableRequest<UpdateRecurringTransactionRequest & { idToken?: string }>) => {
+    // Workaround for React Native: manually verify token if passed in data
+    let userId: string;
+    if (request.auth) {
+      userId = request.auth.uid;
+    } else if (request.data.idToken) {
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(request.data.idToken);
+        userId = decodedToken.uid;
+      } catch (error) {
+        throw new HttpsError('unauthenticated', 'Invalid authentication token');
+      }
+    } else {
+      throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    
+    // Remove idToken from data
+    const { idToken: _, ...data } = request.data;
+
+    if (!data.recurringTransactionId) {
+      throw new HttpsError('invalid-argument', 'Recurring transaction ID is required');
+    }
+
+    // Get the recurring transaction
+    const recurringTransactionRef = db.collection('recurringTransactions').doc(data.recurringTransactionId);
+    const recurringTransactionDoc = await recurringTransactionRef.get();
+
+    if (!recurringTransactionDoc.exists) {
+      throw new HttpsError('not-found', 'Recurring transaction not found');
+    }
+
+    const recurringTransaction = recurringTransactionDoc.data() as RecurringTransaction;
+
+    // Verify ownership
+    if (recurringTransaction.userId !== userId) {
+      throw new HttpsError('permission-denied', 'You do not own this recurring transaction');
+    }
+
+    // Build update object
+    const updates: any = {
+      updatedAt: admin.firestore.Timestamp.now(),
+    };
+
+    if (data.amount !== undefined) {
+      if (data.amount <= 0) {
+        throw new HttpsError('invalid-argument', 'Amount must be greater than 0');
+      }
+      updates.amount = data.amount;
+    }
+
+    if (data.debitAccountId !== undefined || data.creditAccountId !== undefined) {
+      const debitAccountId = data.debitAccountId ?? recurringTransaction.debitAccountId;
+      const creditAccountId = data.creditAccountId ?? recurringTransaction.creditAccountId;
+
+      if (debitAccountId === creditAccountId) {
+        throw new HttpsError('invalid-argument', 'Debit and credit accounts must be different');
+      }
+
+      // Validate accounts exist and belong to user
+      const debitAccountDoc = await db.collection('accounts').doc(debitAccountId).get();
+      const creditAccountDoc = await db.collection('accounts').doc(creditAccountId).get();
+
+      if (!debitAccountDoc.exists || !creditAccountDoc.exists) {
+        throw new HttpsError('not-found', 'One or both accounts not found');
+      }
+
+      const debitAccount = debitAccountDoc.data() as Account;
+      const creditAccount = creditAccountDoc.data() as Account;
+
+      if (debitAccount.userId !== userId || creditAccount.userId !== userId) {
+        throw new HttpsError('permission-denied', 'You do not own one or both accounts');
+      }
+
+      updates.debitAccountId = debitAccountId;
+      updates.creditAccountId = creditAccountId;
+    }
+
+    if (data.note !== undefined) {
+      if (data.note === null || (typeof data.note === 'string' && data.note.trim() === '')) {
+        updates.note = null;
+      } else {
+        updates.note = data.note.trim();
+      }
+    }
+
+    if (data.frequency !== undefined) {
+      if (!['daily', 'weekly', 'monthly', 'yearly'].includes(data.frequency)) {
+        throw new HttpsError('invalid-argument', 'Invalid frequency');
+      }
+      updates.frequency = data.frequency;
+    }
+
+    if (data.dayOfRecurrence !== undefined) {
+      updates.dayOfRecurrence = data.dayOfRecurrence;
+    }
+
+    if (data.startDate !== undefined) {
+      const startDate = new Date(data.startDate);
+      if (isNaN(startDate.getTime())) {
+        throw new HttpsError('invalid-argument', 'Invalid start date');
+      }
+      updates.startDate = admin.firestore.Timestamp.fromDate(startDate);
+    }
+
+    if (data.endDate !== undefined) {
+      if (data.endDate === null) {
+        updates.endDate = null;
+      } else {
+        const endDate = new Date(data.endDate);
+        if (isNaN(endDate.getTime())) {
+          throw new HttpsError('invalid-argument', 'Invalid end date');
+        }
+        updates.endDate = admin.firestore.Timestamp.fromDate(endDate);
+      }
+    }
+
+    if (data.isActive !== undefined) {
+      updates.isActive = data.isActive;
+    }
+
+    if (data.notifyBeforeDays !== undefined) {
+      if (data.notifyBeforeDays === null || data.notifyBeforeDays === 0) {
+        updates.notifyBeforeDays = null;
+      } else if (data.notifyBeforeDays > 0) {
+        updates.notifyBeforeDays = data.notifyBeforeDays;
+      } else {
+        throw new HttpsError('invalid-argument', 'Notify before days must be 0 or positive');
+      }
+    }
+
+    // Recalculate next occurrence if frequency, day, or start date changed
+    if (data.frequency !== undefined || data.dayOfRecurrence !== undefined || data.startDate !== undefined) {
+      const frequency = data.frequency ?? recurringTransaction.frequency;
+      const dayOfRecurrence = data.dayOfRecurrence ?? recurringTransaction.dayOfRecurrence;
+      const startDate = data.startDate 
+        ? new Date(data.startDate)
+        : recurringTransaction.startDate.toDate();
+      const lastCreatedDate = recurringTransaction.lastCreatedDate?.toDate();
+
+      const nextOccurrence = calculateNextOccurrence(frequency, dayOfRecurrence, startDate, lastCreatedDate);
+      updates.nextOccurrence = admin.firestore.Timestamp.fromDate(nextOccurrence);
+    }
+
+    await recurringTransactionRef.update(updates);
+
+    return { success: true };
+  }
+);
+
+/**
+ * Delete a recurring transaction
+ */
+export const deleteRecurringTransaction = onCall(
+  {
+    cors: true,
+    enforceAppCheck: false,
+  },
+  async (request: CallableRequest<{ recurringTransactionId: string; idToken?: string }>) => {
+    // Workaround for React Native: manually verify token if passed in data
+    let userId: string;
+    if (request.auth) {
+      userId = request.auth.uid;
+    } else if (request.data.idToken) {
+      try {
+        const decodedToken = await admin.auth().verifyIdToken(request.data.idToken);
+        userId = decodedToken.uid;
+      } catch (error) {
+        throw new HttpsError('unauthenticated', 'Invalid authentication token');
+      }
+    } else {
+      throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    
+    // Remove idToken from data
+    const { idToken: _, recurringTransactionId } = request.data;
+
+    if (!recurringTransactionId) {
+      throw new HttpsError('invalid-argument', 'Recurring transaction ID is required');
+    }
+
+    // Get the recurring transaction
+    const recurringTransactionRef = db.collection('recurringTransactions').doc(recurringTransactionId);
+    const recurringTransactionDoc = await recurringTransactionRef.get();
+
+    if (!recurringTransactionDoc.exists) {
+      throw new HttpsError('not-found', 'Recurring transaction not found');
+    }
+
+    const recurringTransaction = recurringTransactionDoc.data() as RecurringTransaction;
+
+    // Verify ownership
+    if (recurringTransaction.userId !== userId) {
+      throw new HttpsError('permission-denied', 'You do not own this recurring transaction');
+    }
+
+    // Delete the recurring transaction
+    await recurringTransactionRef.delete();
+
+    return { success: true };
+  }
+);

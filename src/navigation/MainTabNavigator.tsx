@@ -17,7 +17,7 @@ import DashboardScreen from '../screens/DashboardScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import AccountsScreen from '../screens/AccountsScreen';
 import ReportsListScreen from '../screens/ReportsListScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import MoreScreen from '../screens/MoreScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -31,7 +31,7 @@ const TabIcon: React.FC<{ name: string; focused: boolean }> = ({ name, focused }
     Transactions: '⇄',
     Accounts: '☰',
     Reports: '📊',
-    Settings: '⚙',
+    More: '⋯',
   };
 
   return (
@@ -126,10 +126,10 @@ const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen 
-        name="Settings" 
-        component={SettingsScreen}
+        name="More" 
+        component={MoreScreen}
         options={{
-          headerTitle: 'Settings',
+          headerTitle: 'More',
         }}
       />
     </Tab.Navigator>

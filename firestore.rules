@@ -49,6 +49,15 @@ service cloud.firestore {
       allow write: if false;
     }
     
+    // Recurring Transactions collection
+    match /recurringTransactions/{recurringTransactionId} {
+      // Users can read their own recurring transactions
+      // This covers both individual reads and list queries
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // All writes go through Cloud Functions
+      allow write: if false;
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

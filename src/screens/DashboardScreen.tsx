@@ -11,6 +11,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -84,8 +85,17 @@ const DashboardScreen: React.FC = () => {
 
   const netWorth = totalAssets - totalLiabilities;
 
+  const [showAddMenu, setShowAddMenu] = React.useState(false);
+
   const handleAddTransaction = () => {
+    setShowAddMenu(false);
     navigation.navigate('AddTransaction');
+  };
+
+  const handleAddRecurringTransaction = () => {
+    setShowAddMenu(false);
+    console.log('Attempting to navigate to AddRecurringTransaction');
+    navigation.navigate('AddRecurringTransaction');
   };
 
   return (
@@ -128,11 +138,31 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.quickActions}>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={handleAddTransaction}
+          onPress={() => setShowAddMenu(!showAddMenu)}
         >
           <Text style={styles.addButtonIcon}>+</Text>
           <Text style={styles.addButtonText}>Add Transaction</Text>
         </TouchableOpacity>
+        
+        {/* Add Menu */}
+        {showAddMenu && (
+          <View style={styles.addMenu}>
+            <TouchableOpacity
+              style={styles.addMenuItem}
+              onPress={handleAddTransaction}
+            >
+              <Text style={styles.addMenuItemIcon}>📝</Text>
+              <Text style={styles.addMenuItemText}>Add Transaction</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addMenuItem}
+              onPress={handleAddRecurringTransaction}
+            >
+              <Text style={styles.addMenuItemIcon}>🔄</Text>
+              <Text style={styles.addMenuItemText}>Add Recurring</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Account Summary */}
