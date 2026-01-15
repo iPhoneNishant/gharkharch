@@ -14,6 +14,7 @@
 
 import * as admin from 'firebase-admin';
 import { onCall, HttpsError, CallableRequest } from 'firebase-functions/v2/https';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -1232,5 +1233,177 @@ export const deleteRecurringTransaction = onCall(
     await recurringTransactionRef.delete();
 
     return { success: true };
+  }
+);
+
+/**
+ * Default accounts to create for new users
+ */
+const DEFAULT_ACCOUNTS = [
+  // Income accounts
+  {
+    name: 'Salary',
+    accountType: 'income' as AccountType,
+    parentCategory: 'Earned Income',
+    subCategory: 'Salary',
+  },
+  {
+    name: 'Interest Income',
+    accountType: 'income' as AccountType,
+    parentCategory: 'Investment Income',
+    subCategory: 'Interest',
+  },
+  // Expense accounts
+  {
+    name: 'Rent',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Housing',
+    subCategory: 'Rent',
+  },
+  {
+    name: 'Electricity',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Utilities',
+    subCategory: 'Electricity',
+  },
+  {
+    name: 'Water',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Utilities',
+    subCategory: 'Water',
+  },
+  {
+    name: 'Internet',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Utilities',
+    subCategory: 'Internet',
+  },
+  {
+    name: 'Mobile',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Utilities',
+    subCategory: 'Mobile',
+  },
+  {
+    name: 'Groceries',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Food & Dining',
+    subCategory: 'Groceries',
+  },
+  {
+    name: 'Restaurants',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Food & Dining',
+    subCategory: 'Restaurants',
+  },
+  {
+    name: 'Fuel',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Transportation',
+    subCategory: 'Fuel',
+  },
+  {
+    name: 'Public Transport',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Transportation',
+    subCategory: 'Public Transport',
+  },
+  {
+    name: 'Doctor',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Healthcare',
+    subCategory: 'Doctor',
+  },
+  {
+    name: 'Medicine',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Healthcare',
+    subCategory: 'Medicine',
+  },
+  {
+    name: 'Entertainment',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Entertainment',
+    subCategory: 'Movies',
+  },
+  {
+    name: 'Maid',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Utilities',
+    subCategory: 'Helper',
+  },
+  {
+    name: 'Cook',
+    accountType: 'expense' as AccountType,
+    parentCategory: 'Utilities',
+    subCategory: 'Helper',
+  },
+];
+
+/**
+ * Create default accounts when a new user is created
+ * This function triggers when a user document is created in Firestore
+ */
+export const onCreateUser = onDocumentCreated(
+  {
+    document: 'users/{userId}',
+  },
+  async (event) => {
+    const userId = event.params.userId;
+    const userData = event.data?.data();
+
+    if (!userData) {
+      console.error('No user data found for userId:', userId);
+      return;
+    }
+
+    // Check if user already has accounts (safety check to prevent duplicates)
+    const existingAccounts = await db.collection('accounts')
+      .where('userId', '==', userId)
+      .limit(1)
+      .get();
+
+    if (!existingAccounts.empty) {
+      console.log(`User ${userId} already has accounts, skipping default account creation`);
+      return;
+    }
+
+    console.log(`Creating default accounts for new user: ${userId}`);
+
+    const batch = db.batch();
+    const now = admin.firestore.Timestamp.now();
+
+    // Create all default accounts in a batch
+    for (const accountData of DEFAULT_ACCOUNTS) {
+      const accountRef = db.collection('accounts').doc();
+      
+      const account: any = {
+        name: accountData.name,
+        accountType: accountData.accountType,
+        parentCategory: accountData.parentCategory,
+        subCategory: accountData.subCategory,
+        userId,
+        createdAt: now,
+        updatedAt: now,
+        isActive: true,
+      };
+
+      // Income and expense accounts don't have balances
+      // Only asset and liability accounts have balances
+      if (hasBalance(accountData.accountType)) {
+        account.openingBalance = 0;
+        account.currentBalance = 0;
+      }
+
+      batch.set(accountRef, account);
+    }
+
+    try {
+      await batch.commit();
+      console.log(`Successfully created ${DEFAULT_ACCOUNTS.length} default accounts for user: ${userId}`);
+    } catch (error) {
+      console.error(`Error creating default accounts for user ${userId}:`, error);
+      // Don't throw - we don't want to fail user creation if account creation fails
+    }
   }
 );

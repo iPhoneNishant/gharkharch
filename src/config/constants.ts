@@ -78,7 +78,7 @@ export const ACCOUNT_CATEGORIES: AccountCategory[] = [
   },
   {
     parentCategory: 'Utilities',
-    subCategories: ['Electricity', 'Water', 'Gas', 'Internet', 'Mobile', 'DTH/Cable'],
+    subCategories: ['Electricity', 'Water', 'Gas', 'Internet', 'Mobile', 'DTH/Cable', 'Helper'],
     accountType: 'expense',
   },
   {

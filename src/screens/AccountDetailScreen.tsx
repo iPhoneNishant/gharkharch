@@ -80,15 +80,17 @@ const AccountDetailScreen: React.FC = () => {
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
 
-  // Subscribe to transactions with limit
+  // Subscribe to transactions - use high limit for balance calculations, but display limited
   useEffect(() => {
     if (user?.id) {
-      const unsubscribe = subscribeToTransactions(user.id, transactionLimit);
+      // Use a very high limit (10000) to ensure we get all transactions for accurate balance calculations
+      // The transactionLimit is only for display pagination
+      const unsubscribe = subscribeToTransactions(user.id, 10000);
       return () => {
         unsubscribe();
       };
     }
-  }, [user?.id, subscribeToTransactions, transactionLimit]);
+  }, [user?.id, subscribeToTransactions]);
 
   const handleLoadMore = () => {
     setTransactionLimit(prev => prev + 50);

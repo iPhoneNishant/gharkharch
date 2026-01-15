@@ -153,10 +153,18 @@ export const dashboardScreenStyles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 1,
   },
+  balanceContainer: {
+    alignItems: 'flex-end',
+  },
   accountBalance: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.asset,
+  },
+  balanceLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: 2,
   },
   liabilityBalance: {
     color: colors.liability,

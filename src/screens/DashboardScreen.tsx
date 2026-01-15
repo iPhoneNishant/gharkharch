@@ -218,12 +218,54 @@ const DashboardScreen: React.FC = () => {
                       {account.subCategory}
                     </Text>
                   </View>
-                  <Text style={[
-                    styles.accountBalance,
-                    account.accountType === 'liability' && styles.liabilityBalance
-                  ]}>
-                    {formatCurrency(getClosingBalance(account, transactions, today), currency)}
-                  </Text>
+                  <View style={styles.balanceContainer}>
+                    {(() => {
+                      const balance = getClosingBalance(account, transactions, today);
+                      const isNegative = balance < 0;
+                      const absBalance = Math.abs(balance);
+                      
+                      // For liability: negative = green (receiving), positive = red (owe)
+                      // For asset: negative = red (pay), positive = green (have)
+                      let balanceColor: string;
+                      let label: string | null = null;
+                      
+                      if (account.accountType === 'liability') {
+                        if (isNegative) {
+                          balanceColor = colors.success; // Green for receiving
+                          label = '(to receive)';
+                        } else {
+                          balanceColor = colors.error; // Red for owing
+                        }
+                      } else {
+                        // Asset
+                        if (isNegative) {
+                          balanceColor = colors.error; // Red for pay
+                          label = '(to pay)';
+                        } else {
+                          balanceColor = colors.success; // Green for have
+                        }
+                      }
+                      
+                      return (
+                        <>
+                          <Text style={[
+                            styles.accountBalance,
+                            { color: balanceColor }
+                          ]}>
+                            {formatCurrency(absBalance, currency)}
+                          </Text>
+                          {label && (
+                            <Text style={[
+                              styles.balanceLabel,
+                              { color: balanceColor }
+                            ]}>
+                              {label}
+                            </Text>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </View>
                 </TouchableOpacity>
               ))}
           </View>

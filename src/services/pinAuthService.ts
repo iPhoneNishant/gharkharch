@@ -5,6 +5,7 @@
 
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const PIN_KEY = 'user_pin';
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
@@ -23,7 +24,7 @@ const hashPin = async (pin: string): Promise<string> => {
 };
 
 /**
- * Check if biometric authentication is available on the device
+ * Check if fingerprint authentication is available on the device
  */
 export const isBiometricAvailable = async (): Promise<boolean> => {
   try {
@@ -31,29 +32,32 @@ export const isBiometricAvailable = async (): Promise<boolean> => {
     if (!compatible) return false;
 
     const enrolled = await LocalAuthentication.isEnrolledAsync();
-    return enrolled;
+    if (!enrolled) return false;
+
+    // Only allow fingerprint authentication, not Face ID
+    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+    const hasFingerprint = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+    
+    return hasFingerprint;
   } catch (error) {
-    console.error('Error checking biometric availability:', error);
+    console.error('Error checking fingerprint availability:', error);
     return false;
   }
 };
 
 /**
- * Get biometric authentication type (Face ID, Touch ID, Fingerprint, etc.)
+ * Get fingerprint authentication type (Touch ID, Fingerprint)
  */
 export const getBiometricType = async (): Promise<string | null> => {
   try {
     const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-      return 'Face ID';
-    } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-      return 'Touch ID / Fingerprint';
-    } else if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
-      return 'Iris';
+    // Only return fingerprint-related types, exclude Face ID
+    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+      return Platform.OS === 'ios' ? 'Touch ID' : 'Fingerprint';
     }
     return null;
   } catch (error) {
-    console.error('Error getting biometric type:', error);
+    console.error('Error getting fingerprint type:', error);
     return null;
   }
 };
@@ -129,18 +133,26 @@ export const isPinSetup = async (): Promise<boolean> => {
 };
 
 /**
- * Enable biometric authentication
+ * Enable fingerprint authentication (fingerprint only, not Face ID)
  */
 export const enableBiometric = async (): Promise<void> => {
   try {
     const available = await isBiometricAvailable();
     if (!available) {
-      throw new Error('Biometric authentication is not available on this device');
+      throw new Error('Fingerprint authentication is not available on this device. Please enable fingerprint authentication in your device settings.');
+    }
+
+    // Verify that fingerprint (not Face ID) is available
+    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+    const hasFingerprint = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+    
+    if (!hasFingerprint) {
+      throw new Error('Fingerprint authentication is not available. This device only supports Face ID, which is not supported.');
     }
 
     await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'true');
   } catch (error) {
-    console.error('Error enabling biometric:', error);
+    console.error('Error enabling fingerprint:', error);
     throw error;
   }
 };
@@ -171,7 +183,7 @@ export const isBiometricEnabled = async (): Promise<boolean> => {
 };
 
 /**
- * Authenticate using biometric
+ * Authenticate using fingerprint only (not Face ID)
  */
 export const authenticateWithBiometric = async (): Promise<boolean> => {
   try {
@@ -185,16 +197,29 @@ export const authenticateWithBiometric = async (): Promise<boolean> => {
       return false;
     }
 
+    // Only use fingerprint authentication
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Authenticate to access Gharkharch',
+      promptMessage: 'Authenticate with fingerprint to access Gharkharch',
       cancelLabel: 'Cancel',
       disableDeviceFallback: false, // Allow PIN fallback
       fallbackLabel: 'Use PIN',
+      // Explicitly request fingerprint only
+      requireConfirmation: false,
     });
+
+    // Double-check that we're using fingerprint, not Face ID
+    // If the device only has Face ID, this will fail gracefully
+    const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+    const hasFingerprint = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+    
+    if (!hasFingerprint) {
+      console.warn('Fingerprint not available, only Face ID detected');
+      return false;
+    }
 
     return result.success;
   } catch (error) {
-    console.error('Error authenticating with biometric:', error);
+    console.error('Error authenticating with fingerprint:', error);
     return false;
   }
 };

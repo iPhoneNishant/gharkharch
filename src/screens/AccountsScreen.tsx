@@ -120,7 +120,7 @@ const AccountsScreen: React.FC = () => {
         }, 0);
         
         result.push({
-          title: 'Assets',
+          title: 'Asset (What we have)',
           data: assetAccounts,
           type: 'asset',
           total: totalClosing,
@@ -138,7 +138,7 @@ const AccountsScreen: React.FC = () => {
         }, 0);
         
         result.push({
-          title: 'Liabilities',
+          title: 'Liabilities (What We Have to Pay)',
           data: liabilityAccounts,
           type: 'liability',
           total: totalClosing,
@@ -291,25 +291,45 @@ const AccountsScreen: React.FC = () => {
             {account.subCategory}
           </Text>
         </View>
-        {showBalance && (
-          <View style={styles.balanceContainer}>
-            <Text 
-              style={[
-                styles.accountBalance,
-                account.accountType === 'liability' && styles.liabilityBalance
-              ]}
-              allowFontScaling={true}
-            >
-              {balance ? formatCurrency(balance.closing, currency) : formatCurrency(account.currentBalance ?? 0, currency)}
-            </Text>
-            <Text 
-              style={styles.balanceLabel}
-              allowFontScaling={true}
-            >
-              Opening: {balance ? formatCurrency(balance.opening ?? 0, currency) : formatCurrency(account.openingBalance ?? 0, currency)}
-            </Text>
-          </View>
-        )}
+        {showBalance && (() => {
+          // Always use calculated balance from transactions, not stored balance
+          // This ensures consistency with AccountDetailScreen
+          const closingBalance = balance ? balance.closing : getClosingBalance(account, transactions, toDate);
+          const openingBalance = balance ? balance.opening : getOpeningBalance(account, transactions, fromDate);
+          
+          // For liability: positive = red (owe money), negative = green (will receive)
+          // For asset: positive = green (have money), negative = red (owe money)
+          const getBalanceColor = (bal: number, accountType: AccountType) => {
+            if (accountType === 'liability') {
+              return bal >= 0 ? colors.error : colors.success;
+            } else {
+              return bal >= 0 ? colors.success : colors.error;
+            }
+          };
+          
+          return (
+            <View style={styles.balanceContainer}>
+              <Text 
+                style={[
+                  styles.accountBalance,
+                  { color: getBalanceColor(closingBalance, account.accountType) }
+                ]}
+                allowFontScaling={true}
+              >
+                {formatCurrency(Math.abs(closingBalance), currency)}
+              </Text>
+              <Text 
+                style={[
+                  styles.balanceLabel,
+                  { color: getBalanceColor(openingBalance, account.accountType) }
+                ]}
+                allowFontScaling={true}
+              >
+                Opening: {formatCurrency(Math.abs(openingBalance), currency)}
+              </Text>
+            </View>
+          );
+        })()}
         {showAccountTotal && (
           <View style={styles.balanceContainer}>
             <Text 
@@ -341,11 +361,16 @@ const AccountsScreen: React.FC = () => {
       {section.total !== 0 && (
         <Text style={[
           styles.sectionTotal,
-          section.type === 'liability' && styles.liabilityBalance,
-          section.type === 'income' && { color: colors.income },
-          section.type === 'expense' && { color: colors.expense },
+          // For liability: positive = red (owe money), negative = green (will receive)
+          // For asset: positive = green (have money), negative = red (owe money)
+          // For income/expense: income = green (money received), expense = red (money spent)
+          section.type === 'liability'
+            ? (section.total >= 0 ? { color: colors.error } : { color: colors.success })
+            : section.type === 'asset'
+            ? (section.total >= 0 ? { color: colors.success } : { color: colors.error })
+            : (section.type === 'income' ? { color: colors.income } : { color: colors.expense })
         ]}>
-          {formatCurrency(section.total, currency)}
+          {formatCurrency(Math.abs(section.total), currency)}
         </Text>
       )}
     </View>

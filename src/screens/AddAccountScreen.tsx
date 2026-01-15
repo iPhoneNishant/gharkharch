@@ -264,21 +264,6 @@ const AddAccountScreen: React.FC = () => {
     }
   };
 
-  /**
-   * Get description for account type
-   */
-  const getTypeDescription = (type: AccountType): string => {
-    switch (type) {
-      case 'asset':
-        return 'Things you own (bank accounts, investments, cash)';
-      case 'liability':
-        return 'Things you owe (credit cards, loans)';
-      case 'income':
-        return 'Sources of money earned';
-      case 'expense':
-        return 'Categories for money spent';
-    }
-  };
 
   return (
     <KeyboardAvoidingView
@@ -331,12 +316,19 @@ const AddAccountScreen: React.FC = () => {
                 ]}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </Text>
+                {type === 'asset' && (
+                  <Text style={styles.typeSubtitle} numberOfLines={2}>
+                    What we have
+                  </Text>
+                )}
+                {type === 'liability' && (
+                  <Text style={styles.typeSubtitle} numberOfLines={2}>
+                    What we have to pay
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.typeDescription}>
-            {getTypeDescription(accountType)}
-          </Text>
         </View>
 
         {/* Category Selection */}
@@ -819,11 +811,24 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     color: colors.text.secondary,
   },
-  typeDescription: {
-    fontSize: typography.fontSize.sm,
+  typeSubtitle: {
+    fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
     textAlign: 'center',
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    width: '100%',
+  },
+  typeDescription: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+    textAlign: 'center',
     marginTop: spacing.md,
+    paddingHorizontal: spacing.base,
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
   },
   formCard: {
     backgroundColor: colors.background.elevated,
