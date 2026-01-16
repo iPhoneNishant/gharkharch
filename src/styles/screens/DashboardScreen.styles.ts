@@ -54,10 +54,20 @@ export const dashboardScreenStyles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     color: colors.primary[200],
   },
+  summaryMeaningLabel: {
+    fontSize: 10,
+    color: colors.primary[100],
+    marginTop: 1,
+  },
   summaryValue: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.neutral[0],
+  },
+  summarySubLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: 2,
   },
   quickActions: {
     paddingHorizontal: spacing.base,
@@ -90,12 +100,35 @@ export const dashboardScreenStyles = StyleSheet.create({
   sectionHeader: {
     marginBottom: spacing.md,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
   sectionTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  sectionMeaning: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
+  sectionTotalContainer: {
+    alignItems: 'flex-end',
+  },
+  sectionTotal: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+  },
+  sectionSubLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: 2,
   },
   emptyState: {
     backgroundColor: colors.background.elevated,

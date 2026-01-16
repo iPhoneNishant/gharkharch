@@ -7,7 +7,6 @@ import React, { useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
@@ -87,6 +86,38 @@ const DashboardScreen: React.FC = () => {
 
   const [showAddMenu, setShowAddMenu] = React.useState(false);
 
+  const activeAssets = React.useMemo(
+    () => accounts.filter(a => a.isActive && a.accountType === 'asset'),
+    [accounts]
+  );
+
+  const activeLiabilities = React.useMemo(
+    () => accounts.filter(a => a.isActive && a.accountType === 'liability'),
+    [accounts]
+  );
+
+  const getDashboardBalanceMeta = (accountType: AccountType, balance: number) => {
+    const isNegative = balance < 0;
+
+    // Liability:
+    // - positive => red (owe)
+    // - negative => green (to receive)
+    if (accountType === 'liability') {
+      return {
+        color: isNegative ? colors.success : colors.error,
+        label: isNegative ? '(to receive)' : null,
+      };
+    }
+
+    // Asset:
+    // - positive => green (have)
+    // - negative => red (to pay)
+    return {
+      color: isNegative ? colors.error : colors.success,
+      label: isNegative ? '(to pay)' : null,
+    };
+  };
+
   const handleAddTransaction = () => {
     setShowAddMenu(false);
     navigation.navigate('AddTransaction');
@@ -118,17 +149,31 @@ const DashboardScreen: React.FC = () => {
         
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
-            <View style={[styles.summaryDot, { backgroundColor: colors.asset }]} />
             <View>
               <Text style={styles.summaryLabel}>Assets</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(totalAssets, currency)}</Text>
+              <Text style={styles.summaryMeaningLabel}>What we have</Text>
+              <Text style={[styles.summaryValue, { color: colors.neutral[0]  }]}>
+                {formatCurrency(Math.abs(totalAssets), currency)}
+              </Text>
+              {totalAssets < 0 && (
+                <Text style={[styles.summarySubLabel, { color: colors.error }]}>
+                  (to pay)
+                </Text>
+              )}
             </View>
           </View>
           <View style={styles.summaryItem}>
-            <View style={[styles.summaryDot, { backgroundColor: colors.liability }]} />
             <View>
               <Text style={styles.summaryLabel}>Liabilities</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(totalLiabilities, currency)}</Text>
+              <Text style={styles.summaryMeaningLabel}>What We Have to Pay </Text>
+              <Text style={[styles.summaryValue, { color: colors.neutral[0] }]}>
+                {formatCurrency(totalLiabilities, currency)}
+              </Text>
+              {totalLiabilities < 0 && (
+                <Text style={[styles.summarySubLabel, { color: colors.neutral[0]  }]}>
+                  (to receive)
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -165,109 +210,154 @@ const DashboardScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Account Summary */}
+      {/* Assets */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Accounts</Text>
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Assets</Text>
+            <Text style={styles.sectionMeaning}>What we have</Text>
+          </View>
+          <View style={styles.sectionTotalContainer}>
+            <Text style={[styles.sectionTotal, { color: totalAssets < 0 ? colors.error : colors.success }]}>
+              {formatCurrency(Math.abs(totalAssets), currency)}
+            </Text>
+            {totalAssets < 0 && (
+              <Text style={[styles.sectionSubLabel, { color: colors.error }]}>(to pay)</Text>
+            )}
+          </View>
         </View>
 
         {accountsLoading ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>Loading...</Text>
           </View>
-        ) : accounts.filter(a => a.isActive && (a.accountType === 'asset' || a.accountType === 'liability')).length === 0 ? (
+        ) : activeAssets.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No accounts yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Add your bank accounts and credit cards
-            </Text>
+            <Text style={styles.emptyStateText}>No asset accounts yet</Text>
+            <Text style={styles.emptyStateSubtext}>Add your bank accounts and cash</Text>
           </View>
         ) : (
           <View style={styles.accountsList}>
-            {accounts
-              .filter(a => a.isActive && (a.accountType === 'asset' || a.accountType === 'liability'))
-              .sort((a, b) => {
-                // Assets first, then liabilities
-                if (a.accountType === 'asset' && b.accountType === 'liability') return -1;
-                if (a.accountType === 'liability' && b.accountType === 'asset') return 1;
-                // Within same type, sort by name
-                return a.name.localeCompare(b.name);
-              })
-              .map((account) => (
-                <TouchableOpacity
-                  key={account.id}
-                  style={styles.accountItem}
-                  onPress={() => navigation.navigate('AccountDetail', { accountId: account.id })}
-                >
-                  <View style={[
-                    styles.accountIcon,
-                    { backgroundColor: getAccountTypeBgColor(account.accountType) }
-                  ]}>
-                    <Text style={[
-                      styles.accountIconText,
-                      { color: getAccountTypeColor(account.accountType) }
+            {activeAssets
+              .slice()
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((account) => {
+                const balance = getClosingBalance(account, transactions, today);
+                const meta = getDashboardBalanceMeta(account.accountType, balance);
+                return (
+                  <TouchableOpacity
+                    key={account.id}
+                    style={styles.accountItem}
+                    onPress={() => navigation.navigate('AccountDetail', { accountId: account.id })}
+                  >
+                    <View style={[
+                      styles.accountIcon,
+                      { backgroundColor: getAccountTypeBgColor(account.accountType) }
                     ]}>
-                      {account.accountType === 'asset' ? '↗' : '↙'}
-                    </Text>
-                  </View>
-                  <View style={styles.accountInfo}>
-                    <Text style={styles.accountName} numberOfLines={1}>
-                      {account.name}
-                    </Text>
-                    <Text style={styles.accountCategory} numberOfLines={1}>
-                      {account.subCategory}
-                    </Text>
-                  </View>
-                  <View style={styles.balanceContainer}>
-                    {(() => {
-                      const balance = getClosingBalance(account, transactions, today);
-                      const isNegative = balance < 0;
-                      const absBalance = Math.abs(balance);
-                      
-                      // For liability: negative = green (receiving), positive = red (owe)
-                      // For asset: negative = red (pay), positive = green (have)
-                      let balanceColor: string;
-                      let label: string | null = null;
-                      
-                      if (account.accountType === 'liability') {
-                        if (isNegative) {
-                          balanceColor = colors.success; // Green for receiving
-                          label = '(to receive)';
-                        } else {
-                          balanceColor = colors.error; // Red for owing
-                        }
-                      } else {
-                        // Asset
-                        if (isNegative) {
-                          balanceColor = colors.error; // Red for pay
-                          label = '(to pay)';
-                        } else {
-                          balanceColor = colors.success; // Green for have
-                        }
-                      }
-                      
-                      return (
-                        <>
-                          <Text style={[
-                            styles.accountBalance,
-                            { color: balanceColor }
-                          ]}>
-                            {formatCurrency(absBalance, currency)}
-                          </Text>
-                          {label && (
-                            <Text style={[
-                              styles.balanceLabel,
-                              { color: balanceColor }
-                            ]}>
-                              {label}
-                            </Text>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </View>
-                </TouchableOpacity>
-              ))}
+                      <Text style={[
+                        styles.accountIconText,
+                        { color: getAccountTypeColor(account.accountType) }
+                      ]}>
+                        ↗
+                      </Text>
+                    </View>
+                    <View style={styles.accountInfo}>
+                      <Text style={styles.accountName} numberOfLines={1}>
+                        {account.name}
+                      </Text>
+                      <Text style={styles.accountCategory} numberOfLines={1}>
+                        {account.subCategory}
+                      </Text>
+                    </View>
+                    <View style={styles.balanceContainer}>
+                      <Text style={[styles.accountBalance, { color: meta.color }]}>
+                        {formatCurrency(Math.abs(balance), currency)}
+                      </Text>
+                      {meta.label && (
+                        <Text style={[styles.balanceLabel, { color: meta.color }]}>
+                          {meta.label}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+          </View>
+        )}
+      </View>
+
+      {/* Liabilities */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Liabilities</Text>
+            <Text style={styles.sectionMeaning}>What We Have to Pay</Text>
+          </View>
+          <View style={styles.sectionTotalContainer}>
+            <Text style={[styles.sectionTotal, { color: totalLiabilities < 0 ? colors.success : colors.error }]}>
+              {formatCurrency(Math.abs(totalLiabilities), currency)}
+            </Text>
+            {totalLiabilities < 0 && (
+              <Text style={[styles.sectionSubLabel, { color: colors.success }]}>(to receive)</Text>
+            )}
+          </View>
+        </View>
+
+        {accountsLoading ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>Loading...</Text>
+          </View>
+        ) : activeLiabilities.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No liability accounts yet</Text>
+            <Text style={styles.emptyStateSubtext}>Add your credit cards and loans</Text>
+          </View>
+        ) : (
+          <View style={styles.accountsList}>
+            {activeLiabilities
+              .slice()
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((account) => {
+                const balance = getClosingBalance(account, transactions, today);
+                const meta = getDashboardBalanceMeta(account.accountType, balance);
+                return (
+                  <TouchableOpacity
+                    key={account.id}
+                    style={styles.accountItem}
+                    onPress={() => navigation.navigate('AccountDetail', { accountId: account.id })}
+                  >
+                    <View style={[
+                      styles.accountIcon,
+                      { backgroundColor: getAccountTypeBgColor(account.accountType) }
+                    ]}>
+                      <Text style={[
+                        styles.accountIconText,
+                        { color: getAccountTypeColor(account.accountType) }
+                      ]}>
+                        ↙
+                      </Text>
+                    </View>
+                    <View style={styles.accountInfo}>
+                      <Text style={styles.accountName} numberOfLines={1}>
+                        {account.name}
+                      </Text>
+                      <Text style={styles.accountCategory} numberOfLines={1}>
+                        {account.subCategory}
+                      </Text>
+                    </View>
+                    <View style={styles.balanceContainer}>
+                      <Text style={[styles.accountBalance, { color: meta.color }]}>
+                        {formatCurrency(Math.abs(balance), currency)}
+                      </Text>
+                      {meta.label && (
+                        <Text style={[styles.balanceLabel, { color: meta.color }]}>
+                          {meta.label}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
           </View>
         )}
       </View>

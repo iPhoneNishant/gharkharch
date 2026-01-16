@@ -76,9 +76,11 @@ const MainTabNavigator: React.FC = () => {
             backgroundColor: colors.background.elevated,
             borderTopColor: colors.border.light,
             borderTopWidth: 1,
-            paddingBottom: insets.bottom > 0 ? insets.bottom - 10 : spacing.sm,
+            // Never subtract from safe-area bottom inset; on some Android devices this
+            // causes the tab bar to sit behind the system navigation bar.
+            paddingBottom: Math.max(insets.bottom, spacing.sm),
             paddingTop: spacing.sm,
-            height: 60 + (insets.bottom > 0 ? insets.bottom - 10 : 0),
+            height: 60 + Math.max(insets.bottom, spacing.sm),
           },
           tabBarLabelStyle: {
             fontSize: typography.fontSize.xs,
