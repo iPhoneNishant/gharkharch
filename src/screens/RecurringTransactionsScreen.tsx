@@ -32,7 +32,7 @@ import {
   getAccountTypeBgColor,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
-import { rescheduleAllRecurringTransactionNotifications, testNotification } from '../services/recurringTransactionService';
+import { testNotification } from '../services/recurringTransactionService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -72,13 +72,6 @@ const RecurringTransactionsScreen: React.FC = () => {
       };
     }
   }, [user?.id, subscribeToRecurringTransactions]);
-
-  // Reschedule notifications when recurring transactions are loaded
-  useEffect(() => {
-    if (!isLoading && recurringTransactions.length > 0) {
-      rescheduleAllRecurringTransactionNotifications(recurringTransactions);
-    }
-  }, [recurringTransactions, isLoading]);
 
   // Add test notification button to header
   useLayoutEffect(() => {

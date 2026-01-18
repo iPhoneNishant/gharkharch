@@ -26,57 +26,60 @@ import {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+type ReportScreen =
+  | 'SummaryMonthReport'
+  | 'SummaryCustomReport'
+  | 'TransactionsMonthReport'
+  | 'TransactionsCustomReport'
+  | 'MonthToMonthReport'
+  | 'DayToDayReport';
+
 const ReportsListScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
 
-  const reportOptions = [
+  const reportOptions: Array<{
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    screen?: ReportScreen;
+    variant?: 'summary' | 'transactions' | 'single';
+  }> = [
     {
-      id: 'summary-month',
-      title: 'Summary Month Wise',
-      description: 'View financial summary for a specific month',
+      id: 'summary',
+      title: 'Summary',
+      description: 'Category & sub-category summary',
       icon: '📊',
-      screen: 'SummaryMonthReport' as keyof RootStackParamList,
+      variant: 'summary',
     },
     {
-      id: 'summary-custom',
-      title: 'Summary Custom Range',
-      description: 'View financial summary for a custom date range',
-      icon: '📈',
-      screen: 'SummaryCustomReport' as keyof RootStackParamList,
-    },
-    {
-      id: 'transactions-month',
-      title: 'Transactions Month Wise',
-      description: 'View all transactions for a specific month',
+      id: 'transactions',
+      title: 'Transactions',
+      description: 'All transactions list for a period',
       icon: '📋',
-      screen: 'TransactionsMonthReport' as keyof RootStackParamList,
-    },
-    {
-      id: 'transactions-custom',
-      title: 'Transactions Custom Range',
-      description: 'View all transactions for a custom date range',
-      icon: '📑',
-      screen: 'TransactionsCustomReport' as keyof RootStackParamList,
+      variant: 'transactions',
     },
     {
       id: 'month-to-month',
       title: 'Month-to-Month Report',
       description: 'View income and expenses breakdown by month',
       icon: '📅',
-      screen: 'MonthToMonthReport' as keyof RootStackParamList,
+      screen: 'MonthToMonthReport',
+      variant: 'single',
     },
     {
       id: 'day-to-day',
       title: 'Day-to-Day Report',
       description: 'View income and expenses breakdown by day (max 90 days)',
       icon: '📆',
-      screen: 'DayToDayReport' as keyof RootStackParamList,
+      screen: 'DayToDayReport',
+      variant: 'single',
     },
   ];
 
-  const handleReportPress = (screen: keyof RootStackParamList) => {
-    navigation.navigate(screen);
+  const handleReportPress = (screen: ReportScreen) => {
+    navigation.navigate(screen as never);
   };
 
   return (
@@ -87,22 +90,28 @@ const ReportsListScreen: React.FC = () => {
           paddingBottom: insets.bottom + spacing.xl,
         }}
       >
-        <Text style={styles.subtitle}>Select a report type to view</Text>
-
         <View style={styles.optionsContainer}>
           {reportOptions.map((option) => (
             <TouchableOpacity
               key={option.id}
               style={styles.optionCard}
-              onPress={() => handleReportPress(option.screen)}
+              onPress={() => {
+                if (option.variant === 'summary') return handleReportPress('SummaryMonthReport');
+                if (option.variant === 'transactions') return handleReportPress('TransactionsMonthReport');
+                if (option.screen) return handleReportPress(option.screen);
+              }}
               activeOpacity={0.7}
             >
               <View style={styles.optionIcon}>
                 <Text style={styles.iconText}>{option.icon}</Text>
               </View>
               <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>{option.title}</Text>
-                <Text style={styles.optionDescription}>{option.description}</Text>
+                <Text style={styles.optionTitle} numberOfLines={1}>
+                  {option.title}
+                </Text>
+                <Text style={styles.optionDescription} numberOfLines={2}>
+                  {option.description}
+                </Text>
               </View>
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
@@ -118,8 +127,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background.primary,
   },
+  header: {
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
   title: {
-    fontSize: typography.fontSize.xxl,
+    fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
@@ -127,30 +140,33 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.sm,
   },
   optionsContainer: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.elevated,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.border.light,
     ...shadows.sm,
   },
   optionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.primary[50],
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   iconText: {
-    fontSize: 28,
+    fontSize: 20,
   },
   optionContent: {
     flex: 1,
@@ -159,11 +175,12 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   optionDescription: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+    lineHeight: 18,
   },
   chevron: {
     fontSize: typography.fontSize.xl,

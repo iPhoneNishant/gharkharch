@@ -196,44 +196,10 @@ const TransactionDetailScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Details Section */}
-      <View style={styles.detailsSection}>
-        <Text style={styles.sectionTitle}>Details</Text>
-        
-        <View style={styles.detailsCard}>
-          {transaction.note && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Note</Text>
-              <Text style={styles.detailValue}>{transaction.note}</Text>
-            </View>
-          )}
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Transaction ID</Text>
-            <Text style={styles.detailValueSmall}>{transaction.id}</Text>
-          </View>
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Created</Text>
-            <Text style={styles.detailValue}>
-              {transaction.createdAt.toLocaleString()}
-            </Text>
-          </View>
-          
-          {transaction.updatedAt.getTime() !== transaction.createdAt.getTime() && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Last Updated</Text>
-              <Text style={styles.detailValue}>
-                {transaction.updatedAt.toLocaleString()}
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
+  
 
       {/* Accounting Explanation */}
       <View style={styles.explanationSection}>
-        <Text style={styles.sectionTitle}>Double-Entry Accounting</Text>
         <View style={styles.explanationCard}>
           <Text style={styles.explanationText}>
             This transaction records a {transactionType.toLowerCase()} of{' '}
@@ -316,6 +282,7 @@ const styles = StyleSheet.create({
   amountDate: {
     fontSize: typography.fontSize.sm,
     color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
   },
   flowSection: {
     paddingHorizontal: spacing.base,

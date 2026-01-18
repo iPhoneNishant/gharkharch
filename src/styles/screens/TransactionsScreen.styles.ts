@@ -169,7 +169,6 @@ export const transactionsScreenStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.xs,
-    position: 'relative',
   },
   monthSelectorValue: {
     fontSize: typography.fontSize.sm,
@@ -177,10 +176,10 @@ export const transactionsScreenStyles = StyleSheet.create({
     color: colors.text.primary,
     textAlign: 'center',
   },
-  editIconButton: {
-    position: 'absolute',
-    right: 0,
-    padding: spacing.xs,
+  calendarIcon: {
+    width: 18,
+    height: 18,
+    marginLeft: spacing.sm,
   },
   editIcon: {
     fontSize: typography.fontSize.base,

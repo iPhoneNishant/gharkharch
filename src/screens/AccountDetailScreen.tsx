@@ -11,6 +11,7 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  Keyboard,
   Modal,
   ScrollView,
   Platform,
@@ -100,6 +101,16 @@ const AccountDetailScreen: React.FC = () => {
   const accountTransactions = useMemo(() => {
     return getTransactionsForDateRange(allAccountTransactions, fromDate, toDate);
   }, [allAccountTransactions, fromDate, toDate]);
+
+  // Paginate the displayed transactions (Load More)
+  const visibleAccountTransactions = useMemo(() => {
+    return accountTransactions.slice(0, transactionLimit);
+  }, [accountTransactions, transactionLimit]);
+
+  // Reset pagination when date range changes
+  useEffect(() => {
+    setTransactionLimit(50);
+  }, [fromDate, toDate, accountId]);
 
   // Calculate opening and closing balances
   const openingBalance = useMemo(() => {
@@ -339,7 +350,10 @@ const AccountDetailScreen: React.FC = () => {
         <View style={styles.dateRangeRow}>
           <TouchableOpacity
             style={styles.dateButton}
-            onPress={() => setShowFromDatePicker(true)}
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowFromDatePicker(true);
+            }}
           >
             <View style={styles.dateButtonContent}>
               <View style={styles.labelRow}>
@@ -353,7 +367,10 @@ const AccountDetailScreen: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dateButton}
-            onPress={() => setShowToDatePicker(true)}
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowToDatePicker(true);
+            }}
           >
             <View style={styles.dateButtonContent}>
               <View style={styles.labelRow}>
@@ -462,14 +479,14 @@ const AccountDetailScreen: React.FC = () => {
       <FlatList
         ref={flatListRef}
         style={styles.container}
-        data={accountTransactions}
+        data={visibleAccountTransactions}
         renderItem={renderTransaction}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={ListEmpty}
         ListFooterComponent={() => (
           <>
-            {transactions.length >= transactionLimit && (
+            {accountTransactions.length > transactionLimit && (
               <TouchableOpacity
                 style={styles.loadMoreButton}
                 onPress={handleLoadMore}

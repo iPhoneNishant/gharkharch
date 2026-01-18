@@ -11,6 +11,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SectionList,
+  Keyboard,
   Modal,
   Platform,
 } from 'react-native';
@@ -318,15 +319,7 @@ const AccountsScreen: React.FC = () => {
               >
                 {formatCurrency(Math.abs(closingBalance), currency)}
               </Text>
-              <Text 
-                style={[
-                  styles.balanceLabel,
-                  { color: getBalanceColor(openingBalance, account.accountType) }
-                ]}
-                allowFontScaling={true}
-              >
-                Opening: {formatCurrency(Math.abs(openingBalance), currency)}
-              </Text>
+            
             </View>
           );
         })()}
@@ -401,7 +394,10 @@ const AccountsScreen: React.FC = () => {
           <View style={styles.dateRangeRow}>
             <TouchableOpacity
               style={styles.dateButton}
-              onPress={() => setShowFromDatePicker(true)}
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowFromDatePicker(true);
+              }}
             >
               <View style={styles.dateButtonContent}>
                 <Text style={styles.dateLabel}>From Date</Text>
@@ -413,7 +409,10 @@ const AccountsScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.dateButton}
-              onPress={() => setShowToDatePicker(true)}
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowToDatePicker(true);
+              }}
             >
               <View style={styles.dateButtonContent}>
                 <Text style={styles.dateLabel}>To Date</Text>

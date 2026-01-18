@@ -103,6 +103,13 @@ const RootNavigator: React.FC = () => {
         initialRouteName={currentRoute}
         screenOptions={{
           headerShown: false,
+          // Ensure native navigation bar is white across the app
+          headerStyle: {
+            backgroundColor: colors.background.elevated,
+          },
+          headerTitleStyle: {
+            color: colors.text.primary,
+          },
           contentStyle: { backgroundColor: colors.background.primary },
         }}
       >
@@ -174,6 +181,7 @@ const RootNavigator: React.FC = () => {
               options={{
                 headerShown: true,
                 headerTitle: 'Transaction Details',
+                headerTitleAlign: 'center',
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
               }}

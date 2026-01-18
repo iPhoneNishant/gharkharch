@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Keyboard,
   Platform,
   Alert,
 } from 'react-native';
@@ -68,7 +69,7 @@ const ReportsScreen: React.FC = () => {
   const routeName = (route.name || '') as keyof RootStackParamList;
   const viewMode = getViewModeFromRoute(routeName);
   const isMonthMode = viewMode.includes('month');
-  const dateRangeMode = isMonthMode ? 'month' : 'custom';
+  const [dateRangeMode, setDateRangeMode] = useState<'month' | 'custom'>(() => (isMonthMode ? 'month' : 'custom'));
   
   // Debug logging removed
 
@@ -759,10 +760,56 @@ const ReportsScreen: React.FC = () => {
       >
         {/* Filters */}
         <View style={styles.filtersContainer}>
+          <View style={styles.rangeModeToggle}>
+            <TouchableOpacity
+              style={[
+                styles.rangeModeChip,
+                dateRangeMode === 'month' && styles.rangeModeChipSelected,
+              ]}
+              onPress={() => {
+                Keyboard.dismiss();
+                setDateRangeMode('month');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.rangeModeChipText,
+                  dateRangeMode === 'month' && styles.rangeModeChipTextSelected,
+                ]}
+              >
+                Month Wise
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.rangeModeChip,
+                dateRangeMode === 'custom' && styles.rangeModeChipSelected,
+              ]}
+              onPress={() => {
+                Keyboard.dismiss();
+                setDateRangeMode('custom');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.rangeModeChipText,
+                  dateRangeMode === 'custom' && styles.rangeModeChipTextSelected,
+                ]}
+              >
+                Custom Range
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {dateRangeMode === 'month' ? (
             <TouchableOpacity
               style={styles.dateSelectionContainer}
-              onPress={() => setShowMonthYearPicker(true)}
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowMonthYearPicker(true);
+              }}
               activeOpacity={0.7}
             >
               <View style={styles.labelRow}>
@@ -781,7 +828,10 @@ const ReportsScreen: React.FC = () => {
             <View style={styles.dateSelectionRow}>
               <TouchableOpacity 
                 style={styles.dateSelectionContainer}
-                onPress={() => setShowFromDatePicker(true)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowFromDatePicker(true);
+                }}
                 activeOpacity={0.7}
               >
                 <View style={styles.labelRow}>
@@ -796,7 +846,10 @@ const ReportsScreen: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.dateSelectionContainer}
-                onPress={() => setShowToDatePicker(true)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowToDatePicker(true);
+                }}
                 activeOpacity={0.7}
               >
                 <View style={styles.labelRow}>
@@ -816,7 +869,10 @@ const ReportsScreen: React.FC = () => {
           <>
               <TouchableOpacity
                 style={styles.dateSelectionContainer}
-                onPress={() => setShowCategoryPicker(true)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowCategoryPicker(true);
+                }}
                 activeOpacity={0.7}
               >
                 <View style={styles.labelRow}>
@@ -833,7 +889,10 @@ const ReportsScreen: React.FC = () => {
               {selectedCategory && (
                 <TouchableOpacity
                   style={styles.dateSelectionContainer}
-                  onPress={() => setShowSubCategoryPicker(true)}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setShowSubCategoryPicker(true);
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={styles.labelRow}>
@@ -1430,6 +1489,36 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
     gap: spacing.sm,
+  },
+  rangeModeToggle: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+    padding: 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.neutral[100],
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  rangeModeChip: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  rangeModeChipSelected: {
+    backgroundColor: colors.background.primary,
+    ...shadows.sm,
+  },
+  rangeModeChipText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+  },
+  rangeModeChipTextSelected: {
+    color: colors.primary[700],
   },
   dateSelectionRow: {
     flexDirection: 'row',

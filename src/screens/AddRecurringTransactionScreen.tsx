@@ -63,6 +63,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
     updateRecurringTransaction,
     deleteRecurringTransaction,
     getRecurringTransactionById,
+    fetchRecurringTransactionById,
     subscribeToRecurringTransactions
   } = useRecurringTransactionStore();
 
@@ -297,7 +298,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
       // Wait for store to update, then schedule notification
       const scheduleNotification = async () => {
         let attempts = 0;
-        const maxAttempts = 10;
+        const maxAttempts = 30;
         
         while (attempts < maxAttempts) {
           const transaction = getRecurringTransactionById(transactionId);
@@ -311,7 +312,22 @@ const AddRecurringTransactionScreen: React.FC = () => {
             }
           }
           attempts++;
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 250));
+        }
+
+        // If snapshot hasn't arrived yet, fetch once directly from Firestore and schedule.
+        if (attempts >= maxAttempts) {
+          try {
+            const fetched = await fetchRecurringTransactionById(transactionId);
+            if (fetched) {
+              await scheduleRecurringTransactionNotification(fetched);
+              console.log(`Successfully scheduled notification (fetched) for transaction ${transactionId}`);
+            } else {
+              console.warn(`Could not fetch transaction ${transactionId} to schedule notification`);
+            }
+          } catch (error) {
+            console.error('Error scheduling notification (fetched):', error);
+          }
         }
       };
       

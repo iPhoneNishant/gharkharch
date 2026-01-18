@@ -147,7 +147,7 @@ export const scheduleRecurringTransactionNotification = async (
         try {
           const notificationId = await Notifications.scheduleNotificationAsync({
             content: {
-              title: 'Upcoming Repeat Transaction',
+              title: 'Repeat Transaction Reminder',
               body: `Reminder: ${recurringTransaction.note || 'Repeat transaction'} of ₹${recurringTransaction.amount} is due on ${nextOccurrence.toLocaleDateString()}`,
               data: {
                 recurringTransactionId: recurringTransaction.id,
@@ -175,42 +175,8 @@ export const scheduleRecurringTransactionNotification = async (
       }
     }
 
-    // Schedule notification for the occurrence date itself
-    const dueDate = new Date(nextOccurrence);
-    dueDate.setHours(9, 0, 0, 0); // Set to 9 AM for better UX
-    
-    if (dueDate > now) {
-      try {
-        const notificationId = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: 'Repeat Transaction Due',
-            body: `${recurringTransaction.note || 'Repeat transaction'} of ₹${recurringTransaction.amount} is due today`,
-            data: {
-              recurringTransactionId: recurringTransaction.id,
-              type: 'recurring_transaction_due',
-            },
-            sound: true,
-          },
-          trigger: Platform.OS === 'android'
-            ? {
-                date: dueDate,
-                channelId: 'recurring-transactions',
-              }
-            : {
-                date: dueDate,
-              },
-        });
-        
-        console.log(`✓ Scheduled due notification for ${recurringTransaction.id} at ${dueDate.toISOString()}, ID: ${notificationId}`);
-        // Return the due notification ID (more important than reminder)
-        return notificationId;
-      } catch (error) {
-        console.error(`Failed to schedule due notification:`, error);
-      }
-    } else {
-      console.log(`Due date ${dueDate.toISOString()} is in the past, skipping`);
-    }
-
+    // Important: We intentionally DO NOT schedule a "due today" notification.
+    // As per requirement, notifications should trigger only on "days before" the transaction date.
     return scheduledNotificationId;
   } catch (error) {
     console.error(`Error scheduling notification for transaction ${recurringTransaction.id}:`, error);

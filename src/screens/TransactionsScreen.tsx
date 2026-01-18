@@ -7,14 +7,15 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
   TextInput,
   Modal,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -283,15 +284,17 @@ const TransactionsScreen: React.FC = () => {
       <View style={styles.monthSelectorContainer}>
         <TouchableOpacity
           style={styles.monthSelectorButton}
-          onPress={() => setShowMonthYearPicker(true)}
+          onPress={() => {
+            Keyboard.dismiss();
+            setShowMonthYearPicker(true);
+          }}
         >
           <Text style={styles.monthSelectorValue}>{getMonthDisplayName()}</Text>
-          <TouchableOpacity
-            style={styles.editIconButton}
-            onPress={() => setShowMonthYearPicker(true)}
-          >
-            <Text style={styles.editIcon}>✎</Text>
-          </TouchableOpacity>
+          <Image
+            source={require('../../assets/icons/calendar.png')}
+            style={styles.calendarIcon}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
 

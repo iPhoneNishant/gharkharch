@@ -14,11 +14,13 @@ import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Modal,
@@ -89,6 +91,8 @@ const AddTransactionScreen: React.FC = () => {
   const hasUserSelectedTypeRef = useRef(false);
   const reopenPickerOnFocusRef = useRef(false);
   const reopenPickerTypeRef = useRef<'debit' | 'credit'>('credit');
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calcExpr, setCalcExpr] = useState('');
 
   const currency = user?.currency ?? DEFAULT_CURRENCY;
 
@@ -193,6 +197,7 @@ const AddTransactionScreen: React.FC = () => {
    * Open account picker modal
    */
   const openAccountPicker = (type: 'debit' | 'credit') => {
+    Keyboard.dismiss();
     setAccountPickerType(type);
     setAccountSearchQuery(''); // Reset search when opening picker
     setShowAccountPicker(true);
@@ -321,6 +326,174 @@ const AddTransactionScreen: React.FC = () => {
     return type === 'debit' ? 'To Account' : 'From Account';
   };
 
+  const openCalculator = () => {
+    Keyboard.dismiss();
+    setCalcExpr(amount?.trim() || '');
+    setShowCalculator(true);
+  };
+
+  const tokenizeExpression = (expr: string): string[] => {
+    const s = expr.replace(/\s+/g, '');
+    if (!s) return [];
+
+    const tokens: string[] = [];
+    let i = 0;
+
+    const isOp = (c: string) => c === '+' || c === '-' || c === '*' || c === '/';
+    const isDigit = (c: string) => c >= '0' && c <= '9';
+
+    while (i < s.length) {
+      const c = s[i];
+
+      // Operator
+      if (isOp(c)) {
+        // unary minus -> attach to next number
+        const prev = tokens[tokens.length - 1];
+        const isUnaryMinus = c === '-' && (!prev || isOp(prev));
+        if (isUnaryMinus) {
+          // parse a signed number
+          let j = i + 1;
+          let num = '-';
+          let dotCount = 0;
+          while (j < s.length) {
+            const ch = s[j];
+            if (isDigit(ch)) {
+              num += ch;
+              j++;
+              continue;
+            }
+            if (ch === '.') {
+              if (dotCount > 0) break;
+              dotCount++;
+              num += ch;
+              j++;
+              continue;
+            }
+            break;
+          }
+          // If user typed just "-" without digits, keep it as operator
+          if (num === '-') {
+            tokens.push('-');
+            i++;
+          } else {
+            tokens.push(num);
+            i = j;
+          }
+          continue;
+        }
+
+        tokens.push(c);
+        i++;
+        continue;
+      }
+
+      // Number
+      if (isDigit(c) || c === '.') {
+        let j = i;
+        let num = '';
+        let dotCount = 0;
+        while (j < s.length) {
+          const ch = s[j];
+          if (isDigit(ch)) {
+            num += ch;
+            j++;
+            continue;
+          }
+          if (ch === '.') {
+            if (dotCount > 0) break;
+            dotCount++;
+            num += ch;
+            j++;
+            continue;
+          }
+          break;
+        }
+        tokens.push(num);
+        i = j;
+        continue;
+      }
+
+      // Unknown char: skip
+      i++;
+    }
+
+    return tokens;
+  };
+
+  const evaluateExpression = (expr: string): number | null => {
+    const tokens = tokenizeExpression(expr);
+    if (tokens.length === 0) return null;
+
+    const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 };
+    const output: string[] = [];
+    const ops: string[] = [];
+
+    const isOp = (t: string) => t in prec;
+
+    for (const t of tokens) {
+      if (isOp(t)) {
+        while (ops.length > 0) {
+          const top = ops[ops.length - 1];
+          if (isOp(top) && prec[top] >= prec[t]) {
+            output.push(ops.pop()!);
+          } else {
+            break;
+          }
+        }
+        ops.push(t);
+      } else {
+        // number
+        output.push(t);
+      }
+    }
+    while (ops.length > 0) output.push(ops.pop()!);
+
+    const stack: number[] = [];
+    for (const t of output) {
+      if (!isOp(t)) {
+        const n = Number(t);
+        if (Number.isNaN(n)) return null;
+        stack.push(n);
+        continue;
+      }
+      const b = stack.pop();
+      const a = stack.pop();
+      if (a === undefined || b === undefined) return null;
+      switch (t) {
+        case '+':
+          stack.push(a + b);
+          break;
+        case '-':
+          stack.push(a - b);
+          break;
+        case '*':
+          stack.push(a * b);
+          break;
+        case '/':
+          if (b === 0) return null;
+          stack.push(a / b);
+          break;
+      }
+    }
+    if (stack.length !== 1) return null;
+    return stack[0];
+  };
+
+  const calcValue = useMemo(() => evaluateExpression(calcExpr), [calcExpr]);
+
+  const appendCalc = (v: string) => setCalcExpr(prev => `${prev}${v}`);
+  const backspaceCalc = () => setCalcExpr(prev => prev.slice(0, -1));
+  const clearCalc = () => setCalcExpr('');
+  const useCalcAmount = () => {
+    if (calcValue === null || !Number.isFinite(calcValue)) {
+      Alert.alert('Invalid amount', 'Please enter a valid calculation.');
+      return;
+    }
+    const formatted = calcValue.toFixed(2).replace(/\.00$/, '');
+    setAmount(formatted);
+    setShowCalculator(false);
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -415,6 +588,13 @@ const AddTransactionScreen: React.FC = () => {
             keyboardType="decimal-pad"
             autoFocus
           />
+          <TouchableOpacity style={styles.calcButton} onPress={openCalculator} activeOpacity={0.8}>
+            <Image
+              source={require('../../assets/icons/calculator.png')}
+              style={styles.calcButtonIcon}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Account Selectors */}
@@ -477,7 +657,10 @@ const AddTransactionScreen: React.FC = () => {
         <View style={styles.formSection}>
           <TouchableOpacity
             style={styles.dateSelector}
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowDatePicker(true);
+            }}
           >
             <Text style={styles.inputLabel}>Transaction Date</Text>
             <View style={styles.dateValueContainer}>
@@ -645,32 +828,40 @@ const AddTransactionScreen: React.FC = () => {
         Platform.OS === 'ios' ? (
           <Modal
             visible={showDatePicker}
-            animationType="slide"
-            presentationStyle="pageSheet"
+            animationType="fade"
+            transparent
             onRequestClose={() => setShowDatePicker(false)}
           >
-            <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
-              <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.modalCancel}>Cancel</Text>
-                </TouchableOpacity>
-                <Text style={styles.modalTitle}>Select Date</Text>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.modalDone}>Done</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="spinner"
-                onChange={(event, selectedDate) => {
-                  if (selectedDate) {
-                    setDate(selectedDate);
-                  }
-                }}
-                maximumDate={new Date()}
-                style={{ flex: 1 }}
+            <View style={styles.bottomSheetBackdrop}>
+              <TouchableOpacity
+                style={styles.bottomSheetBackdropTouchable}
+                activeOpacity={1}
+                onPress={() => setShowDatePicker(false)}
               />
+              <View style={[styles.bottomSheet, { paddingBottom: insets.bottom }]}>
+                <View style={styles.bottomSheetHandle} />
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                    <Text style={styles.modalCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Select Date</Text>
+                  <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                    <Text style={styles.modalDone}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="spinner"
+                  onChange={(event, selectedDate) => {
+                    if (selectedDate) {
+                      setDate(selectedDate);
+                    }
+                  }}
+                  maximumDate={new Date()}
+                  style={styles.datePicker}
+                />
+              </View>
             </View>
           </Modal>
         ) : (
@@ -688,6 +879,99 @@ const AddTransactionScreen: React.FC = () => {
           />
         )
       )}
+
+      {/* Calculator Modal */}
+      <Modal
+        visible={showCalculator}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowCalculator(false)}
+      >
+        <View style={styles.bottomSheetBackdrop}>
+          <TouchableOpacity
+            style={styles.bottomSheetBackdropTouchable}
+            activeOpacity={1}
+            onPress={() => setShowCalculator(false)}
+          />
+          <View style={[styles.calcBottomSheet, { paddingBottom: insets.bottom }]}>
+            <View style={styles.bottomSheetHandle} />
+            <View style={styles.calcHeader}>
+              <TouchableOpacity onPress={() => setShowCalculator(false)}>
+                <Text style={styles.modalCancel}>Close</Text>
+              </TouchableOpacity>
+              <Text style={styles.calcTitle}>Calculator</Text>
+              <TouchableOpacity onPress={useCalcAmount}>
+                <Text style={styles.modalDone}>Use</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.calcDisplay}>
+              <Text style={styles.calcExpr} numberOfLines={2} ellipsizeMode="tail">
+                {calcExpr || '0'}
+              </Text>
+              <Text style={styles.calcResult} numberOfLines={1} ellipsizeMode="tail">
+                {calcValue === null ? '—' : formatCurrency(Math.abs(calcValue), currency)}
+              </Text>
+            </View>
+
+            <View style={styles.calcPad}>
+              {[
+                ['C', '⌫', '/', '*'],
+                ['7', '8', '9', '-'],
+                ['4', '5', '6', '+'],
+                ['1', '2', '3', '='],
+                ['0', '.', '', ''],
+              ].map((row, rowIdx) => (
+                <View key={`r-${rowIdx}`} style={styles.calcRow}>
+                  {row.map((key, idx) => {
+                    if (!key) return <View key={`e-${rowIdx}-${idx}`} style={[styles.calcKey, styles.calcKeyEmpty]} />;
+
+                    const onPress = () => {
+                      if (key === 'C') return clearCalc();
+                      if (key === '⌫') return backspaceCalc();
+                      if (key === '=') {
+                        if (calcValue === null || !Number.isFinite(calcValue)) return;
+                        setCalcExpr(String(calcValue));
+                        return;
+                      }
+                      // normalize operators shown
+                      const token = key === '×' ? '*' : key === '÷' ? '/' : key;
+                      appendCalc(token);
+                    };
+
+                    const isPrimary = key === '=';
+                    const isAction = key === 'C' || key === '⌫';
+                    const isOp = key === '+' || key === '-' || key === '*' || key === '/';
+
+                    return (
+                      <TouchableOpacity
+                        key={`k-${rowIdx}-${idx}-${key}`}
+                        style={[
+                          styles.calcKey,
+                          isPrimary && styles.calcKeyPrimary,
+                          isAction && styles.calcKeyAction,
+                          isOp && styles.calcKeyOp,
+                        ]}
+                        onPress={onPress}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.calcKeyText,
+                            isPrimary && styles.calcKeyTextPrimary,
+                          ]}
+                        >
+                          {key}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -718,6 +1002,14 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     minWidth: 150,
     textAlign: 'center',
+  },
+  calcButton: {
+    marginLeft: spacing.sm,
+    backgroundColor: 'transparent',
+  },
+  calcButtonIcon: {
+    width: 33,
+    height: 27,
   },
   typeSection: {
     marginBottom: spacing.lg,
@@ -903,6 +1195,32 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
   },
+  bottomSheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheetBackdropTouchable: {
+    flex: 1,
+  },
+  bottomSheet: {
+    backgroundColor: colors.background.primary,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  bottomSheetHandle: {
+    alignSelf: 'center',
+    width: 48,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: colors.neutral[300],
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  datePicker: {
+    height: 260,
+  },
   modalCancel: {
     fontSize: typography.fontSize.base,
     color: colors.primary[500],
@@ -924,6 +1242,90 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     paddingHorizontal: spacing.sm,
+  },
+  calcBottomSheet: {
+    backgroundColor: colors.background.primary,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    overflow: 'hidden',
+    maxHeight: '85%',
+  },
+  calcHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  calcTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+    textAlign: 'center',
+    flex: 1,
+  },
+  calcDisplay: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  calcExpr: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+    textAlign: 'right',
+  },
+  calcResult: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    textAlign: 'right',
+    marginTop: spacing.sm,
+  },
+  calcPad: {
+    padding: spacing.base,
+    gap: spacing.sm,
+  },
+  calcRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  calcKey: {
+    flex: 1,
+    height: 52,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+  },
+  calcKeyEmpty: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    ...shadows.sm,
+  },
+  calcKeyOp: {
+    backgroundColor: colors.primary[50],
+    borderColor: colors.primary[100],
+  },
+  calcKeyAction: {
+    backgroundColor: colors.neutral[100],
+  },
+  calcKeyPrimary: {
+    backgroundColor: colors.primary[500],
+    borderColor: colors.primary[500],
+  },
+  calcKeyText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+  },
+  calcKeyTextPrimary: {
+    color: colors.neutral[0],
   },
   pickerContent: {
     flex: 1,

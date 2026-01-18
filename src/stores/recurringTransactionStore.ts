@@ -7,6 +7,8 @@
 import { create } from 'zustand';
 import { 
   collection, 
+  doc,
+  getDoc,
   query, 
   where, 
   orderBy, 
@@ -32,6 +34,7 @@ interface RecurringTransactionState {
   // Computed getters
   getRecurringTransactionById: (id: string) => RecurringTransaction | undefined;
   getActiveRecurringTransactions: () => RecurringTransaction[];
+  fetchRecurringTransactionById: (id: string) => Promise<RecurringTransaction | null>;
   
   // Actions
   subscribeToRecurringTransactions: (userId: string) => Unsubscribe;
@@ -75,6 +78,18 @@ export const useRecurringTransactionStore = create<RecurringTransactionState>((s
 
   getActiveRecurringTransactions: () => {
     return get().recurringTransactions.filter(rt => rt.isActive);
+  },
+
+  fetchRecurringTransactionById: async (id: string) => {
+    try {
+      const ref = doc(firestore, COLLECTIONS.RECURRING_TRANSACTIONS, id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return null;
+      return docToRecurringTransaction(snap.data(), snap.id);
+    } catch (error) {
+      console.error('Error fetching recurring transaction:', error);
+      return null;
+    }
   },
 
   /**

@@ -20,6 +20,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Modal,
@@ -337,7 +338,10 @@ const AddAccountScreen: React.FC = () => {
           <View style={styles.formCard}>
             <TouchableOpacity
               style={styles.selector}
-              onPress={() => setShowCategoryPicker(true)}
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowCategoryPicker(true);
+              }}
             >
               <Text style={styles.selectorLabel}>Category</Text>
               {parentCategory ? (
@@ -353,7 +357,10 @@ const AddAccountScreen: React.FC = () => {
                 <View style={styles.divider} />
                 <TouchableOpacity
                   style={styles.selector}
-                  onPress={() => setShowSubCategoryPicker(true)}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setShowSubCategoryPicker(true);
+                  }}
                 >
                   <Text style={styles.selectorLabel}>Sub-category</Text>
                   {subCategory ? (
