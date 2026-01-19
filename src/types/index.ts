@@ -223,9 +223,21 @@ export interface UpdateRecurringTransactionRequest {
 export type RootStackParamList = {
   Auth: undefined;
   PinSetup: { onComplete?: () => void; allowBack?: boolean } | undefined;
+  PinChange: { onComplete?: () => void; allowBack?: boolean } | undefined;
   PinVerification: undefined;
   Main: undefined;
-  AddTransaction: { editTransactionId?: string } | undefined;
+  AddTransaction:
+    | {
+        editTransactionId?: string;
+        prefill?: {
+          amount?: number;
+          note?: string;
+          date?: string; // ISO string
+          debitAccountId?: string;
+          creditAccountId?: string;
+        };
+      }
+    | undefined;
   AddAccount: { editAccountId?: string } | undefined;
   AccountDetail: { accountId: string; fromDate?: Date; toDate?: Date };
   TransactionDetail: { transactionId: string };
@@ -238,6 +250,7 @@ export type RootStackParamList = {
   DayToDayReport: undefined;
   AddRecurringTransaction: { editRecurringTransactionId?: string } | undefined;
   RecurringTransactions: undefined;
+  SmsImport: undefined;
   SubCategoryTransactions: { 
     subCategory: string; 
     category: string; 

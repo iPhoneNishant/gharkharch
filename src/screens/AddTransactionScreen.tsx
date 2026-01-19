@@ -60,6 +60,8 @@ const AddTransactionScreen: React.FC = () => {
   const editTransactionId = route.params?.editTransactionId;
   const isEditing = !!editTransactionId;
   const existingTransaction = editTransactionId ? getTransactionById(editTransactionId) : null;
+  const prefill = route.params?.prefill;
+  const hasAppliedPrefillRef = useRef(false);
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -79,6 +81,31 @@ const AddTransactionScreen: React.FC = () => {
       setDate(existingTransaction.date);
     }
   }, [existingTransaction]);
+
+  // Apply prefill only once (when not editing)
+  React.useEffect(() => {
+    if (isEditing) return;
+    if (!prefill) return;
+    if (hasAppliedPrefillRef.current) return;
+    hasAppliedPrefillRef.current = true;
+
+    if (typeof prefill.amount === 'number' && Number.isFinite(prefill.amount)) {
+      setAmount(String(prefill.amount));
+    }
+    if (typeof prefill.note === 'string') {
+      setNote(prefill.note);
+    }
+    if (typeof prefill.date === 'string') {
+      const parsed = new Date(prefill.date);
+      if (Number.isFinite(parsed.getTime())) setDate(parsed);
+    }
+    if (typeof prefill.debitAccountId === 'string') {
+      setDebitAccountId(prefill.debitAccountId);
+    }
+    if (typeof prefill.creditAccountId === 'string') {
+      setCreditAccountId(prefill.creditAccountId);
+    }
+  }, [isEditing, prefill]);
 
   // Modal state
   const [showAccountPicker, setShowAccountPicker] = useState(false);
@@ -303,13 +330,13 @@ const AddTransactionScreen: React.FC = () => {
           note: note.trim() || undefined,
         });
       } else {
-        await createTransaction({
-          date: date.toISOString(),
-          amount: amountNum,
-          debitAccountId,
-          creditAccountId,
-          note: note.trim() || undefined,
-        });
+      await createTransaction({
+        date: date.toISOString(),
+        amount: amountNum,
+        debitAccountId,
+        creditAccountId,
+        note: note.trim() || undefined,
+      });
       }
 
       navigation.goBack();
@@ -323,7 +350,7 @@ const AddTransactionScreen: React.FC = () => {
    * Get label for account selector
    */
   const getAccountLabel = (type: 'debit' | 'credit'): string => {
-    return type === 'debit' ? 'To Account' : 'From Account';
+      return type === 'debit' ? 'To Account' : 'From Account';
   };
 
   const openCalculator = () => {
@@ -534,9 +561,9 @@ const AddTransactionScreen: React.FC = () => {
                   : 'Return';
 
               return (
-                <TouchableOpacity
+          <TouchableOpacity
                   key={type}
-                  style={[
+            style={[
                     styles.typeChip,
                     !isActive && styles.typeChipInactive,
                     { borderColor: isActive ? fg : colors.border.light },
@@ -563,14 +590,14 @@ const AddTransactionScreen: React.FC = () => {
                   }}
                 >
                   <Text
-                    style={[
+            style={[
                       styles.typeChipText,
                       { color: isActive ? colors.neutral[0] : fg }
                     ]}
                   >
                     {label}
-                  </Text>
-                </TouchableOpacity>
+            </Text>
+          </TouchableOpacity>
               );
             })}
           </View>
@@ -607,19 +634,19 @@ const AddTransactionScreen: React.FC = () => {
             <View style={styles.accountSelectorContent}>
               <View style={styles.accountSelectorLeft}>
                 <Text style={styles.accountLabel}>{getAccountLabel('credit')} </Text>
-                {creditAccount ? (
-                  <View style={styles.selectedAccount}>
-                    <View style={[
-                      styles.accountDot,
-                      { backgroundColor: getAccountTypeColor(creditAccount.accountType) }
-                    ]} />
-                    <Text style={styles.accountName}>{creditAccount.name}</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.accountPlaceholder}>Select account</Text>
-                )}
+            {creditAccount ? (
+              <View style={styles.selectedAccount}>
+                <View style={[
+                  styles.accountDot,
+                  { backgroundColor: getAccountTypeColor(creditAccount.accountType) }
+                ]} />
+                <Text style={styles.accountName}>{creditAccount.name}</Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+            ) : (
+              <Text style={styles.accountPlaceholder}>Select account</Text>
+            )}
+              </View>
+            <Text style={styles.chevron}>›</Text>
             </View>
           </TouchableOpacity>
 
@@ -636,19 +663,19 @@ const AddTransactionScreen: React.FC = () => {
             <View style={styles.accountSelectorContent}>
               <View style={styles.accountSelectorLeft}>
                 <Text style={styles.accountLabel}>{getAccountLabel('debit')} </Text>
-                {debitAccount ? (
-                  <View style={styles.selectedAccount}>
-                    <View style={[
-                      styles.accountDot,
-                      { backgroundColor: getAccountTypeColor(debitAccount.accountType) }
-                    ]} />
-                    <Text style={styles.accountName}>{debitAccount.name}</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.accountPlaceholder}>Select account</Text>
-                )}
+            {debitAccount ? (
+              <View style={styles.selectedAccount}>
+                <View style={[
+                  styles.accountDot,
+                  { backgroundColor: getAccountTypeColor(debitAccount.accountType) }
+                ]} />
+                <Text style={styles.accountName}>{debitAccount.name}</Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+            ) : (
+              <Text style={styles.accountPlaceholder}>Select account</Text>
+            )}
+              </View>
+            <Text style={styles.chevron}>›</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -702,9 +729,9 @@ const AddTransactionScreen: React.FC = () => {
           {isSaving ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator color={colors.neutral[0]} size="small" />
-              <Text style={styles.submitButtonText}>
+          <Text style={styles.submitButtonText}>
                 {isEditing ? 'Updating...' : 'Saving...'}
-              </Text>
+          </Text>
             </View>
           ) : (
             <Text style={styles.submitButtonText}>
@@ -765,7 +792,7 @@ const AddTransactionScreen: React.FC = () => {
 
           <View style={styles.pickerContent}>
             {availableAccountsForPicker.length === 0 ? (
-              <View style={styles.emptyState}>
+            <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>No accounts available</Text>
               <Text style={styles.emptyStateSubtext}>
                 Create an account to continue
@@ -779,42 +806,42 @@ const AddTransactionScreen: React.FC = () => {
                 Try a different search term
               </Text>
                 <AddAccountFooter />
-              </View>
-            ) : (
-              <FlatList
+            </View>
+          ) : (
+            <FlatList
                 data={filteredAccounts}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.accountOption}
-                    onPress={() => handleAccountSelect(item)}
-                  >
-                    <View style={[
-                      styles.accountOptionIcon,
-                      { backgroundColor: getAccountTypeBgColor(item.accountType) }
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.accountOption}
+                  onPress={() => handleAccountSelect(item)}
+                >
+                  <View style={[
+                    styles.accountOptionIcon,
+                    { backgroundColor: getAccountTypeBgColor(item.accountType) }
+                  ]}>
+                    <Text style={[
+                      styles.accountOptionIconText,
+                      { color: getAccountTypeColor(item.accountType) }
                     ]}>
-                      <Text style={[
-                        styles.accountOptionIconText,
-                        { color: getAccountTypeColor(item.accountType) }
-                      ]}>
-                        {item.name.charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                    <View style={styles.accountOptionInfo}>
-                      <Text style={styles.accountOptionName}>{item.name}</Text>
-                      <Text style={styles.accountOptionCategory}>{item.subCategory}</Text>
-                    </View>
-                    {(item.accountType === 'asset' || item.accountType === 'liability') && (
-                      <Text style={[
-                        styles.accountOptionBalance,
-                        item.accountType === 'liability' && styles.liabilityBalance
-                      ]}>
-                        {formatCurrency(item.currentBalance ?? 0, currency)}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                      {item.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.accountOptionInfo}>
+                    <Text style={styles.accountOptionName}>{item.name}</Text>
+                    <Text style={styles.accountOptionCategory}>{item.subCategory}</Text>
+                  </View>
+                  {(item.accountType === 'asset' || item.accountType === 'liability') && (
+                    <Text style={[
+                      styles.accountOptionBalance,
+                      item.accountType === 'liability' && styles.liabilityBalance
+                    ]}>
+                      {formatCurrency(item.currentBalance ?? 0, currency)}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
                 ListFooterComponent={AddAccountFooter}
                 contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
               />

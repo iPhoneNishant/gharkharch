@@ -28,7 +28,6 @@ import {
   getBiometricType,
   enableBiometric,
   disableBiometric,
-  resetPin,
 } from '../services/pinAuthService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -43,6 +42,7 @@ const SettingsScreen: React.FC = () => {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState<string | null>(null);
   const [isLoadingPin, setIsLoadingPin] = useState(false);
+
 
   useEffect(() => {
     checkPinStatus();
@@ -94,7 +94,7 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleChangePin = () => {
-    navigation.navigate('PinSetup', {
+    navigation.navigate('PinChange', {
       onComplete: () => {
         checkPinStatus();
         Alert.alert('Success', 'PIN has been updated successfully.');
@@ -102,6 +102,7 @@ const SettingsScreen: React.FC = () => {
       allowBack: true, // Allow back when accessed from Settings
     });
   };
+
 
   const handleSetupPin = () => {
     navigation.navigate('PinSetup', {
@@ -112,33 +113,6 @@ const SettingsScreen: React.FC = () => {
     });
   };
 
-  const handleResetPin = () => {
-    Alert.alert(
-      'Reset PIN',
-      'Are you sure you want to reset your PIN? You will need to set up a new PIN.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await resetPin();
-              await checkPinStatus();
-              Alert.alert('PIN Reset', 'Your PIN has been reset. Please set up a new PIN.', [
-                {
-                  text: 'Setup PIN',
-                  onPress: handleSetupPin,
-                },
-              ]);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to reset PIN. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
 
   const handleBiometricToggle = async (value: boolean) => {
     try {
@@ -185,7 +159,7 @@ const SettingsScreen: React.FC = () => {
                 <Text style={styles.settingLabel}>Change PIN</Text>
                 <Text style={styles.chevron}>›</Text>
               </TouchableOpacity>
-              
+
               {biometricAvailable && (
                 <View style={styles.settingItem}>
                   <Text style={styles.settingLabel}>
@@ -199,11 +173,6 @@ const SettingsScreen: React.FC = () => {
                   />
                 </View>
               )}
-              
-              <TouchableOpacity style={styles.settingItem} onPress={handleResetPin}>
-                <Text style={[styles.settingLabel, { color: colors.error }]}>Reset PIN</Text>
-                <Text style={styles.chevron}>›</Text>
-              </TouchableOpacity>
             </>
           ) : (
             <TouchableOpacity style={styles.settingItem} onPress={handleSetupPin}>
@@ -276,8 +245,8 @@ const SettingsScreen: React.FC = () => {
 
       {/* App Info */}
       <View style={styles.appInfo}>
-        <Text style={styles.appName}>Gharkharch</Text>
-        <Text style={styles.appTagline}>Personal Finance</Text>
+        <Text style={styles.appName}>DailyMunim</Text>
+        <Text style={styles.appTagline}>Ghar Ka Daily Hisab Kitab</Text>
       </View>
     </ScrollView>
   );

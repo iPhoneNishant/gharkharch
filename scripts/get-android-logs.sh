@@ -33,7 +33,7 @@ echo "✅ Device connected"
 echo ""
 
 # Get app package name
-PACKAGE_NAME="com.anonymous.gharkharch"
+PACKAGE_NAME="com.anonymous.dailymunim"
 
 echo "📋 Getting logs for: $PACKAGE_NAME"
 echo ""

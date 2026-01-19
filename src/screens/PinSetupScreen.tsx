@@ -1,6 +1,6 @@
 /**
  * PIN Setup Screen for Gharkharch
- * Allows users to set up their MPIN (4-6 digits)
+ * Allows users to set up their MPIN (4 digits only)
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -34,7 +34,7 @@ interface PinSetupScreenProps {
 }
 
 const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) => {
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets(); 
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [isSettingUp, setIsSettingUp] = useState(false);
@@ -110,8 +110,8 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
     const digitsOnly = value.replace(/[^0-9]/g, '');
     if (digitsOnly.length <= 6) {
       setPin(digitsOnly);
-      // Auto-focus confirm PIN when PIN is 4-6 digits
-      if (digitsOnly.length >= 4 && digitsOnly.length <= 6) {
+      // Auto-focus confirm PIN when PIN is 4 digits
+      if (digitsOnly.length === 4) {
         setTimeout(() => confirmPinRef.current?.focus(), 100);
       }
     }
@@ -126,8 +126,8 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
   };
 
   const handleSetup = async () => {
-    if (pin.length < 4 || pin.length > 6) {
-      Alert.alert('Invalid PIN', 'PIN must be 4-6 digits');
+    if (pin.length !== 4) {
+      Alert.alert('Invalid PIN', 'PIN must be exactly 4 digits');
       return;
     }
 
@@ -172,7 +172,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
     }
   };
 
-  const canSubmit = pin.length >= 4 && pin.length <= 6 && confirmPin.length >= 4 && confirmPin.length <= 6 && pin === confirmPin;
+  const canSubmit = pin.length === 4 && confirmPin.length === 4 && pin === confirmPin;
 
   return (
     <KeyboardAvoidingView
@@ -190,7 +190,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
           <View style={styles.header}>
             <Text style={styles.title}>Setup MPIN</Text>
             <Text style={styles.subtitle}>
-              Enter a 4-6 digit PIN to secure your app
+              Enter a 4 digit PIN to secure your app
             </Text>
           </View>
 
@@ -205,13 +205,10 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
               placeholderTextColor={colors.neutral[400]}
               keyboardType="number-pad"
               secureTextEntry
-              maxLength={6}
+              maxLength={4}
               autoFocus
               editable={!isSettingUp}
             />
-            <Text style={styles.hint}>
-              {pin.length < 4 ? 'Enter 4-6 digits' : `${pin.length}/6 digits`}
-            </Text>
           </View>
 
           {/* Confirm PIN Input */}
@@ -226,7 +223,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
               placeholderTextColor={colors.neutral[400]}
               keyboardType="number-pad"
               secureTextEntry
-              maxLength={6}
+              maxLength={4}
               editable={!isSettingUp}
             />
             {confirmPin.length > 0 && pin !== confirmPin && (

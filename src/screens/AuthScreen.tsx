@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -98,6 +99,8 @@ const AuthScreen: React.FC = () => {
     setMode(mode === 'signIn' ? 'signUp' : 'signIn');
     setPassword('');
     setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setResetEmailSent(false);
   };
 
@@ -106,6 +109,8 @@ const AuthScreen: React.FC = () => {
     setMode('forgotPassword');
     setPassword('');
     setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setResetEmailSent(false);
   };
 
@@ -114,6 +119,8 @@ const AuthScreen: React.FC = () => {
     setMode('signIn');
     setPassword('');
     setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setResetEmailSent(false);
   };
 
@@ -132,7 +139,10 @@ const AuthScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>₹</Text>
-          <Text style={styles.title}>Gharkharch</Text>
+          <Text style={styles.title}>DailyMunim</Text>
+          <Text style={styles.tagline} numberOfLines={2} ellipsizeMode="tail">
+            Ghar Ka Daily Hisab Kitab
+          </Text>
           <Text 
             style={styles.subtitle}
             numberOfLines={2}
@@ -197,7 +207,10 @@ const AuthScreen: React.FC = () => {
                     style={styles.eyeIcon}
                     onPress={() => setShowPassword(!showPassword)}
                   >
-                    <Text style={styles.eyeIconText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                    <Image
+                      source={showPassword ? require('../../assets/icons/hide.png') : require('../../assets/icons/show.png')}
+                      style={styles.eyeIconImage}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -219,7 +232,10 @@ const AuthScreen: React.FC = () => {
                       style={styles.eyeIcon}
                       onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      <Text style={styles.eyeIconText}>{showConfirmPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                      <Image
+                        source={showConfirmPassword ? require('../../assets/icons/hide.png') : require('../../assets/icons/show.png')}
+                        style={styles.eyeIconImage}
+                      />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -310,6 +326,15 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
+  tagline: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.sm,
+    width: '100%',
+    marginBottom: spacing.xs,
+  },
   subtitle: {
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
@@ -364,6 +389,11 @@ const styles = StyleSheet.create({
   },
   eyeIconText: {
     fontSize: 20,
+  },
+  eyeIconImage: {
+    width: 20,
+    height: 20,
+    tintColor: colors.text.secondary,
   },
   errorContainer: {
     backgroundColor: '#FFEBEE',

@@ -116,7 +116,24 @@ cp .env.example .env
 
 ## Building the APK
 
-### Option 1: Using the Build Script (Recommended)
+### Option 0: EAS Local Build (Recommended for this project)
+
+This app uses `expo-notifications` and needs a **development build** (Expo Go won’t work reliably for notifications).
+
+From the project root:
+
+```bash
+# Dev client (best for testing features like local notifications)
+npm run build:android:dev
+
+# Shareable APK (internal/preview)
+npm run build:android:apk
+
+# Production AAB (Play Store)
+npm run build:android:aab
+```
+
+### Option 1: Using the Build Script (Gradle)
 
 ```bash
 ./build-android.sh

@@ -103,7 +103,8 @@ const MainTabNavigator: React.FC = () => {
         name="Dashboard" 
         component={DashboardScreen}
         options={{
-          headerTitle: 'Gharkharch',
+          headerTitle: 'DailyMunim',
+          
         }}
       />
       <Tab.Screen 

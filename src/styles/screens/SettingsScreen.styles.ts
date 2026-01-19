@@ -133,4 +133,5 @@ export const settingsScreenStyles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
+
 });

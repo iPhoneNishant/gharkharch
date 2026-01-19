@@ -38,6 +38,12 @@ const MoreScreen: React.FC = () => {
       icon: 'repeat-outline' as const,
       onPress: () => navigation.navigate('RecurringTransactions'),
     },
+    {
+      id: 'sms-import',
+      title: 'Import from SMS',
+      icon: 'chatbox-ellipses-outline' as const,
+      onPress: () => navigation.navigate('SmsImport'),
+    },
   ];
 
   return (

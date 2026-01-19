@@ -67,8 +67,8 @@ export const getBiometricType = async (): Promise<string | null> => {
  */
 export const setupPin = async (pin: string): Promise<void> => {
   try {
-    if (pin.length < 4 || pin.length > 6) {
-      throw new Error('PIN must be 4-6 digits');
+    if (pin.length !== 4) {
+      throw new Error('PIN must be exactly 4 digits');
     }
 
     if (!/^\d+$/.test(pin)) {

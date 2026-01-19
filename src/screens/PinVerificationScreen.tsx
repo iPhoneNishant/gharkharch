@@ -150,7 +150,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
   };
 
   const handleVerify = async () => {
-    if (pin.length < 4 || pin.length > 6) {
+    if (pin.length !== 4) {
       return;
     }
 
@@ -268,7 +268,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.logo}>₹</Text>
-            <Text style={styles.title}>Gharkharch</Text>
+            <Text style={styles.title}>Daily Munim</Text>
             <Text style={styles.subtitle}>
               {biometricEnabled && !biometricAttempted
                 ? `Authenticate with ${biometricType || 'Biometric'} to continue`
@@ -314,10 +314,10 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
               <TouchableOpacity
                 style={[
                   styles.continueButton,
-                  (pin.length < 4 || pin.length > 6 || isVerifying) && styles.continueButtonDisabled,
+                  (pin.length !== 4 || isVerifying) && styles.continueButtonDisabled,
                 ]}
                 onPress={handleVerify}
-                disabled={pin.length < 4 || pin.length > 6 || isVerifying}
+                disabled={pin.length !== 4 || isVerifying}
               >
                 {isVerifying ? (
                   <ActivityIndicator color={colors.neutral[0]} />

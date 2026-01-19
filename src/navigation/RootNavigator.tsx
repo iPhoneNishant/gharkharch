@@ -11,10 +11,13 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useAuthStore, usePinAuthStore } from '../stores';
 import { RootStackParamList } from '../types';
 import { colors } from '../config/theme';
+import { navigationRef } from './navigationRef';
+import { startSmsAutoDetect, stopSmsAutoDetect } from '../services/smsAutoDetectService';
 
 // Screens
 import AuthScreen from '../screens/AuthScreen';
 import PinSetupScreen from '../screens/PinSetupScreen';
+import PinChangeScreen from '../screens/PinChangeScreen';
 import PinVerificationScreen from '../screens/PinVerificationScreen';
 import MainTabNavigator from './MainTabNavigator';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
@@ -28,11 +31,12 @@ import AddRecurringTransactionScreen from '../screens/AddRecurringTransactionScr
 import RecurringTransactionsScreen from '../screens/RecurringTransactionsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SubCategoryTransactionsScreen from '../screens/SubCategoryTransactionsScreen';
+import SmsImportScreen from '../screens/SmsImportScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const { isAuthenticated, isLoading, initialize, signOut } = useAuthStore();
   // Use individual selectors for values that trigger re-renders
   const isPinVerified = usePinAuthStore(state => state.isPinVerified);
   const isPinSetup = usePinAuthStore(state => state.isPinSetup);
@@ -47,6 +51,15 @@ const RootNavigator: React.FC = () => {
     const unsubscribe = initialize();
     return () => unsubscribe();
   }, [initialize]);
+
+  // Start Android SMS auto-detect when user is fully inside the app
+  useEffect(() => {
+    if (isAuthenticated && isPinVerified) {
+      startSmsAutoDetect();
+      return;
+    }
+    stopSmsAutoDetect();
+  }, [isAuthenticated, isPinVerified]);
 
   // Reset PIN check ref when authentication state changes from false to true
   useEffect(() => {
@@ -68,8 +81,20 @@ const RootNavigator: React.FC = () => {
     }
   }, [isAuthenticated, isPinSetup, checkPinSetup]);
 
+  // Force logout if PIN is not set up on app launch (not during fresh login)
+  useEffect(() => {
+    // Only force logout if user was already authenticated (app launch)
+    // Don't force logout during fresh login (let them go to PIN setup)
+    if (isAuthenticated && !previousAuthRef.current && isPinSetup === false) {
+      // User was already authenticated on app launch but PIN is not set up
+      signOut().catch(error => {
+        console.error('Error during forced logout on app launch:', error);
+      });
+    }
+  }, [isAuthenticated, isPinSetup, signOut]);
+
   // Determine initial route based on auth and PIN state
-  const currentRoute = useMemo((): string => {
+  const currentRoute = useMemo((): keyof RootStackParamList => {
     if (!isAuthenticated) return 'Auth';
     if (isPinSetup === false) return 'PinSetup';
     if (!isPinVerified) return 'PinVerification';
@@ -98,7 +123,7 @@ const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer key={currentRoute}>
+    <NavigationContainer ref={navigationRef} key={currentRoute}>
       <Stack.Navigator
         initialRouteName={currentRoute}
         screenOptions={{
@@ -288,12 +313,33 @@ const RootNavigator: React.FC = () => {
                 headerBackTitle: 'Back',
               }}
             />
-            <Stack.Screen 
-              name="Settings" 
+            <Stack.Screen
+              name="Settings"
               component={SettingsScreen}
               options={{
                 headerShown: true,
                 headerTitle: 'Settings',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen
+              name="PinChange"
+              component={PinChangeScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Change PIN',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+                gestureEnabled: false, // Disable swipe back gesture for security
+              }}
+            />
+            <Stack.Screen
+              name="SmsImport"
+              component={SmsImportScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Import from SMS',
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
               }}
