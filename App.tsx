@@ -13,7 +13,7 @@ import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation';
-import { initializeNotifications, rescheduleAllRecurringTransactionNotifications } from './src/services/recurringTransactionService';
+import { initializeNotifications, rescheduleAllRecurringTransactionNotifications, cancelAllScheduledNotifications } from './src/services/recurringTransactionService';
 import { useAuthStore } from './src/stores';
 import { useRecurringTransactionStore } from './src/stores/recurringTransactionStore';
 
@@ -28,6 +28,9 @@ export default function App() {
     if (!hasInitializedNotificationsRef.current) {
       hasInitializedNotificationsRef.current = true;
       initializeNotifications();
+
+      // Cancel any existing notifications to start fresh
+      cancelAllScheduledNotifications();
     }
   }, []);
 

@@ -133,6 +133,13 @@ export const scheduleRecurringTransactionNotification = async (
 
     console.log(`Processing notification for transaction ${recurringTransaction.id}: nextOccurrence=${nextOccurrence.toISOString()}, now=${now.toISOString()}, notifyBeforeDays=${recurringTransaction.notifyBeforeDays}`);
 
+    // Check if nextOccurrence is within the next 24 hours - if so, skip entirely
+    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    if (nextOccurrence <= twentyFourHoursFromNow) {
+      console.log(`Next occurrence for ${recurringTransaction.id} is within 24 hours (${nextOccurrence.toISOString()}), skipping notification entirely`);
+      return null;
+    }
+
     // Check if nextOccurrence is today or in the past - if so, don't schedule notification
     const today = new Date();
     today.setHours(23, 59, 59, 999); // End of today
@@ -150,10 +157,10 @@ export const scheduleRecurringTransactionNotification = async (
       notificationDate.setDate(notificationDate.getDate() - recurringTransaction.notifyBeforeDays);
       notificationDate.setHours(9, 0, 0, 0); // Set to 9 AM for better UX
 
-      // Check if notification should be sent within the next 48 hours - if so, don't schedule
-      const fortyEightHoursFromNow = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-      if (notificationDate <= fortyEightHoursFromNow) {
-        console.log(`Notification for ${recurringTransaction.id} is within 48 hours (${notificationDate.toISOString()}), skipping`);
+      // Check if notification should be sent within the next 3 days - if so, don't schedule
+      const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+      if (notificationDate <= threeDaysFromNow) {
+        console.log(`Notification for ${recurringTransaction.id} is within 3 days (${notificationDate.toISOString()}), skipping`);
         return null;
       }
 
@@ -274,6 +281,19 @@ export const processRecurringTransactions = async (
 };
 
 /**
+ * Cancel all scheduled notifications (for debugging/cleanup)
+ */
+export const cancelAllScheduledNotifications = async (): Promise<void> => {
+  try {
+    console.log('Cancelling all scheduled notifications...');
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    console.log('All scheduled notifications cancelled');
+  } catch (error) {
+    console.error('Error cancelling all notifications:', error);
+  }
+};
+
+/**
  * Reschedule notifications for all active recurring transactions
  */
 export const rescheduleAllRecurringTransactionNotifications = async (
@@ -286,7 +306,16 @@ export const rescheduleAllRecurringTransactionNotifications = async (
       return;
     }
 
+    // First, cancel all existing notifications to prevent duplicates
+    console.log('Cancelling existing notifications before rescheduling...');
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
+    // Log current scheduled notifications for debugging
+    const existingNotifications = await Notifications.getAllScheduledNotificationsAsync();
+    console.log(`Found ${existingNotifications.length} existing scheduled notifications`);
+
     const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
+    console.log(`Processing ${activeTransactions.length} active recurring transactions for notifications`);
 
     for (const transaction of activeTransactions) {
       try {
