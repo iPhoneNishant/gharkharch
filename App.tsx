@@ -34,21 +34,17 @@ export default function App() {
   useEffect(() => {
     // Schedule notifications for next occurrence of all active recurring transactions on app launch
     const scheduleAllActiveRecurringTransactionNotifications = async () => {
-      if (isAuthenticated && !hasCheckedRecurringTransactionsRef.current) {
+      if (isAuthenticated && !hasCheckedRecurringTransactionsRef.current && !isLoading) {
         hasCheckedRecurringTransactionsRef.current = true;
 
         try {
-          // If data is still loading, wait for it to complete
-          if (isLoading) {
-            console.log('Recurring transactions still loading - will schedule notifications when ready');
-            return;
-          }
-
           // Schedule notifications for all active recurring transactions (regardless of when they're due)
           const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
 
           if (activeTransactions.length > 0) {
+            console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions on app launch`);
             await rescheduleAllRecurringTransactionNotifications(activeTransactions);
+            console.log('Successfully scheduled recurring transaction notifications on app launch');
           }
         } catch (error) {
           console.error('Error scheduling recurring transaction notifications on app launch:', error);
@@ -62,19 +58,20 @@ export default function App() {
     if (!isAuthenticated) {
       hasCheckedRecurringTransactionsRef.current = false;
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated]);
 
-  // Additional effect to handle when loading completes and we have data
+  // Effect to handle notification scheduling when data becomes available after login
   useEffect(() => {
     const scheduleNotificationsWhenDataReady = async () => {
-      if (isAuthenticated && hasCheckedRecurringTransactionsRef.current && !isLoading) {
+      if (isAuthenticated && !isLoading && recurringTransactions.length > 0 && !hasCheckedRecurringTransactionsRef.current) {
+        hasCheckedRecurringTransactionsRef.current = true;
+
         try {
           const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
-
           if (activeTransactions.length > 0) {
-            console.log(`Scheduling notifications for next occurrence of ${activeTransactions.length} active transactions (data now ready)`);
+            console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions (data ready)`);
             await rescheduleAllRecurringTransactionNotifications(activeTransactions);
-            console.log('All recurring transaction notifications scheduled successfully (data ready)');
+            console.log('Successfully scheduled recurring transaction notifications');
           }
         } catch (error) {
           console.error('Error scheduling recurring transaction notifications when data became ready:', error);
@@ -83,7 +80,7 @@ export default function App() {
     };
 
     scheduleNotificationsWhenDataReady();
-  }, [isAuthenticated, recurringTransactions, isLoading]);
+  }, [isAuthenticated, isLoading, recurringTransactions]);
 
   return (
     <SafeAreaProvider>

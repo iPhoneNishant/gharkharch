@@ -131,6 +131,15 @@ export const scheduleRecurringTransactionNotification = async (
     const nextOccurrence = new Date(recurringTransaction.nextOccurrence);
     const now = new Date();
 
+    // Check if nextOccurrence is today or in the past - if so, don't schedule notification
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+
+    if (nextOccurrence <= today) {
+      console.log(`Next occurrence for ${recurringTransaction.id} is today or past (${nextOccurrence.toISOString()}), skipping notification`);
+      return null;
+    }
+
     let scheduledNotificationId: string | null = null;
 
     // If notification should be sent before the occurrence
@@ -138,6 +147,13 @@ export const scheduleRecurringTransactionNotification = async (
       const notificationDate = new Date(nextOccurrence);
       notificationDate.setDate(notificationDate.getDate() - recurringTransaction.notifyBeforeDays);
       notificationDate.setHours(9, 0, 0, 0); // Set to 9 AM for better UX
+
+      // Check if notification should be sent within the next 24 hours - if so, don't schedule
+      const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      if (notificationDate <= twentyFourHoursFromNow) {
+        console.log(`Notification for ${recurringTransaction.id} is within 24 hours (${notificationDate.toISOString()}), skipping`);
+        return null;
+      }
 
       // Only schedule if notification date is in the future
       if (notificationDate > now) {
@@ -152,9 +168,10 @@ export const scheduleRecurringTransactionNotification = async (
             return null;
           }
 
-          // Additional safety check: ensure notification is at least 5 minutes in the future
-          const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-          if (notificationDate <= fiveMinutesFromNow) {
+          // Additional safety check: ensure notification is at least 1 hour in the future
+          const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+          if (notificationDate <= oneHourFromNow) {
+            console.log(`Notification for ${recurringTransaction.id} is too soon (${notificationDate.toISOString()}), skipping`);
             return null;
           }
 
