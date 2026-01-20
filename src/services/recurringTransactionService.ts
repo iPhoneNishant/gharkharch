@@ -105,12 +105,16 @@ export const scheduleRecurringTransactionNotification = async (
   recurringTransaction: RecurringTransaction
 ): Promise<string | null> => {
   try {
+    console.log(`Attempting to schedule notification for transaction ${recurringTransaction.id}`);
+
     // Only schedule if transaction is active
     if (!recurringTransaction.isActive) {
       console.log(`Skipping notification for inactive transaction ${recurringTransaction.id}`);
       await cancelRecurringTransactionNotification(recurringTransaction.id);
       return null;
     }
+
+    console.log(`Transaction ${recurringTransaction.id} is active, checking notification settings`);
 
     // Request notification permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -132,14 +136,17 @@ export const scheduleRecurringTransactionNotification = async (
     const nextOccurrence = new Date(recurringTransaction.nextOccurrence);
     const now = new Date();
 
+    console.log(`Transaction ${recurringTransaction.id}: isActive=${recurringTransaction.isActive}, notifyBeforeDays=${recurringTransaction.notifyBeforeDays}`);
     console.log(`Transaction ${recurringTransaction.id}: raw nextOccurrence from DB:`, recurringTransaction.nextOccurrence);
     console.log(`Transaction ${recurringTransaction.id}: parsed nextOccurrence: ${nextOccurrence.toISOString()}`);
     console.log(`Transaction ${recurringTransaction.id}: parsed nextOccurrence local: ${nextOccurrence.toLocaleString()}`);
     console.log(`Transaction ${recurringTransaction.id}: current time (now): ${now.toISOString()}`);
     console.log(`Transaction ${recurringTransaction.id}: current time local: ${now.toLocaleString()}`);
-    
+
     let scheduledNotificationId: string | null = null;
-    
+
+    console.log(`Transaction ${recurringTransaction.id}: checking if notification should be sent before occurrence`);
+
     // If notification should be sent before the occurrence
     if (recurringTransaction.notifyBeforeDays && recurringTransaction.notifyBeforeDays > 0) {
       const notificationDate = new Date(nextOccurrence);
