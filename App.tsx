@@ -19,7 +19,7 @@ import { useRecurringTransactionStore } from './src/stores/recurringTransactionS
 
 export default function App() {
   const { isAuthenticated } = useAuthStore();
-  const { recurringTransactions } = useRecurringTransactionStore();
+  const { recurringTransactions, isLoading } = useRecurringTransactionStore();
   const hasInitializedNotificationsRef = useRef(false);
   const hasCheckedRecurringTransactionsRef = useRef(false);
 
@@ -38,22 +38,19 @@ export default function App() {
         hasCheckedRecurringTransactionsRef.current = true;
 
         try {
-          // Wait for recurring transactions to be loaded (they are subscribed to in RootNavigator)
+          // If data is still loading, wait for it to complete
+          if (isLoading) {
+            console.log('Recurring transactions still loading - will set up notifications when ready');
+            return;
+          }
+
+          // Data is loaded, set up notifications
           if (recurringTransactions.length > 0) {
             console.log(`Setting up notifications for ${recurringTransactions.length} recurring transactions on app launch`);
             await rescheduleAllRecurringTransactionNotifications(recurringTransactions);
             console.log('Recurring transaction notifications set up successfully');
           } else {
-            console.log('No recurring transactions found - will check again when data loads');
-            // Set up a watcher for when data becomes available
-            const checkAgain = setTimeout(async () => {
-              if (recurringTransactions.length > 0) {
-                console.log(`Setting up notifications for ${recurringTransactions.length} recurring transactions (delayed)`);
-                await rescheduleAllRecurringTransactionNotifications(recurringTransactions);
-                console.log('Recurring transaction notifications set up successfully (delayed)');
-              }
-            }, 3000);
-            return () => clearTimeout(checkAgain);
+            console.log('No recurring transactions found for this user');
           }
         } catch (error) {
           console.error('Error setting up recurring transaction notifications on app launch:', error);
@@ -67,7 +64,24 @@ export default function App() {
     if (!isAuthenticated) {
       hasCheckedRecurringTransactionsRef.current = false;
     }
-  }, [isAuthenticated, recurringTransactions]);
+  }, [isAuthenticated, isLoading]);
+
+  // Additional effect to handle when loading completes and we have data
+  useEffect(() => {
+    const setupNotificationsWhenDataReady = async () => {
+      if (isAuthenticated && hasCheckedRecurringTransactionsRef.current && !isLoading && recurringTransactions.length > 0) {
+        try {
+          console.log(`Setting up notifications for ${recurringTransactions.length} recurring transactions (data now ready)`);
+          await rescheduleAllRecurringTransactionNotifications(recurringTransactions);
+          console.log('Recurring transaction notifications set up successfully (data ready)');
+        } catch (error) {
+          console.error('Error setting up recurring transaction notifications when data became ready:', error);
+        }
+      }
+    };
+
+    setupNotificationsWhenDataReady();
+  }, [isAuthenticated, recurringTransactions, isLoading]);
 
   return (
     <SafeAreaProvider>
