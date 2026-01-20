@@ -10,7 +10,8 @@ import { RecurringTransaction, RecurrenceFrequency } from '../types';
 // Configure notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -152,17 +153,16 @@ export const scheduleRecurringTransactionNotification = async (
     let scheduledNotificationId: string | null = null;
 
     // If notification should be sent before the occurrence
+    let notifyBeforeDays = 0; 
     if (recurringTransaction.notifyBeforeDays && recurringTransaction.notifyBeforeDays > 0) {
+      notifyBeforeDays = recurringTransaction.notifyBeforeDays;
+    }
+
       const notificationDate = new Date(nextOccurrence);
-      notificationDate.setDate(notificationDate.getDate() - recurringTransaction.notifyBeforeDays);
+      notificationDate.setDate(notificationDate.getDate() - notifyBeforeDays);
       notificationDate.setHours(9, 0, 0, 0); // Set to 9 AM for better UX
 
-      // Check if notification should be sent within the next 3 days - if so, don't schedule
-      const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-      if (notificationDate <= threeDaysFromNow) {
-        console.log(`Notification for ${recurringTransaction.id} is within 3 days (${notificationDate.toISOString()}), skipping`);
-        return null;
-      }
+    
 
       // Only schedule if notification date is in the future
       if (notificationDate > now) {
@@ -171,7 +171,7 @@ export const scheduleRecurringTransactionNotification = async (
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const notificationDay = new Date(notificationDate);
-          notificationDay.setHours(0, 0, 0, 0);
+          notificationDay.setHours(9, 0, 0);
 
           if (notificationDay.getTime() === today.getTime() && notificationDate <= now) {
             return null;
@@ -191,6 +191,7 @@ export const scheduleRecurringTransactionNotification = async (
           if (notificationDate > oneYearFromNow) {
             return null;
           }
+          console.log(`${recurringTransaction.id} ---XXXXX------ (${notificationDate.toISOString()})`);
 
           const notificationId = await Notifications.scheduleNotificationAsync({
             content: {
@@ -220,7 +221,7 @@ export const scheduleRecurringTransactionNotification = async (
       } else {
         console.log(`Reminder date ${notificationDate.toISOString()} is in the past, skipping`);
       }
-    }
+    
 
     // Important: We intentionally DO NOT schedule a "due today" notification.
     // As per requirement, notifications should trigger only on "days before" the transaction date.
