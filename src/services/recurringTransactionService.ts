@@ -324,6 +324,7 @@ export const testNotification = async (): Promise<boolean> => {
       trigger: Platform.OS === 'android'
         ? {
             date: testDate,
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
             channelId: 'recurring-transactions',
           }
         : {
