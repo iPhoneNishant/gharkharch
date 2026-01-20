@@ -37,18 +37,21 @@ export default function App() {
       if (isAuthenticated && !hasCheckedRecurringTransactionsRef.current && !isLoading) {
         hasCheckedRecurringTransactionsRef.current = true;
 
-        try {
-          // Schedule notifications for all active recurring transactions (regardless of when they're due)
-          const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
+        // Add a delay to prevent immediate notifications on new device login
+        setTimeout(async () => {
+          try {
+            // Schedule notifications for all active recurring transactions (regardless of when they're due)
+            const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
 
-          if (activeTransactions.length > 0) {
-            console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions on app launch`);
-            await rescheduleAllRecurringTransactionNotifications(activeTransactions);
-            console.log('Successfully scheduled recurring transaction notifications on app launch');
+            if (activeTransactions.length > 0) {
+              console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions on app launch`);
+              await rescheduleAllRecurringTransactionNotifications(activeTransactions);
+              console.log('Successfully scheduled recurring transaction notifications on app launch');
+            }
+          } catch (error) {
+            console.error('Error scheduling recurring transaction notifications on app launch:', error);
           }
-        } catch (error) {
-          console.error('Error scheduling recurring transaction notifications on app launch:', error);
-        }
+        }, 5000); // 5 second delay to allow app to fully initialize
       }
     };
 
@@ -66,16 +69,19 @@ export default function App() {
       if (isAuthenticated && !isLoading && recurringTransactions.length > 0 && !hasCheckedRecurringTransactionsRef.current) {
         hasCheckedRecurringTransactionsRef.current = true;
 
-        try {
-          const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
-          if (activeTransactions.length > 0) {
-            console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions (data ready)`);
-            await rescheduleAllRecurringTransactionNotifications(activeTransactions);
-            console.log('Successfully scheduled recurring transaction notifications');
+        // Add a delay to prevent immediate notifications on new device login
+        setTimeout(async () => {
+          try {
+            const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
+            if (activeTransactions.length > 0) {
+              console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions (data ready)`);
+              await rescheduleAllRecurringTransactionNotifications(activeTransactions);
+              console.log('Successfully scheduled recurring transaction notifications');
+            }
+          } catch (error) {
+            console.error('Error scheduling recurring transaction notifications when data became ready:', error);
           }
-        } catch (error) {
-          console.error('Error scheduling recurring transaction notifications when data became ready:', error);
-        }
+        }, 3000); // 3 second delay for data-ready notifications
       }
     };
 

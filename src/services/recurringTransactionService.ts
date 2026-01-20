@@ -131,6 +131,8 @@ export const scheduleRecurringTransactionNotification = async (
     const nextOccurrence = new Date(recurringTransaction.nextOccurrence);
     const now = new Date();
 
+    console.log(`Processing notification for transaction ${recurringTransaction.id}: nextOccurrence=${nextOccurrence.toISOString()}, now=${now.toISOString()}, notifyBeforeDays=${recurringTransaction.notifyBeforeDays}`);
+
     // Check if nextOccurrence is today or in the past - if so, don't schedule notification
     const today = new Date();
     today.setHours(23, 59, 59, 999); // End of today
@@ -148,10 +150,10 @@ export const scheduleRecurringTransactionNotification = async (
       notificationDate.setDate(notificationDate.getDate() - recurringTransaction.notifyBeforeDays);
       notificationDate.setHours(9, 0, 0, 0); // Set to 9 AM for better UX
 
-      // Check if notification should be sent within the next 24 hours - if so, don't schedule
-      const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      if (notificationDate <= twentyFourHoursFromNow) {
-        console.log(`Notification for ${recurringTransaction.id} is within 24 hours (${notificationDate.toISOString()}), skipping`);
+      // Check if notification should be sent within the next 48 hours - if so, don't schedule
+      const fortyEightHoursFromNow = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      if (notificationDate <= fortyEightHoursFromNow) {
+        console.log(`Notification for ${recurringTransaction.id} is within 48 hours (${notificationDate.toISOString()}), skipping`);
         return null;
       }
 
