@@ -2,7 +2,7 @@
   "expo": {
     "name": "DailyMunim",
     "slug": "gharkharch",
-    "version": "1.0.0",
+    "version": "1.0.0+1",
     "description": "Ghar Ka Daily Hisab Kitab",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

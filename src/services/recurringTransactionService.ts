@@ -105,16 +105,11 @@ export const scheduleRecurringTransactionNotification = async (
   recurringTransaction: RecurringTransaction
 ): Promise<string | null> => {
   try {
-    console.log(`Attempting to schedule notification for transaction ${recurringTransaction.id}`);
-
     // Only schedule if transaction is active
     if (!recurringTransaction.isActive) {
-      console.log(`Skipping notification for inactive transaction ${recurringTransaction.id}`);
       await cancelRecurringTransactionNotification(recurringTransaction.id);
       return null;
     }
-
-    console.log(`Transaction ${recurringTransaction.id} is active, checking notification settings`);
 
     // Request notification permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -136,26 +131,13 @@ export const scheduleRecurringTransactionNotification = async (
     const nextOccurrence = new Date(recurringTransaction.nextOccurrence);
     const now = new Date();
 
-    console.log(`Transaction ${recurringTransaction.id}: isActive=${recurringTransaction.isActive}, notifyBeforeDays=${recurringTransaction.notifyBeforeDays}`);
-    console.log(`Transaction ${recurringTransaction.id}: raw nextOccurrence from DB:`, recurringTransaction.nextOccurrence);
-    console.log(`Transaction ${recurringTransaction.id}: parsed nextOccurrence: ${nextOccurrence.toISOString()}`);
-    console.log(`Transaction ${recurringTransaction.id}: parsed nextOccurrence local: ${nextOccurrence.toLocaleString()}`);
-    console.log(`Transaction ${recurringTransaction.id}: current time (now): ${now.toISOString()}`);
-    console.log(`Transaction ${recurringTransaction.id}: current time local: ${now.toLocaleString()}`);
-
     let scheduledNotificationId: string | null = null;
-
-    console.log(`Transaction ${recurringTransaction.id}: checking if notification should be sent before occurrence`);
 
     // If notification should be sent before the occurrence
     if (recurringTransaction.notifyBeforeDays && recurringTransaction.notifyBeforeDays > 0) {
       const notificationDate = new Date(nextOccurrence);
       notificationDate.setDate(notificationDate.getDate() - recurringTransaction.notifyBeforeDays);
       notificationDate.setHours(9, 0, 0, 0); // Set to 9 AM for better UX
-
-      console.log(`Transaction ${recurringTransaction.id}: nextOccurrence=${nextOccurrence.toISOString()}, notifyBeforeDays=${recurringTransaction.notifyBeforeDays}`);
-      console.log(`Transaction ${recurringTransaction.id}: calculated notificationDate=${notificationDate.toISOString()}, now=${now.toISOString()}`);
-      console.log(`Transaction ${recurringTransaction.id}: notificationDate > now = ${notificationDate > now}`);
 
       // Only schedule if notification date is in the future
       if (notificationDate > now) {
@@ -167,14 +149,12 @@ export const scheduleRecurringTransactionNotification = async (
           notificationDay.setHours(0, 0, 0, 0);
 
           if (notificationDay.getTime() === today.getTime() && notificationDate <= now) {
-            console.log(`Transaction ${recurringTransaction.id}: Skipping notification for today as it's already past the scheduled time`);
             return null;
           }
 
           // Additional safety check: ensure notification is at least 5 minutes in the future
           const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
           if (notificationDate <= fiveMinutesFromNow) {
-            console.log(`Transaction ${recurringTransaction.id}: Notification too soon (${notificationDate.toISOString()}), skipping`);
             return null;
           }
 
@@ -183,11 +163,8 @@ export const scheduleRecurringTransactionNotification = async (
           oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
           if (notificationDate > oneYearFromNow) {
-            console.log(`Transaction ${recurringTransaction.id}: Notification too far in future (${notificationDate.toISOString()}), skipping`);
             return null;
           }
-
-          console.log(`Transaction ${recurringTransaction.id}: Scheduling notification for ${notificationDate.toISOString()}`);
 
           const notificationId = await Notifications.scheduleNotificationAsync({
             content: {
@@ -291,14 +268,10 @@ export const rescheduleAllRecurringTransactionNotifications = async (
     }
 
     const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
-    console.log(`Rescheduling notifications for ${activeTransactions.length} active recurring transactions`);
-    console.log('Transactions to reschedule:', activeTransactions.map(rt => rt.id));
 
     for (const transaction of activeTransactions) {
-      console.log(`Processing transaction ${transaction.id} for notification rescheduling`);
       try {
-        const result = await scheduleRecurringTransactionNotification(transaction);
-        console.log(`Notification rescheduling result for ${transaction.id}: ${result ? 'scheduled' : 'skipped'}`);
+        await scheduleRecurringTransactionNotification(transaction);
       } catch (error) {
         console.error(`Failed to reschedule notification for transaction ${transaction.id}:`, error);
       }

@@ -47,16 +47,8 @@ export default function App() {
           // Schedule notifications for all active recurring transactions (regardless of when they're due)
           const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
 
-          console.log(`Total recurring transactions: ${recurringTransactions.length}`);
-          console.log(`Active recurring transactions: ${activeTransactions.length}`);
-          console.log('Active transaction IDs:', activeTransactions.map(rt => `${rt.id}(active:${rt.isActive})`));
-
           if (activeTransactions.length > 0) {
-            console.log(`Scheduling notifications for next occurrence of ${activeTransactions.length} active recurring transactions`);
             await rescheduleAllRecurringTransactionNotifications(activeTransactions);
-            console.log('All recurring transaction notifications scheduled successfully for next occurrences');
-          } else {
-            console.log('No active recurring transactions found to schedule notifications for');
           }
         } catch (error) {
           console.error('Error scheduling recurring transaction notifications on app launch:', error);
