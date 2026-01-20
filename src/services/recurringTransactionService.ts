@@ -106,6 +106,16 @@ export const scheduleRecurringTransactionNotification = async (
   recurringTransaction: RecurringTransaction
 ): Promise<string | null> => {
   try {
+    // EMERGENCY LOCKDOWN: Disable notification scheduling for first 10 minutes after app start
+    const currentTime = Date.now();
+    const appStartTime = (global as any).__appStartTime || currentTime;
+    const tenMinutesAfterStart = appStartTime + (10 * 60 * 1000);
+
+    if (currentTime < tenMinutesAfterStart) {
+      console.log(`🚫 INDIVIDUAL NOTIFICATION LOCKDOWN: Skipping scheduling for ${recurringTransaction.id} (${Math.round((tenMinutesAfterStart - currentTime) / 1000 / 60)} minutes remaining)`);
+      return null;
+    }
+
     // Only schedule if transaction is active
     if (!recurringTransaction.isActive) {
       await cancelRecurringTransactionNotification(recurringTransaction.id);
@@ -303,12 +313,37 @@ export const cancelAllScheduledNotifications = async (): Promise<void> => {
 };
 
 /**
+ * Nuclear option: Disable all notifications completely for emergency use
+ */
+export const disableAllNotifications = async (): Promise<void> => {
+  try {
+    console.log('🚨 NUCLEAR OPTION: Disabling all notifications...');
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    console.log('🚨 All notifications disabled and cancelled');
+  } catch (error) {
+    console.error('Error disabling notifications:', error);
+  }
+};
+
+/**
  * Reschedule notifications for all active recurring transactions
  */
 export const rescheduleAllRecurringTransactionNotifications = async (
   recurringTransactions: RecurringTransaction[]
 ): Promise<void> => {
   try {
+    // EMERGENCY LOCKDOWN: Disable notification scheduling for first 10 minutes after app start
+    const currentTimeMillis = Date.now();
+    const appStartTime = (global as any).__appStartTime || currentTimeMillis;
+    const tenMinutesAfterStart = appStartTime + (10 * 60 * 1000);
+
+    if (currentTimeMillis < tenMinutesAfterStart) {
+      console.log(`🚫 NOTIFICATION LOCKDOWN: App just started (${Math.round((tenMinutesAfterStart - currentTimeMillis) / 1000 / 60)} minutes remaining). Skipping all notification scheduling.`);
+      return;
+    }
+
+    console.log('✅ NOTIFICATION LOCKDOWN CLEARED: Proceeding with notification scheduling...');
+
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
       console.warn('Notification permissions not granted, skipping reschedule');
