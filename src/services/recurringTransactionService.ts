@@ -292,10 +292,13 @@ export const rescheduleAllRecurringTransactionNotifications = async (
 
     const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
     console.log(`Rescheduling notifications for ${activeTransactions.length} active recurring transactions`);
-    
+    console.log('Transactions to reschedule:', activeTransactions.map(rt => rt.id));
+
     for (const transaction of activeTransactions) {
+      console.log(`Processing transaction ${transaction.id} for notification rescheduling`);
       try {
-        await scheduleRecurringTransactionNotification(transaction);
+        const result = await scheduleRecurringTransactionNotification(transaction);
+        console.log(`Notification rescheduling result for ${transaction.id}: ${result ? 'scheduled' : 'skipped'}`);
       } catch (error) {
         console.error(`Failed to reschedule notification for transaction ${transaction.id}:`, error);
       }
