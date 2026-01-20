@@ -6,6 +6,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform, Alert } from 'react-native';
 import { RecurringTransaction, RecurrenceFrequency } from '../types';
+import { useTransactionStore } from '../stores';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -106,16 +107,6 @@ export const scheduleRecurringTransactionNotification = async (
   recurringTransaction: RecurringTransaction
 ): Promise<string | null> => {
   try {
-    // EMERGENCY LOCKDOWN: Disable notification scheduling for first 10 minutes after app start
-    const currentTime = Date.now();
-    const appStartTime = (global as any).__appStartTime || currentTime;
-    const tenMinutesAfterStart = appStartTime + (10 * 60 * 1000);
-
-    if (currentTime < tenMinutesAfterStart) {
-      console.log(`🚫 INDIVIDUAL NOTIFICATION LOCKDOWN: Skipping scheduling for ${recurringTransaction.id} (${Math.round((tenMinutesAfterStart - currentTime) / 1000 / 60)} minutes remaining)`);
-      return null;
-    }
-
     // Only schedule if transaction is active
     if (!recurringTransaction.isActive) {
       await cancelRecurringTransactionNotification(recurringTransaction.id);
@@ -123,127 +114,71 @@ export const scheduleRecurringTransactionNotification = async (
     }
 
     // Request notification permissions
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    
-    if (finalStatus !== 'granted') {
-      console.warn(`Notification permissions not granted for transaction ${recurringTransaction.id}`);
-      return null;
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      const { status: newStatus } = await Notifications.requestPermissionsAsync();
+      if (newStatus !== 'granted') {
+        return null;
+      }
     }
 
-    // Cancel any existing notifications for this recurring transaction
+    // Cancel any existing notifications for this transaction
     await cancelRecurringTransactionNotification(recurringTransaction.id);
 
     const nextOccurrence = new Date(recurringTransaction.nextOccurrence);
     const now = new Date();
 
-    console.log(`Processing notification for transaction ${recurringTransaction.id}: nextOccurrence=${nextOccurrence.toISOString()}, now=${now.toISOString()}, notifyBeforeDays=${recurringTransaction.notifyBeforeDays}`);
-
-    // Check if nextOccurrence is within the next 2 days - if so, skip entirely to be extra safe
-    const twoDaysFromNowForNextOccurrence = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
-    if (nextOccurrence <= twoDaysFromNowForNextOccurrence) {
-      console.log(`Next occurrence for ${recurringTransaction.id} is within 2 days (${nextOccurrence.toISOString()}), skipping notification entirely`);
+    // Skip if next occurrence is too soon (prevents immediate notifications)
+    const minFutureTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours minimum
+    if (nextOccurrence <= minFutureTime) {
       return null;
     }
 
-    // Check if nextOccurrence is today or in the past - if so, don't schedule notification
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today
+    // Calculate notification date (days before occurrence)
+    const notifyBeforeDays = recurringTransaction.notifyBeforeDays || 0;
+    if (notifyBeforeDays <= 0) {
+      return null; // No notification needed
+    }
 
-    if (nextOccurrence <= today) {
-      console.log(`Next occurrence for ${recurringTransaction.id} is today or past (${nextOccurrence.toISOString()}), skipping notification`);
+    const notificationDate = new Date(nextOccurrence);
+    notificationDate.setDate(notificationDate.getDate() - notifyBeforeDays);
+    notificationDate.setHours(9, 0, 0, 0); // 9 AM
+
+    // Ensure notification is at least 2 hours in the future
+    const minNotificationTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    if (notificationDate <= minNotificationTime) {
       return null;
     }
 
-    let scheduledNotificationId: string | null = null;
-
-    // If notification should be sent before the occurrence
-    let notifyBeforeDays = 0; 
-    if (recurringTransaction.notifyBeforeDays && recurringTransaction.notifyBeforeDays > 0) {
-      notifyBeforeDays = recurringTransaction.notifyBeforeDays;
+    // Don't schedule if more than 1 year in future
+    const maxFutureTime = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    if (notificationDate > maxFutureTime) {
+      return null;
     }
 
-      const notificationDate = new Date(nextOccurrence);
-      notificationDate.setDate(notificationDate.getDate() - notifyBeforeDays);
-      notificationDate.setHours(9, 0, 0, 0); // Set to 9 AM for better UX
-
-      console.log(`Calculated notification date for ${recurringTransaction.id}: ${notificationDate.toISOString()} (nextOccurrence: ${nextOccurrence.toISOString()}, notifyBeforeDays: ${notifyBeforeDays})`);
-
-      // AGGRESSIVE SAFETY CHECK: Ensure notification date is at least 2 days in the future
-      const twoDaysFromNowForNotification = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
-      if (notificationDate <= twoDaysFromNowForNotification) {
-        console.log(`Notification for ${recurringTransaction.id} is within 2 days (${notificationDate.toISOString()}), skipping to prevent premature firing`);
-        return null;
-      }
-
-      // Only schedule if notification date is in the future
-      if (notificationDate > now) {
-        try {
-          // Additional check: if notification is for today, only schedule if it's after current time
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const notificationDay = new Date(notificationDate);
-          notificationDay.setHours(0, 0, 0, 0);
-
-          if (notificationDay.getTime() === today.getTime() && notificationDate <= now) {
-            console.log(`Notification for ${recurringTransaction.id} is scheduled for today but already past (${notificationDate.toISOString()}), skipping`);
-            return null;
+    // Schedule the notification
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Repeat Transaction Reminder',
+        body: `Reminder: ${recurringTransaction.note || 'Repeat transaction'} of ₹${recurringTransaction.amount} is due on ${nextOccurrence.toLocaleDateString()}`,
+        data: {
+          recurringTransactionId: recurringTransaction.id,
+          type: 'recurring_transaction_reminder',
+        },
+        sound: true,
+      },
+      trigger: Platform.OS === 'android'
+        ? {
+            date: notificationDate,
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            channelId: 'recurring-transactions',
           }
+        : {
+            date: notificationDate,
+          } as any,
+    });
 
-          // Additional safety check: ensure notification is at least 3 hours in the future
-          const threeHoursFromNow = new Date(now.getTime() + 3 * 60 * 60 * 1000); // 3 hours
-          if (notificationDate <= threeHoursFromNow) {
-            console.log(`Notification for ${recurringTransaction.id} is too soon (${notificationDate.toISOString()}), skipping`);
-            return null;
-          }
-
-          // Check if notification is too far in the future (Expo limit is typically 1 year)
-          const oneYearFromNow = new Date();
-          oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-
-          if (notificationDate > oneYearFromNow) {
-            return null;
-          }
-          console.log(`🎯 SCHEDULING NOTIFICATION for ${recurringTransaction.id}: ${notificationDate.toISOString()} (in ${Math.round((notificationDate.getTime() - now.getTime()) / (1000 * 60 * 60))} hours)`);
-
-          const notificationId = await Notifications.scheduleNotificationAsync({
-            content: {
-              title: 'Repeat Transaction Reminder',
-              body: `Reminder: ${recurringTransaction.note || 'Repeat transaction'} of ₹${recurringTransaction.amount} is due on ${nextOccurrence.toLocaleDateString()}`,
-              data: {
-                recurringTransactionId: recurringTransaction.id,
-                type: 'recurring_transaction_reminder',
-              },
-              sound: true,
-            },
-            trigger: Platform.OS === 'android'
-              ? {
-                  date: notificationDate,
-                  channelId: 'recurring-transactions',
-                }
-              : {
-                  date: notificationDate,
-                },
-          });
-          
-          console.log(`✓ Scheduled reminder notification for ${recurringTransaction.id} at ${notificationDate.toISOString()}, ID: ${notificationId}`);
-          scheduledNotificationId = notificationId;
-        } catch (error) {
-          console.error(`Failed to schedule reminder notification:`, error);
-        }
-      } else {
-        console.log(`Reminder date ${notificationDate.toISOString()} is in the past, skipping`);
-      }
-    
-
-    // Important: We intentionally DO NOT schedule a "due today" notification.
-    // As per requirement, notifications should trigger only on "days before" the transaction date.
-    return scheduledNotificationId;
+    return notificationId;
   } catch (error) {
     console.error(`Error scheduling notification for transaction ${recurringTransaction.id}:`, error);
     return null;
@@ -300,26 +235,22 @@ export const processRecurringTransactions = async (
 };
 
 /**
- * Cancel all scheduled notifications (for debugging/cleanup)
+ * Cancel all scheduled notifications
  */
 export const cancelAllScheduledNotifications = async (): Promise<void> => {
   try {
-    console.log('Cancelling all scheduled notifications...');
     await Notifications.cancelAllScheduledNotificationsAsync();
-    console.log('All scheduled notifications cancelled');
   } catch (error) {
     console.error('Error cancelling all notifications:', error);
   }
 };
 
 /**
- * Nuclear option: Disable all notifications completely for emergency use
+ * Cancel all scheduled notifications
  */
 export const disableAllNotifications = async (): Promise<void> => {
   try {
-    console.log('🚨 NUCLEAR OPTION: Disabling all notifications...');
     await Notifications.cancelAllScheduledNotificationsAsync();
-    console.log('🚨 All notifications disabled and cancelled');
   } catch (error) {
     console.error('Error disabling notifications:', error);
   }
@@ -332,34 +263,16 @@ export const rescheduleAllRecurringTransactionNotifications = async (
   recurringTransactions: RecurringTransaction[]
 ): Promise<void> => {
   try {
-    // EMERGENCY LOCKDOWN: Disable notification scheduling for first 10 minutes after app start
-    const currentTimeMillis = Date.now();
-    const appStartTime = (global as any).__appStartTime || currentTimeMillis;
-    const tenMinutesAfterStart = appStartTime + (10 * 60 * 1000);
-
-    if (currentTimeMillis < tenMinutesAfterStart) {
-      console.log(`🚫 NOTIFICATION LOCKDOWN: App just started (${Math.round((tenMinutesAfterStart - currentTimeMillis) / 1000 / 60)} minutes remaining). Skipping all notification scheduling.`);
-      return;
-    }
-
-    console.log('✅ NOTIFICATION LOCKDOWN CLEARED: Proceeding with notification scheduling...');
-
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
-      console.warn('Notification permissions not granted, skipping reschedule');
       return;
     }
 
-    // First, cancel all existing notifications to prevent duplicates
-    console.log('Cancelling existing notifications before rescheduling...');
+    // Cancel all existing notifications to prevent duplicates
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    // Log current scheduled notifications for debugging
-    const existingNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    console.log(`Found ${existingNotifications.length} existing scheduled notifications`);
-
+    // Schedule notifications for active transactions
     const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
-    console.log(`Processing ${activeTransactions.length} active recurring transactions for notifications`);
 
     for (const transaction of activeTransactions) {
       try {
@@ -375,16 +288,12 @@ export const rescheduleAllRecurringTransactionNotifications = async (
 
 /**
  * Test notification - schedules a notification for 5 seconds from now
- * Useful for testing if notifications work in your environment
  */
 export const testNotification = async (): Promise<boolean> => {
   try {
-    console.log('Testing notification...');
-    
     // Request permissions
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') {
-      console.warn('Notification permissions not granted. Cannot test notification.');
       Alert.alert('Permission Required', 'Please grant notification permissions to test notifications.');
       return false;
     }
@@ -442,8 +351,6 @@ export const initializeNotifications = async (): Promise<void> => {
       return;
     }
 
-    console.log('Notification permissions granted');
-
     // Configure notification channel for Android
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('recurring-transactions', {
@@ -453,23 +360,6 @@ export const initializeNotifications = async (): Promise<void> => {
         lightColor: '#FF231F7C',
         sound: 'default',
         enableVibrate: true,
-      });
-      console.log('Android notification channel configured');
-    }
-
-    // Log scheduled notifications for debugging
-    const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    console.log(`Currently scheduled ${scheduledNotifications.length} notifications`);
-    
-    // Log details of scheduled notifications
-    if (scheduledNotifications.length > 0) {
-      scheduledNotifications.forEach((notif, index) => {
-        console.log(`Notification ${index + 1}:`, {
-          id: notif.identifier,
-          title: notif.content.title,
-          body: notif.content.body,
-          trigger: notif.trigger,
-        });
       });
     }
   } catch (error) {

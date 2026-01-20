@@ -23,11 +23,6 @@ export default function App() {
   const hasInitializedNotificationsRef = useRef(false);
   const hasCheckedRecurringTransactionsRef = useRef(false);
 
-  // Set global app start time to prevent immediate notifications
-  useEffect(() => {
-    (global as any).__appStartTime = Date.now();
-    console.log('🚨 NOTIFICATION LOCKDOWN ACTIVATED: App start time recorded');
-  }, []);
 
   useEffect(() => {
     // Initialize notifications for recurring transactions (one-time setup)
