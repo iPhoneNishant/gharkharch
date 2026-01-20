@@ -8,7 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
-import { useAuthStore, usePinAuthStore } from '../stores';
+import { useAuthStore, usePinAuthStore, useRecurringTransactionStore } from '../stores';
 import { RootStackParamList } from '../types';
 import { colors } from '../config/theme';
 import { navigationRef } from './navigationRef';
@@ -36,15 +36,17 @@ import SmsImportScreen from '../screens/SmsImportScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading, initialize, signOut } = useAuthStore();
+  const { isAuthenticated, isLoading, initialize, signOut, user } = useAuthStore();
   // Use individual selectors for values that trigger re-renders
   const isPinVerified = usePinAuthStore(state => state.isPinVerified);
   const isPinSetup = usePinAuthStore(state => state.isPinSetup);
   const checkPinSetup = usePinAuthStore(state => state.checkPinSetup);
   const setPinVerified = usePinAuthStore(state => state.setPinVerified);
+  const { subscribeToRecurringTransactions } = useRecurringTransactionStore();
   const [isCheckingPin, setIsCheckingPin] = useState(false);
   const hasCheckedPinRef = useRef(false);
   const previousAuthRef = useRef(false);
+  const hasSubscribedToRecurringTransactionsRef = useRef(false);
 
 
   useEffect(() => {
@@ -92,6 +94,31 @@ const RootNavigator: React.FC = () => {
       });
     }
   }, [isAuthenticated, isPinSetup, signOut]);
+
+  // Subscribe to recurring transactions when user is authenticated
+  useEffect(() => {
+    let unsubscribeRecurringTransactions: (() => void) | null = null;
+
+    if (isAuthenticated && user?.id && !hasSubscribedToRecurringTransactionsRef.current) {
+      hasSubscribedToRecurringTransactionsRef.current = true;
+      console.log('Subscribing to recurring transactions for user:', user.id);
+      unsubscribeRecurringTransactions = subscribeToRecurringTransactions(user.id);
+    }
+
+    // Reset subscription flag when user logs out
+    if (!isAuthenticated) {
+      hasSubscribedToRecurringTransactionsRef.current = false;
+      if (unsubscribeRecurringTransactions) {
+        unsubscribeRecurringTransactions();
+      }
+    }
+
+    return () => {
+      if (unsubscribeRecurringTransactions) {
+        unsubscribeRecurringTransactions();
+      }
+    };
+  }, [isAuthenticated, user?.id, subscribeToRecurringTransactions]);
 
   // Determine initial route based on auth and PIN state
   const currentRoute = useMemo((): keyof RootStackParamList => {

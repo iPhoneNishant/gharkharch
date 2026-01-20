@@ -11,3 +11,4 @@ const config = mergeConfig(expoConfig, {
 });
 
 module.exports = config;
+return config;
