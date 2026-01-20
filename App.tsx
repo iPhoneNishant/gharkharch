@@ -32,33 +32,57 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Set up notifications for recurring transactions on every app launch when authenticated
-    const setupRecurringTransactionNotifications = async () => {
+    // Check for recurring transactions that need notifications on app launch
+    const checkRecurringTransactionsForNotifications = async () => {
       if (isAuthenticated && !hasCheckedRecurringTransactionsRef.current) {
         hasCheckedRecurringTransactionsRef.current = true;
 
         try {
           // If data is still loading, wait for it to complete
           if (isLoading) {
-            console.log('Recurring transactions still loading - will set up notifications when ready');
+            console.log('Recurring transactions still loading - will check notifications when ready');
             return;
           }
 
-          // Data is loaded, set up notifications
-          if (recurringTransactions.length > 0) {
-            console.log(`Setting up notifications for ${recurringTransactions.length} recurring transactions on app launch`);
-            await rescheduleAllRecurringTransactionNotifications(recurringTransactions);
-            console.log('Recurring transaction notifications set up successfully');
+          // Check if any transactions actually need notifications scheduled
+          const activeTransactionsWithNotifications = recurringTransactions.filter(
+            rt => rt.isActive && rt.notifyBeforeDays && rt.notifyBeforeDays > 0
+          );
+
+          if (activeTransactionsWithNotifications.length > 0) {
+            console.log(`Found ${activeTransactionsWithNotifications.length} recurring transactions with notifications enabled`);
+
+            // Only reschedule if there are transactions that might need immediate notifications
+            // (e.g., due very soon and haven't been notified yet)
+            const now = new Date();
+            const transactionsNeedingImmediateCheck = activeTransactionsWithNotifications.filter(rt => {
+              const nextOccurrence = new Date(rt.nextOccurrence);
+              const notificationDate = new Date(nextOccurrence);
+              notificationDate.setDate(notificationDate.getDate() - (rt.notifyBeforeDays || 0));
+              notificationDate.setHours(9, 0, 0, 0);
+
+              // Only reschedule if the notification should be within the next 24 hours
+              const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+              return notificationDate <= twentyFourHoursFromNow && notificationDate > now;
+            });
+
+            if (transactionsNeedingImmediateCheck.length > 0) {
+              console.log(`Rescheduling notifications for ${transactionsNeedingImmediateCheck.length} transactions due soon`);
+              await rescheduleAllRecurringTransactionNotifications(recurringTransactions);
+              console.log('Urgent recurring transaction notifications rescheduled successfully');
+            } else {
+              console.log('No recurring transactions need immediate notification rescheduling');
+            }
           } else {
-            console.log('No recurring transactions found for this user');
+            console.log('No recurring transactions with notifications enabled');
           }
         } catch (error) {
-          console.error('Error setting up recurring transaction notifications on app launch:', error);
+          console.error('Error checking recurring transaction notifications on app launch:', error);
         }
       }
     };
 
-    setupRecurringTransactionNotifications();
+    checkRecurringTransactionsForNotifications();
 
     // Reset the check flag when user logs out so it runs again on next login
     if (!isAuthenticated) {
@@ -68,19 +92,40 @@ export default function App() {
 
   // Additional effect to handle when loading completes and we have data
   useEffect(() => {
-    const setupNotificationsWhenDataReady = async () => {
-      if (isAuthenticated && hasCheckedRecurringTransactionsRef.current && !isLoading && recurringTransactions.length > 0) {
+    const checkNotificationsWhenDataReady = async () => {
+      if (isAuthenticated && hasCheckedRecurringTransactionsRef.current && !isLoading) {
         try {
-          console.log(`Setting up notifications for ${recurringTransactions.length} recurring transactions (data now ready)`);
-          await rescheduleAllRecurringTransactionNotifications(recurringTransactions);
-          console.log('Recurring transaction notifications set up successfully (data ready)');
+          const activeTransactionsWithNotifications = recurringTransactions.filter(
+            rt => rt.isActive && rt.notifyBeforeDays && rt.notifyBeforeDays > 0
+          );
+
+          if (activeTransactionsWithNotifications.length > 0) {
+            // Check for transactions that need immediate notifications
+            const now = new Date();
+            const transactionsNeedingImmediateCheck = activeTransactionsWithNotifications.filter(rt => {
+              const nextOccurrence = new Date(rt.nextOccurrence);
+              const notificationDate = new Date(nextOccurrence);
+              notificationDate.setDate(notificationDate.getDate() - (rt.notifyBeforeDays || 0));
+              notificationDate.setHours(9, 0, 0, 0);
+
+              // Only reschedule if the notification should be within the next 24 hours
+              const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+              return notificationDate <= twentyFourHoursFromNow && notificationDate > now;
+            });
+
+            if (transactionsNeedingImmediateCheck.length > 0) {
+              console.log(`Rescheduling notifications for ${transactionsNeedingImmediateCheck.length} transactions (data now ready)`);
+              await rescheduleAllRecurringTransactionNotifications(recurringTransactions);
+              console.log('Recurring transaction notifications rescheduled successfully (data ready)');
+            }
+          }
         } catch (error) {
-          console.error('Error setting up recurring transaction notifications when data became ready:', error);
+          console.error('Error checking recurring transaction notifications when data became ready:', error);
         }
       }
     };
 
-    setupNotificationsWhenDataReady();
+    checkNotificationsWhenDataReady();
   }, [isAuthenticated, recurringTransactions, isLoading]);
 
   return (
