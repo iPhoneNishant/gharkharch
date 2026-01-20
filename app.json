@@ -2,7 +2,7 @@
   "expo": {
     "name": "DailyMunim",
     "slug": "gharkharch",
-    "version": "1.0.0+1",
+    "version": "1.0.0",
     "description": "Ghar Ka Daily Hisab Kitab",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -33,6 +33,9 @@
       "eas": {
         "projectId": "e6230a49-c704-4e92-ab1e-2d180b9e3e05"
       }
-    }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }
