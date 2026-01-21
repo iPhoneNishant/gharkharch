@@ -27,14 +27,27 @@ const AdMobBanner: React.FC<AdMobBannerProps> = ({
     console.warn('AdMob Banner Error:', error);
   };
 
+  const adViewSuccess = () => {
+    console.log('Banner ad loaded successfully');
+  };
+
+  // Get ad unit ID safely
+  const adUnitId = getAdUnitId('banner');
+
+  // Only render if we have a valid ad unit ID
+  if (!adUnitId || adUnitId.includes('XXXXXXXXXXXXXXXX')) {
+    console.warn('AdMob Banner: Invalid ad unit ID, skipping banner');
+    return null;
+  }
+
   return (
     <View style={[styles.container, position === 'top' ? styles.topBanner : styles.bottomBanner, style]}>
       <ExpoAdMobBanner
         bannerSize={size}
-        adUnitID={getAdUnitId('banner')}
+        adUnitID={adUnitId}
         servePersonalizedAds={true}
         onDidFailToReceiveAdWithError={bannerError}
-        onAdViewDidReceiveAd={() => console.log('Banner ad loaded successfully')}
+        onAdViewDidReceiveAd={adViewSuccess}
       />
     </View>
   );
