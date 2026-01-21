@@ -2,7 +2,7 @@
   "expo": {
     "name": "DailyMunim",
     "slug": "gharkharch",
-    "version": "1.1.0-beta.1",
+    "version": "1.0.0",
     "description": "Ghar Ka Daily Hisab Kitab",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,10 +14,12 @@
       "backgroundColor": "#0d9488"
     },
     "ios": {
+      "version": "1.0.0",
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.dailymunim"
     },
     "android": {
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -27,6 +29,7 @@
       "package": "com.anonymous.dailymunim"
     },
     "web": {
+      "version": "1.0.0",
       "favicon": "./assets/favicon.png"
     },
     "extra": {
