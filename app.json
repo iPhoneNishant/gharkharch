@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -26,12 +25,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.dailymunim",
-      "permissions": [
-        "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "com.google.android.gms.permission.AD_ID"
-      ]
+      "package": "com.anonymous.dailymunim"
     },
     "web": {
       "version": "1.0.0",
@@ -43,13 +37,7 @@
       }
     },
   "plugins": [
-    "@react-native-community/datetimepicker",
-    [
-      "expo-ads-admob",
-      {
-        "userTrackingPermission": "This identifier will be used to deliver personalized ads to you."
-      }
-    ]
+    "@react-native-community/datetimepicker"
   ]
   }
 }

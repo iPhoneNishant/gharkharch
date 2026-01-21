@@ -49,8 +49,8 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
     "See .env.example for the required variables.\n" +
     `Current values: apiKey=${firebaseConfig.apiKey ? '***' : 'MISSING'}, projectId=${firebaseConfig.projectId || 'MISSING'}`;
   console.error(errorMsg);
-  // Throw error to fail fast and prevent Firebase from initializing with invalid config
-  throw new Error(errorMsg);
+  // Log warning instead of throwing error to prevent app crashes
+  console.warn('Firebase not initialized due to missing configuration');
 }
 
 let app: FirebaseApp;
