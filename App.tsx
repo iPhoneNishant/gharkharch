@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation';
 import { initializeNotifications, rescheduleAllRecurringTransactionNotifications, cancelAllScheduledNotifications } from './src/services/recurringTransactionService';
+import { initializeAdMob, setupAdMobListeners } from './src/services/adMobService';
 import { useAuthStore } from './src/stores';
 import { useRecurringTransactionStore } from './src/stores/recurringTransactionStore';
 
@@ -25,10 +26,12 @@ export default function App() {
 
 
   useEffect(() => {
-    // Initialize notifications for recurring transactions (one-time setup)
+    // Initialize notifications and AdMob for recurring transactions (one-time setup)
     if (!hasInitializedNotificationsRef.current) {
       hasInitializedNotificationsRef.current = true;
       initializeNotifications();
+      initializeAdMob();
+      setupAdMobListeners();
 
       // NUCLEAR OPTION: Immediately cancel ALL existing notifications to start completely fresh
       console.log('🚨 App starting - nuclear cleanup of all notifications');

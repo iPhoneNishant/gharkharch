@@ -232,3 +232,41 @@ export const COLLECTIONS = {
   ACCOUNTS: 'accounts',
   TRANSACTIONS: 'transactions',
 } as const;
+
+/**
+ * AdMob Configuration
+ * Replace these with your actual AdMob App IDs and Ad Unit IDs
+ * Get these from your AdMob account: https://admob.google.com
+ */
+export const ADMOB_CONFIG = {
+  // Android AdMob App ID
+  androidAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',
+
+  // iOS AdMob App ID
+  iosAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',
+
+  // Ad Unit IDs - Replace with your actual ad unit IDs
+  adUnits: {
+    // Banner Ad - appears at bottom/top of screen
+    banner: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+
+    // Interstitial Ad - full screen ad
+    interstitial: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+
+    // Rewarded Ad - user watches ad for reward
+    rewarded: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+  },
+
+  // Test Ad Unit IDs for development (these always show test ads)
+  testAdUnits: {
+    banner: 'ca-app-pub-3940256099942544/6300978111',
+    interstitial: 'ca-app-pub-3940256099942544/1033173712',
+    rewarded: 'ca-app-pub-3940256099942544/5224354917',
+  },
+} as const;
+
+/**
+ * Whether to use test ads in development
+ * Set to false when publishing to production
+ */
+export const USE_TEST_ADS = true;
