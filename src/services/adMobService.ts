@@ -3,7 +3,7 @@
  * Handles AdMob initialization and ad management
  */
 
-import { AdMob, AdMobBanner, AdMobInterstitial, AdMobRewarded, setTestDeviceIDAsync } from 'expo-ads-admob';
+import { AdMobBanner, AdMobInterstitial, AdMobRewarded, setTestDeviceIDAsync } from 'expo-ads-admob';
 import { ADMOB_CONFIG, USE_TEST_ADS } from '../config/constants';
 import { Platform } from 'react-native';
 
@@ -13,6 +13,12 @@ import { Platform } from 'react-native';
  */
 export const initializeAdMob = async (): Promise<void> => {
   try {
+    // Check if AdMob config is available
+    if (!ADMOB_CONFIG) {
+      console.warn('AdMob: Configuration not found, skipping initialization');
+      return;
+    }
+
     // Set test device for development
     if (__DEV__) {
       await setTestDeviceIDAsync('EMULATOR');
@@ -20,14 +26,17 @@ export const initializeAdMob = async (): Promise<void> => {
 
     // Initialize AdMob with the appropriate app ID
     const appId = Platform.select({
-      android: USE_TEST_ADS ? ADMOB_CONFIG.testAdUnits.banner.split('/')[0] : ADMOB_CONFIG.androidAppId,
-      ios: USE_TEST_ADS ? ADMOB_CONFIG.testAdUnits.banner.split('/')[0] : ADMOB_CONFIG.iosAppId,
+      android: USE_TEST_ADS
+        ? ADMOB_CONFIG?.testAdUnits?.banner?.split('/')[0]
+        : ADMOB_CONFIG?.androidAppId,
+      ios: USE_TEST_ADS
+        ? ADMOB_CONFIG?.testAdUnits?.banner?.split('/')[0]
+        : ADMOB_CONFIG?.iosAppId,
     });
 
-    if (appId) {
-      await AdMob.start(appId);
-      console.log('AdMob initialized successfully');
-    }
+    // AdMob initialization is handled automatically by the plugin in app.json
+    // No need to call AdMob.start() manually
+    console.log('AdMob initialized via plugin configuration');
   } catch (error) {
     console.error('Failed to initialize AdMob:', error);
   }
@@ -50,10 +59,29 @@ export interface BannerAdProps {
  * Get the appropriate ad unit ID based on environment
  */
 export const getAdUnitId = (adType: keyof typeof ADMOB_CONFIG.adUnits): string => {
-  if (USE_TEST_ADS) {
-    return ADMOB_CONFIG.testAdUnits[adType as keyof typeof ADMOB_CONFIG.testAdUnits] || ADMOB_CONFIG.testAdUnits.banner;
+  try {
+    if (USE_TEST_ADS) {
+      // Use test ad units for development
+      if (ADMOB_CONFIG?.testAdUnits?.[adType as keyof typeof ADMOB_CONFIG.testAdUnits]) {
+        return ADMOB_CONFIG.testAdUnits[adType as keyof typeof ADMOB_CONFIG.testAdUnits];
+      }
+      // Fallback to test banner if specific ad type not found
+      return ADMOB_CONFIG?.testAdUnits?.banner || 'ca-app-pub-3940256099942544/6300978111';
+    }
+
+    // Use production ad units
+    if (ADMOB_CONFIG?.adUnits?.[adType]) {
+      return ADMOB_CONFIG.adUnits[adType];
+    }
+
+    // Fallback to test banner if production ad unit not configured
+    console.warn(`AdMob: Production ad unit for '${adType}' not configured, using test ad`);
+    return ADMOB_CONFIG?.testAdUnits?.banner || 'ca-app-pub-3940256099942544/6300978111';
+  } catch (error) {
+    console.error('AdMob: Error getting ad unit ID:', error);
+    // Ultimate fallback
+    return 'ca-app-pub-3940256099942544/6300978111';
   }
-  return ADMOB_CONFIG.adUnits[adType];
 };
 
 /**
@@ -61,7 +89,17 @@ export const getAdUnitId = (adType: keyof typeof ADMOB_CONFIG.adUnits): string =
  */
 export const showInterstitialAd = async (): Promise<void> => {
   try {
+    if (!ADMOB_CONFIG) {
+      console.warn('AdMob: Configuration not available');
+      return;
+    }
+
     const adUnitId = getAdUnitId('interstitial');
+    if (!adUnitId || adUnitId.includes('XXXXXXXXXXXXXXXX')) {
+      console.warn('AdMob: Interstitial ad unit ID not properly configured');
+      return;
+    }
+
     await AdMobInterstitial.setAdUnitID(adUnitId);
 
     // Load and show the ad
@@ -79,7 +117,17 @@ export const showInterstitialAd = async (): Promise<void> => {
  */
 export const showRewardedAd = async (): Promise<void> => {
   try {
+    if (!ADMOB_CONFIG) {
+      console.warn('AdMob: Configuration not available');
+      return;
+    }
+
     const adUnitId = getAdUnitId('rewarded');
+    if (!adUnitId || adUnitId.includes('XXXXXXXXXXXXXXXX')) {
+      console.warn('AdMob: Rewarded ad unit ID not properly configured');
+      return;
+    }
+
     await AdMobRewarded.setAdUnitID(adUnitId);
 
     // Load and show the ad
@@ -121,7 +169,17 @@ export const isRewardedAdLoaded = async (): Promise<boolean> => {
  */
 export const preloadInterstitialAd = async (): Promise<void> => {
   try {
+    if (!ADMOB_CONFIG) {
+      console.warn('AdMob: Configuration not available for preloading');
+      return;
+    }
+
     const adUnitId = getAdUnitId('interstitial');
+    if (!adUnitId || adUnitId.includes('XXXXXXXXXXXXXXXX')) {
+      console.warn('AdMob: Interstitial ad unit ID not properly configured for preloading');
+      return;
+    }
+
     await AdMobInterstitial.setAdUnitID(adUnitId);
     await AdMobInterstitial.requestAdAsync();
     console.log('Interstitial ad preloaded');
@@ -135,7 +193,17 @@ export const preloadInterstitialAd = async (): Promise<void> => {
  */
 export const preloadRewardedAd = async (): Promise<void> => {
   try {
+    if (!ADMOB_CONFIG) {
+      console.warn('AdMob: Configuration not available for preloading');
+      return;
+    }
+
     const adUnitId = getAdUnitId('rewarded');
+    if (!adUnitId || adUnitId.includes('XXXXXXXXXXXXXXXX')) {
+      console.warn('AdMob: Rewarded ad unit ID not properly configured for preloading');
+      return;
+    }
+
     await AdMobRewarded.setAdUnitID(adUnitId);
     await AdMobRewarded.requestAdAsync();
     console.log('Rewarded ad preloaded');
@@ -174,20 +242,12 @@ export const setupAdMobListeners = (): void => {
     console.error('Rewarded ad failed to load:', error);
   });
 
-  AdMobRewarded.addEventListener('rewardedVideoDidOpen', () => {
-    console.log('Rewarded ad opened');
+  AdMobRewarded.addEventListener('rewardedVideoDidPresent', () => {
+    console.log('Rewarded ad presented');
   });
 
-  AdMobRewarded.addEventListener('rewardedVideoDidClose', () => {
-    console.log('Rewarded ad closed');
-  });
-
-  AdMobRewarded.addEventListener('rewardedVideoDidStart', () => {
-    console.log('Rewarded ad started');
-  });
-
-  AdMobRewarded.addEventListener('rewardedVideoDidComplete', () => {
-    console.log('Rewarded ad completed');
+  AdMobRewarded.addEventListener('rewardedVideoDidDismiss', () => {
+    console.log('Rewarded ad dismissed');
   });
 
   AdMobRewarded.addEventListener('rewardedVideoUserDidEarnReward', (reward) => {
