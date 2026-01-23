@@ -35,7 +35,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const SettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
-  const { user, signOut, isLoading } = useAuthStore();
+  const { user, signOut, deleteAccount, isLoading } = useAuthStore();
   
   const [pinSetup, setPinSetup] = useState<boolean | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -86,6 +86,28 @@ const SettingsScreen: React.FC = () => {
               await signOut();
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This action cannot be undone. All your accounts, transactions, and data will be permanently deleted.\n\nAre you sure you want to delete your account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              // Navigation will be handled by auth state change
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to delete account');
             }
           },
         },
@@ -206,6 +228,14 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.settingsList}>
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingLabel}>Export Data</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.settingItem, styles.deleteAccountItem]}
+            onPress={handleDeleteAccount}
+          >
+            <Text style={styles.deleteAccountLabel}>Delete Account</Text>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 

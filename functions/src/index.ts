@@ -1407,3 +1407,76 @@ export const onCreateUser = onDocumentCreated(
     }
   }
 );
+
+/**
+ * Delete user account and all associated data
+ * This function deletes all user data from Firestore
+ */
+export const deleteUserAccount = onCall(async (request: CallableRequest<{}>) => {
+  // Verify user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated to delete account');
+  }
+
+  const userId = request.auth.uid;
+  console.log(`Starting account deletion for user: ${userId}`);
+
+  try {
+    // Use a batch write for atomic operation
+    const batch = db.batch();
+
+    // Delete all user accounts
+    const accountsSnapshot = await db.collection('accounts')
+      .where('userId', '==', userId)
+      .get();
+
+    console.log(`Found ${accountsSnapshot.size} accounts to delete`);
+    accountsSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete all user transactions
+    const transactionsSnapshot = await db.collection('transactions')
+      .where('userId', '==', userId)
+      .get();
+
+    console.log(`Found ${transactionsSnapshot.size} transactions to delete`);
+    transactionsSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete all recurring transactions
+    const recurringTransactionsSnapshot = await db.collection('recurringTransactions')
+      .where('userId', '==', userId)
+      .get();
+
+    console.log(`Found ${recurringTransactionsSnapshot.size} recurring transactions to delete`);
+    recurringTransactionsSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete user profile
+    const userProfileRef = db.collection('users').doc(userId);
+    batch.delete(userProfileRef);
+
+    // Commit all deletions
+    await batch.commit();
+
+    console.log(`Successfully deleted all data for user: ${userId}`);
+    console.log(`Deleted: ${accountsSnapshot.size} accounts, ${transactionsSnapshot.size} transactions, ${recurringTransactionsSnapshot.size} recurring transactions, and user profile`);
+
+    return {
+      success: true,
+      deletedItems: {
+        accounts: accountsSnapshot.size,
+        transactions: transactionsSnapshot.size,
+        recurringTransactions: recurringTransactionsSnapshot.size,
+        userProfile: 1
+      }
+    };
+
+  } catch (error) {
+    console.error(`Error deleting account for user ${userId}:`, error);
+    throw new HttpsError('internal', 'Failed to delete account data');
+  }
+});

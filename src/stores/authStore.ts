@@ -30,6 +30,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   clearError: () => void;
 }
@@ -50,7 +51,7 @@ const docToUserProfile = (docData: Record<string, unknown>, id: string): UserPro
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   firebaseUser: null,
-  isLoading: false,
+  isLoading: true,
   isAuthenticated: false,
   error: null,
   isFreshLogin: false,
@@ -272,6 +273,56 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const errorMessage = error instanceof Error ? error.message : 'Sign out failed';
       set({ isLoading: false, error: errorMessage });
       throw error;
+    }
+  },
+
+  /**
+   * Delete user account and all associated data
+   */
+  deleteAccount: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const currentUser = firebaseAuth.currentUser;
+      if (!currentUser) {
+        throw new Error('No user is currently signed in');
+      }
+
+      // Call Firebase function to delete all user data
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const functions = getFunctions();
+      const deleteUserData = httpsCallable(functions, 'deleteUserAccount');
+
+      await deleteUserData();
+
+      // Delete the user account from Firebase Auth
+      await currentUser.delete();
+
+      // Clear local data and sign out
+      set({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+        isFreshLogin: false,
+        isInitialized: true
+      });
+
+    } catch (error: any) {
+      console.error('Account deletion error:', error);
+
+      let errorMessage = 'Failed to delete account';
+
+      if (error?.code === 'auth/requires-recent-login') {
+        errorMessage = 'Please sign in again before deleting your account';
+      } else if (error?.code === 'permission-denied') {
+        errorMessage = 'Permission denied. Please contact support.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      set({ isLoading: false, error: errorMessage });
+      throw new Error(errorMessage);
     }
   },
 

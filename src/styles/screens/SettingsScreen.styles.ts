@@ -99,6 +99,17 @@ export const settingsScreenStyles = StyleSheet.create({
     fontSize: typography.fontSize.lg,
     color: colors.neutral[400],
   },
+  deleteAccountItem: {
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral[200],
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm,
+  },
+  deleteAccountLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.error,
+    fontWeight: typography.fontWeight.medium,
+  },
   signOutButton: {
     backgroundColor: colors.background.elevated,
     marginHorizontal: spacing.base,
