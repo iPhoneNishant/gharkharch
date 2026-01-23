@@ -36,11 +36,14 @@ const AuthScreen: React.FC = () => {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const handleSubmit = async () => {
+    setIsAuthenticating(true);
     if (mode === 'forgotPassword') {
       if (!email.trim()) {
         Alert.alert('Error', 'Please enter your email address');
+        setIsAuthenticating(false);
         return;
       }
 
@@ -63,22 +66,27 @@ const AuthScreen: React.FC = () => {
         );
       } catch (err) {
         // Error is handled by the store
+      } finally {
+        setIsAuthenticating(false);
       }
       return;
     }
 
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Please enter email and password');
+      setIsAuthenticating(false);
       return;
     }
 
     if (mode === 'signUp') {
       if (password.length < 6) {
         Alert.alert('Error', 'Password must be at least 6 characters');
+        setIsAuthenticating(false);
         return;
       }
       if (password !== confirmPassword) {
         Alert.alert('Error', 'Passwords do not match. Please try again.');
+        setIsAuthenticating(false);
         return;
       }
     }
@@ -91,6 +99,8 @@ const AuthScreen: React.FC = () => {
       }
     } catch (err) {
       // Error is handled by the store
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -267,10 +277,10 @@ const AuthScreen: React.FC = () => {
               <ActivityIndicator color={colors.neutral[0]} />
             ) : (
               <Text style={styles.submitButtonText}>
-                {mode === 'signIn' 
-                  ? 'Sign In' 
-                  : mode === 'signUp' 
-                  ? 'Create Account' 
+                {mode === 'signIn'
+                  ? 'Sign In'
+                  : mode === 'signUp'
+                  ? 'Create Account'
                   : 'Send Reset Email'}
               </Text>
             )}
@@ -297,6 +307,20 @@ const AuthScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Loading Overlay */}
+      {isAuthenticating && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color={colors.primary[500]} />
+            <Text style={styles.loadingText}>
+              {mode === 'signIn' ? 'Signing in...' :
+               mode === 'signUp' ? 'Creating account...' :
+               'Sending reset email...'}
+            </Text>
+          </View>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -450,6 +474,32 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.primary[500],
     fontWeight: typography.fontWeight.medium,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContent: {
+    backgroundColor: colors.neutral[0],
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    minWidth: 200,
+    ...shadows.lg,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[700],
+    fontWeight: typography.fontWeight.medium,
+    textAlign: 'center',
   },
 });
 

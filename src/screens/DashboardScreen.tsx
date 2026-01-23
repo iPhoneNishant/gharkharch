@@ -27,7 +27,6 @@ import {
 import { dashboardScreenStyles as styles } from '../styles/screens/DashboardScreen.styles';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { getClosingBalance } from '../utils/reports';
-// import AdMobBanner from '../components/AdMobBanner';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

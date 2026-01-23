@@ -50,7 +50,7 @@ const docToUserProfile = (docData: Record<string, unknown>, id: string): UserPro
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   firebaseUser: null,
-  isLoading: true,
+  isLoading: false,
   isAuthenticated: false,
   error: null,
   isFreshLogin: false,
@@ -172,7 +172,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Sign in with email and password
    */
   signIn: async (email: string, password: string) => {
-    set({ isLoading: true, error: null, isFreshLogin: true });
+    set({ isLoading: false, error: null, isFreshLogin: true });
     
     try {
       await signInWithEmailAndPassword(firebaseAuth, email, password);
@@ -187,6 +187,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         errorMessage = 'No account found with this email. Please sign up instead.';
       } else if (error?.code === 'auth/wrong-password') {
         errorMessage = 'Incorrect password. Please try again.';
+      } else if (error?.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
       } else if (error?.code === 'auth/invalid-email') {
         errorMessage = 'Invalid email address. Please check and try again.';
       } else if (error?.code === 'auth/user-disabled') {
@@ -208,7 +210,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Sign up with email and password
    */
   signUp: async (email: string, password: string, displayName?: string) => {
-    set({ isLoading: true, error: null, isFreshLogin: true });
+    set({ isLoading: false, error: null, isFreshLogin: true });
     
     try {
       const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
@@ -277,7 +279,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Send password reset email
    */
   resetPassword: async (email: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: false, error: null });
     
     try {
       await sendPasswordResetEmail(firebaseAuth, email.trim());
