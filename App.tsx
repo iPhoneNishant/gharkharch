@@ -13,7 +13,8 @@ import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation';
-import { initializeNotifications, rescheduleAllRecurringTransactionNotifications, cancelAllScheduledNotifications } from './src/services/recurringTransactionService';
+import './src/i18n'; // Initialize i18n
+import { setupNotificationChannels, rescheduleAllRecurringTransactionNotifications, cancelAllScheduledNotifications } from './src/services/recurringTransactionService';
 import { useAuthStore } from './src/stores';
 import { useRecurringTransactionStore } from './src/stores/recurringTransactionStore';
 
@@ -31,7 +32,7 @@ export default function App() {
       hasInitializedNotificationsRef.current = true;
 
       // Initialize notifications
-      initializeNotifications();
+      setupNotificationChannels();
 
       // NUCLEAR OPTION: Immediately cancel ALL existing notifications to start completely fresh
       console.log('🚨 App starting - nuclear cleanup of all notifications');
@@ -53,7 +54,7 @@ export default function App() {
 
             if (activeTransactions.length > 0) {
               console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions on app launch`);
-              await rescheduleAllRecurringTransactionNotifications(activeTransactions);
+              await rescheduleAllRecurringTransactionNotifications(activeTransactions, true);
               console.log('Successfully scheduled recurring transaction notifications on app launch');
             }
           } catch (error) {
@@ -83,7 +84,7 @@ export default function App() {
             const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
             if (activeTransactions.length > 0) {
               console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions (data ready)`);
-              await rescheduleAllRecurringTransactionNotifications(activeTransactions);
+              await rescheduleAllRecurringTransactionNotifications(activeTransactions, true);
               console.log('Successfully scheduled recurring transaction notifications');
             }
           } catch (error) {

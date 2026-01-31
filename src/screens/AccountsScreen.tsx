@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -27,8 +28,9 @@ import {
   spacing,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
-import { accountsScreenStyles as styles } from '../styles/screens/AccountsScreen.styles';
+import { getAccountsScreenStyles } from '../styles/screens/AccountsScreen.styles';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { getOpeningBalance, getClosingBalance, getTransactionsForDateRange } from '../utils/reports';
 
@@ -39,6 +41,9 @@ type TabType = 'balance' | 'income' | 'expense';
 const AccountsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const { t } = useTranslation();
+  const styles = getAccountsScreenStyles();
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
   
   const { user } = useAuthStore();
   const { 
@@ -63,6 +68,14 @@ const AccountsScreen: React.FC = () => {
       };
     }
   }, [user?.id, subscribeToAccounts, subscribeToTransactions]);
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState<TabType>('balance');
   
@@ -121,7 +134,7 @@ const AccountsScreen: React.FC = () => {
         }, 0);
         
         result.push({
-          title: 'Asset (What we have)',
+          title: t('accounts.assetSectionTitle'),
           data: assetAccounts,
           type: 'asset',
           total: totalClosing,
@@ -139,7 +152,7 @@ const AccountsScreen: React.FC = () => {
         }, 0);
         
         result.push({
-          title: 'Liabilities (What We Have to Pay)',
+          title: t('accounts.liabilitySectionTitle'),
           data: liabilityAccounts,
           type: 'liability',
           total: totalClosing,
@@ -400,7 +413,7 @@ const AccountsScreen: React.FC = () => {
               }}
             >
               <View style={styles.dateButtonContent}>
-                <Text style={styles.dateLabel}>From Date</Text>
+                <Text style={styles.dateLabel}>{t('accountDetail.fromDateTitle')}</Text>
                 <Text style={styles.dateValue} numberOfLines={1} ellipsizeMode="tail">
                   {fromDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </Text>
@@ -415,7 +428,7 @@ const AccountsScreen: React.FC = () => {
               }}
             >
               <View style={styles.dateButtonContent}>
-                <Text style={styles.dateLabel}>To Date</Text>
+                <Text style={styles.dateLabel}>{t('accountDetail.toDateTitle')}</Text>
                 <Text style={styles.dateValue} numberOfLines={1} ellipsizeMode="tail">
                   {toDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </Text>
@@ -432,7 +445,7 @@ const AccountsScreen: React.FC = () => {
           onPress={() => setActiveTab('balance')}
         >
           <Text style={[styles.tabText, activeTab === 'balance' && styles.activeTabText]}>
-            Balance Sheet
+            {t('accounts.tabBalance')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -440,7 +453,7 @@ const AccountsScreen: React.FC = () => {
           onPress={() => setActiveTab('income')}
         >
           <Text style={[styles.tabText, activeTab === 'income' && styles.activeTabText]}>
-            Income
+            {t('accounts.tabIncome')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -448,7 +461,7 @@ const AccountsScreen: React.FC = () => {
           onPress={() => setActiveTab('expense')}
         >
           <Text style={[styles.tabText, activeTab === 'expense' && styles.activeTabText]}>
-            Expenses
+            {t('accounts.tabExpense')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -456,7 +469,7 @@ const AccountsScreen: React.FC = () => {
       {/* Accounts List */}
       {isLoading ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>Loading...</Text>
+          <Text style={styles.emptyStateText}>{t('common.loading')}</Text>
         </View>
       ) : sections.length === 0 ? (
         <View style={styles.emptyState}>
@@ -464,10 +477,10 @@ const AccountsScreen: React.FC = () => {
             {activeTab === 'balance' ? '🏦' : activeTab === 'income' ? '💰' : '💸'}
           </Text>
           <Text style={styles.emptyStateText}>
-            No {activeTab === 'balance' ? 'balance sheet' : activeTab} accounts yet
+            {activeTab === 'balance' ? t('accounts.emptyTitleBalance') : activeTab === 'income' ? t('accounts.emptyTitleIncome') : t('accounts.emptyTitleExpense')}
           </Text>
           <Text style={styles.emptyStateSubtext}>
-            Add your first account to get started
+            {t('accounts.emptySubtext')}
           </Text>
         </View>
       ) : (
@@ -504,11 +517,11 @@ const AccountsScreen: React.FC = () => {
             <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
-                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">{t('common.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">From Date</Text>
+                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('accountDetail.fromDateTitle')}</Text>
                 <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
-                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
                 </TouchableOpacity>
               </View>
               <DateTimePicker
@@ -544,11 +557,11 @@ const AccountsScreen: React.FC = () => {
             <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
-                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">{t('common.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">To Date</Text>
+                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('accountDetail.toDateTitle')}</Text>
                 <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
-                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
                 </TouchableOpacity>
               </View>
               <DateTimePicker

@@ -6,7 +6,7 @@
 import { StyleSheet } from 'react-native';
 import { colors, typography, spacing, borderRadius, shadows } from '../../config/theme';
 
-export const accountsScreenStyles = StyleSheet.create({
+export const getAccountsScreenStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,

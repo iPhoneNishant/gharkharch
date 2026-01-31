@@ -8,13 +8,15 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
-import { useAuthStore, usePinAuthStore, useRecurringTransactionStore } from '../stores';
+import { useAuthStore, usePinAuthStore, useRecurringTransactionStore, useNetworkStore } from '../stores';
 import { RootStackParamList } from '../types';
-import { colors } from '../config/theme';
+import { colors, addFontScaleListener, typography } from '../config/theme';
+import { useTranslation } from 'react-i18next';
 import { navigationRef } from './navigationRef';
 import { startSmsAutoDetect, stopSmsAutoDetect } from '../services/smsAutoDetectService';
 
 // Screens
+import NoNetworkScreen from '../screens/NoNetworkScreen';
 import AuthScreen from '../screens/AuthScreen';
 import PinSetupScreen from '../screens/PinSetupScreen';
 import PinChangeScreen from '../screens/PinChangeScreen';
@@ -32,10 +34,13 @@ import RecurringTransactionsScreen from '../screens/RecurringTransactionsScreen'
 import SettingsScreen from '../screens/SettingsScreen';
 import SubCategoryTransactionsScreen from '../screens/SubCategoryTransactionsScreen';
 import SmsImportScreen from '../screens/SmsImportScreen';
+import UserGuideScreen from '../screens/UserGuideScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading, initialize, signOut, user } = useAuthStore();
   // Use individual selectors for values that trigger re-renders
   const isPinVerified = usePinAuthStore(state => state.isPinVerified);
@@ -48,11 +53,28 @@ const RootNavigator: React.FC = () => {
   const previousAuthRef = useRef(false);
   const hasSubscribedToRecurringTransactionsRef = useRef(false);
 
+  // Network state
+  const initializeNetwork = useNetworkStore(state => state.initialize);
+  const { isConnected, isInternetReachable } = useNetworkStore();
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = initializeNetwork();
+    return () => unsubscribe();
+  }, [initializeNetwork]);
 
   useEffect(() => {
     const unsubscribe = initialize();
     return () => unsubscribe();
   }, [initialize]);
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   // Start Android SMS auto-detect when user is fully inside the app
   useEffect(() => {
@@ -140,6 +162,13 @@ const RootNavigator: React.FC = () => {
     [handlePinSetupComplete]
   );
 
+  // Check for network connectivity
+  // Only show offline screen if we definitely know we are offline (not null)
+  const isOffline = isConnected === false || (isConnected === true && isInternetReachable === false);
+
+  if (isOffline) {
+    return <NoNetworkScreen />;
+  }
 
   if (isLoading || (isAuthenticated && isCheckingPin)) {
     return (
@@ -150,8 +179,9 @@ const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} key={currentRoute}>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
+        key={currentRoute}
         initialRouteName={currentRoute}
         screenOptions={{
           headerShown: false,
@@ -161,6 +191,7 @@ const RootNavigator: React.FC = () => {
           },
           headerTitleStyle: {
             color: colors.text.primary,
+            fontSize: typography.fontSize.base,
           },
           contentStyle: { backgroundColor: colors.background.primary },
         }}
@@ -243,9 +274,9 @@ const RootNavigator: React.FC = () => {
               component={ReportsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Summary Month Wise',
+                headerTitle: t('reportsList.summaryTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 
@@ -253,9 +284,9 @@ const RootNavigator: React.FC = () => {
               component={ReportsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Summary Custom Range',
+                headerTitle: t('reportsList.summaryTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 
@@ -263,10 +294,9 @@ const RootNavigator: React.FC = () => {
               component={ReportsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Transactions Month Wise',
+                headerTitle: t('reportsList.transactionsTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
-                headerBackTitleVisible: true,
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 
@@ -274,10 +304,9 @@ const RootNavigator: React.FC = () => {
               component={ReportsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Transactions Custom Range',
+                headerTitle: t('reportsList.transactionsTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
-                headerBackTitleVisible: true,
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 
@@ -285,10 +314,9 @@ const RootNavigator: React.FC = () => {
               component={MonthToMonthReportScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Month-to-Month Report',
+                headerTitle: t('reportsList.monthToMonthTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
-                headerBackTitleVisible: true,
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 
@@ -296,10 +324,9 @@ const RootNavigator: React.FC = () => {
               component={DayToDayReportScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Day-to-Day Report',
+                headerTitle: t('reportsList.dayToDayTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
-                headerBackTitleVisible: true,
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 
@@ -381,8 +408,10 @@ const RootNavigator: React.FC = () => {
                 headerBackTitle: 'Back',
               })}
             />
-          </>
-        )}
+            <Stack.Screen name="UserGuide" component={UserGuideScreen} />
+             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+           </>
+         )}
       </Stack.Navigator>
     </NavigationContainer>
   );

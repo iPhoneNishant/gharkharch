@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -41,6 +42,7 @@ import {
   shadows,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
 import { 
   ACCOUNT_CATEGORIES, 
@@ -56,6 +58,371 @@ const AddAccountScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
+  const { t } = useTranslation();
+  const [fontScaleVersion, setFontScaleVersion] = React.useState(0);
+  React.useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    scrollContent: {
+      padding: spacing.base,
+    },
+    section: {
+      marginBottom: spacing.xl,
+    },
+    sectionTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+      marginLeft: spacing.sm,
+    },
+    sectionTitle: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.secondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    infoButton: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.primary[500],
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: spacing.xs,
+    },
+    infoButtonText: {
+      fontSize: typography.fontSize.xs,
+      fontWeight: typography.fontWeight.bold,
+      color: colors.neutral[0],
+    },
+    typeGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    typeCard: {
+      flex: 1,
+      minWidth: '45%',
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: 'transparent',
+      ...shadows.sm,
+    },
+    typeCardActive: {
+    },
+    typeIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    typeIconText: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.bold,
+    },
+    typeName: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+    },
+    typeSubtitle: {
+      fontSize: typography.fontSize.xs,
+      color: colors.text.tertiary,
+      textAlign: 'center',
+      marginTop: spacing.xs,
+      paddingHorizontal: spacing.xs,
+      width: '100%',
+    },
+    typeDescription: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+      textAlign: 'center',
+      marginTop: spacing.md,
+      paddingHorizontal: spacing.base,
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.sm,
+    },
+    formCard: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      ...shadows.sm,
+    },
+    selector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.base,
+    },
+    selectorLabel: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      width: 100,
+    },
+    inputLabel: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+      marginBottom: spacing.sm,
+    },
+    selectorValue: {
+      flex: 1,
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    selectorPlaceholder: {
+      flex: 1,
+      fontSize: typography.fontSize.base,
+      color: colors.text.tertiary,
+    },
+    chevron: {
+      fontSize: typography.fontSize.xl,
+      color: colors.neutral[400],
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border.light,
+      marginLeft: spacing.base,
+    },
+    textInput: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+      padding: spacing.base,
+    },
+    balanceInput: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.base,
+    },
+    currencySymbol: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+      marginRight: spacing.sm,
+    },
+    balanceTextInput: {
+      flex: 1,
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+    },
+    helperText: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.tertiary,
+      marginTop: spacing.sm,
+      marginLeft: spacing.sm,
+    },
+    colorGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.md,
+    },
+    colorOption: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    colorOptionSelected: {
+      borderWidth: 3,
+      borderColor: colors.neutral[0],
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    colorCheck: {
+      color: colors.neutral[0],
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.bold,
+    },
+    submitButton: {
+      backgroundColor: colors.primary[500],
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.base,
+      alignItems: 'center',
+      marginTop: spacing.lg,
+      ...shadows.md,
+    },
+    submitButtonDisabled: {
+      opacity: 0.7,
+    },
+    loadingContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    submitButtonText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.neutral[0],
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    modalCancelButton: {
+      paddingLeft: spacing.sm,
+      paddingRight: spacing.sm,
+      paddingVertical: spacing.xs,
+      minWidth: 90,
+      width: 90,
+      flexShrink: 0,
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+    },
+    modalCancel: {
+      fontSize: typography.fontSize.base,
+      color: colors.primary[500],
+      includeFontPadding: false,
+      textAlignVertical: 'center',
+      flexShrink: 0,
+    },
+    modalTitle: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      flex: 1,
+      textAlign: 'center',
+      marginHorizontal: spacing.sm,
+    },
+    optionItem: {
+      padding: spacing.base,
+      backgroundColor: colors.background.elevated,
+    },
+    optionText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    optionSubtext: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.tertiary,
+      marginTop: 2,
+    },
+    separator: {
+      height: 1,
+      backgroundColor: colors.border.light,
+    },
+    addCustomButton: {
+      padding: spacing.base,
+      alignItems: 'center',
+      backgroundColor: colors.primary[50],
+    },
+    addCustomButtonText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.primary[500],
+    },
+    modalContent: {
+      padding: spacing.base,
+    },
+    modalDone: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.primary[500],
+    },
+    loadingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    },
+    loadingContent: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      padding: spacing.xl,
+      alignItems: 'center',
+      minWidth: 200,
+      ...shadows.lg,
+    },
+    loadingText: {
+      marginTop: spacing.base,
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    infoModalContent: {
+      paddingBottom: spacing.lg,
+      paddingHorizontal: spacing.base,
+    },
+    infoCard: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.md,
+      marginBottom: spacing.sm,
+      overflow: 'hidden',
+      ...shadows.sm,
+    },
+    infoCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    infoCardBody: {
+      padding: spacing.sm,
+      paddingTop: spacing.xs,
+      paddingBottom: spacing.sm,
+    },
+    infoIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.sm,
+      backgroundColor: 'transparent',
+    },
+    infoIconText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.bold,
+    },
+    infoTitle: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      flex: 1,
+    },
+    infoDescription: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.primary,
+      lineHeight: 18,
+      marginTop: spacing.xs / 2,
+    },
+  });
   
   const { createAccount, accounts, error: accountError } = useAccountStore();
 
@@ -281,7 +648,7 @@ const AddAccountScreen: React.FC = () => {
         {/* Account Type Selector */}
         <View style={styles.section}>
           <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionTitle}>Account Type</Text>
+            <Text style={styles.sectionTitle}>{t('addAccount.accountType')}</Text>
             <TouchableOpacity
               style={styles.infoButton}
               onPress={() => setShowAccountTypeInfo(true)}
@@ -315,16 +682,16 @@ const AddAccountScreen: React.FC = () => {
                   styles.typeName,
                   accountType === type && { color: getAccountTypeColor(type) }
                 ]}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {type === 'asset' ? t('addAccount.asset') : type === 'liability' ? t('addAccount.liability') : type === 'income' ? t('addAccount.income') : t('addAccount.expense')}
                 </Text>
                 {type === 'asset' && (
                   <Text style={styles.typeSubtitle} numberOfLines={2}>
-                    What we have
+                    {t('addAccount.assetSubtitle')}
                   </Text>
                 )}
                 {type === 'liability' && (
                   <Text style={styles.typeSubtitle} numberOfLines={2}>
-                    What we have to pay
+                    {t('addAccount.liabilitySubtitle')}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -334,7 +701,7 @@ const AddAccountScreen: React.FC = () => {
 
         {/* Category Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Category</Text>
+          <Text style={styles.sectionTitle}>{t('addAccount.category')}</Text>
           <View style={styles.formCard}>
             <TouchableOpacity
               style={styles.selector}
@@ -343,11 +710,11 @@ const AddAccountScreen: React.FC = () => {
                 setShowCategoryPicker(true);
               }}
             >
-              <Text style={styles.selectorLabel}>Category</Text>
+              <Text style={styles.selectorLabel}>{t('addAccount.category')}</Text>
               {parentCategory ? (
                 <Text style={styles.selectorValue}>{parentCategory}</Text>
               ) : (
-                <Text style={styles.selectorPlaceholder}>Select category</Text>
+                <Text style={styles.selectorPlaceholder}>{t('addAccount.selectCategory')}</Text>
               )}
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
@@ -362,11 +729,11 @@ const AddAccountScreen: React.FC = () => {
                     setShowSubCategoryPicker(true);
                   }}
                 >
-                  <Text style={styles.selectorLabel}>Sub-category</Text>
+                  <Text style={styles.selectorLabel}>{t('addAccount.subCategory')}</Text>
                   {subCategory ? (
                     <Text style={styles.selectorValue}>{subCategory}</Text>
                   ) : (
-                    <Text style={styles.selectorPlaceholder}>Select sub-category</Text>
+                    <Text style={styles.selectorPlaceholder}>{t('addAccount.selectSubCategory')}</Text>
                   )}
                   <Text style={styles.chevron}>›</Text>
                 </TouchableOpacity>
@@ -377,11 +744,11 @@ const AddAccountScreen: React.FC = () => {
 
         {/* Account Name */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Name</Text>
+          <Text style={styles.sectionTitle}>{t('addAccount.accountName')}</Text>
           <View style={styles.formCard}>
             <TextInput
               style={styles.textInput}
-              placeholder="Enter account name"
+              placeholder={t('addAccount.enterAccountName')}
               placeholderTextColor={colors.neutral[400]}
               value={name}
               onChangeText={setName}
@@ -393,7 +760,7 @@ const AddAccountScreen: React.FC = () => {
         {/* Opening Balance (only for asset/liability) */}
         {hasBalance && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Opening Balance</Text>
+            <Text style={styles.sectionTitle}>{t('addAccount.openingBalance')}</Text>
             <View style={styles.formCard}>
               <View style={styles.balanceInput}>
                 <Text style={styles.currencySymbol}>₹</Text>
@@ -665,9 +1032,9 @@ const AddAccountScreen: React.FC = () => {
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <View style={{ width: 90 }} />
-            <Text style={styles.modalTitle}>Account Types</Text>
+            <Text style={styles.modalTitle}>{t('addAccount.accountTypesTitle')}</Text>
             <TouchableOpacity onPress={() => setShowAccountTypeInfo(false)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -681,11 +1048,11 @@ const AddAccountScreen: React.FC = () => {
                     ↗
                   </Text>
                 </View>
-                <Text style={styles.infoTitle}>Assets – What you own</Text>
+                <Text style={styles.infoTitle}>{t('addAccount.info.assetTitle')}</Text>
               </View>
               <View style={styles.infoCardBody}>
                 <Text style={styles.infoDescription}>
-                  Money you have, like bank balance, cash, gold, or investments. These accounts track what you own and can have opening balances. Examples include savings accounts, checking accounts, fixed deposits, stocks, mutual funds, gold, property, and cash in hand.
+                  {t('addAccount.info.assetDescription')}
                 </Text>
               </View>
             </View>
@@ -697,11 +1064,11 @@ const AddAccountScreen: React.FC = () => {
                     ↙
                   </Text>
                 </View>
-                <Text style={styles.infoTitle}>Liabilities – What you owe</Text>
+                <Text style={styles.infoTitle}>{t('addAccount.info.liabilityTitle')}</Text>
               </View>
               <View style={styles.infoCardBody}>
                 <Text style={styles.infoDescription}>
-                  Loans, credit card dues, or any money you need to pay. These accounts track what you owe to others and can have opening balances. Examples include home loans, car loans, personal loans, credit card balances, education loans, and any other debts you need to repay.
+                  {t('addAccount.info.liabilityDescription')}
                 </Text>
               </View>
             </View>
@@ -713,11 +1080,11 @@ const AddAccountScreen: React.FC = () => {
                     ↓
                   </Text>
                 </View>
-                <Text style={styles.infoTitle}>Income – Money you receive</Text>
+                <Text style={styles.infoTitle}>{t('addAccount.info.incomeTitle')}</Text>
               </View>
               <View style={styles.infoCardBody}>
                 <Text style={styles.infoDescription}>
-                  Salary, business income, rent, or any money coming in. These accounts track sources of money you receive. Examples include salary, freelance income, business profits, rental income, dividends, interest earned, gifts received, and any other money coming into your accounts.
+                  {t('addAccount.info.incomeDescription')}
                 </Text>
               </View>
             </View>
@@ -729,11 +1096,11 @@ const AddAccountScreen: React.FC = () => {
                     ↑
                   </Text>
                 </View>
-                <Text style={styles.infoTitle}>Expenses – Money you spend</Text>
+                <Text style={styles.infoTitle}>{t('addAccount.info.expenseTitle')}</Text>
               </View>
               <View style={styles.infoCardBody}>
                 <Text style={styles.infoDescription}>
-                  Daily costs like food, bills, travel, shopping, etc. These accounts track where your money goes. Examples include groceries, utilities, rent, transportation, entertainment, medical expenses, education fees, shopping, dining out, and any other money you spend.
+                  {t('addAccount.info.expenseDescription')}
                 </Text>
               </View>
             </View>
@@ -744,362 +1111,5 @@ const AddAccountScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  scrollContent: {
-    padding: spacing.base,
-  },
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    marginLeft: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  infoButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.primary[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: spacing.xs,
-  },
-  infoButtonText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[0],
-  },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  typeCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    ...shadows.sm,
-  },
-  typeCardActive: {
-    // Border color set dynamically
-  },
-  typeIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  typeIconText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-  },
-  typeName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-  },
-  typeSubtitle: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    width: '100%',
-  },
-  typeDescription: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-    textAlign: 'center',
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.base,
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-  },
-  formCard: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  selector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-  },
-  selectorLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    width: 100,
-  },
-  inputLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  selectorValue: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  selectorPlaceholder: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    color: colors.text.tertiary,
-  },
-  chevron: {
-    fontSize: typography.fontSize.xl,
-    color: colors.neutral[400],
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border.light,
-    marginLeft: spacing.base,
-  },
-  textInput: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-    padding: spacing.base,
-  },
-  balanceInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-  },
-  currencySymbol: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-    marginRight: spacing.sm,
-  },
-  balanceTextInput: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-  },
-  helperText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    marginTop: spacing.sm,
-    marginLeft: spacing.sm,
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  colorOptionSelected: {
-    borderWidth: 3,
-    borderColor: colors.neutral[0],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  colorCheck: {
-    color: colors.neutral[0],
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-  },
-  submitButton: {
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.base,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    ...shadows.md,
-  },
-  submitButtonDisabled: {
-    opacity: 0.7,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  submitButtonText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.neutral[0],
-  },
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  modalCancelButton: {
-    paddingLeft: spacing.sm,
-    paddingRight: spacing.sm,
-    paddingVertical: spacing.xs,
-    minWidth: 90,
-    width: 90,
-    flexShrink: 0,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  modalCancel: {
-    fontSize: typography.fontSize.base,
-    color: colors.primary[500],
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-    flexShrink: 0,
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    flex: 1,
-    textAlign: 'center',
-    marginHorizontal: spacing.sm,
-  },
-  optionItem: {
-    padding: spacing.base,
-    backgroundColor: colors.background.elevated,
-  },
-  optionText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  optionSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    marginTop: 2,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: colors.border.light,
-  },
-  addCustomButton: {
-    padding: spacing.base,
-    alignItems: 'center',
-    backgroundColor: colors.primary[50],
-  },
-  addCustomButtonText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.primary[500],
-  },
-  modalContent: {
-    padding: spacing.base,
-  },
-  modalDone: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.primary[500],
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  loadingContent: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    minWidth: 200,
-    ...shadows.lg,
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  infoModalContent: {
-    paddingBottom: spacing.lg,
-    paddingHorizontal: spacing.base,
-  },
-  infoCard: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.sm,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  infoCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  infoCardBody: {
-    padding: spacing.sm,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.sm,
-  },
-  infoIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-    backgroundColor: 'transparent',
-  },
-  infoIconText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-  },
-  infoTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    flex: 1,
-  },
-  infoDescription: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.primary,
-    lineHeight: 18,
-    marginTop: spacing.xs / 2,
-  },
-});
 
 export default AddAccountScreen;

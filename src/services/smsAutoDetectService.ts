@@ -59,6 +59,7 @@ export function startSmsAutoDetect() {
                   note: parsed.note,
                   date: (parsed.date ?? new Date()).toISOString(),
                 },
+                postSaveNavigationTarget: 'Transactions',
               });
             }
           },
@@ -96,6 +97,8 @@ export function stopSmsAutoDetect() {
   subs?.forEach(s => s.remove());
   (startSmsAutoDetect as any)._subs = undefined;
 
-  NativeSmsUserConsent.stop?.().catch?.(() => {});
+  try {
+    NativeSmsUserConsent.stop?.();
+  } catch {}
 }
 

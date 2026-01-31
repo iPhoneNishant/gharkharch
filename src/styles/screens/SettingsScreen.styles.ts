@@ -6,7 +6,7 @@
 import { StyleSheet } from 'react-native';
 import { colors, typography, spacing, borderRadius, shadows } from '../../config/theme';
 
-export const settingsScreenStyles = StyleSheet.create({
+export const getSettingsScreenStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
@@ -144,5 +144,85 @@ export const settingsScreenStyles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
-
+  bottomSheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheetBackdropTouchable: {
+    flex: 1,
+  },
+  bottomSheet: {
+    backgroundColor: colors.background.primary,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  bottomSheetHandle: {
+    alignSelf: 'center',
+    width: 48,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: colors.neutral[300],
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  modalCancel: {
+    fontSize: typography.fontSize.base,
+    color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+    textAlign: 'left',
+  },
+  modalTitle: {
+    flex: 1,
+    textAlign: 'center',
+    flexShrink: 1,
+    marginHorizontal: spacing.sm,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+  },
+  modalDone: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.primary[500],
+    flexShrink: 0,
+    minWidth: 60,
+    textAlign: 'right',
+  },
+  sheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  sheetOptionText: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    flex: 1,
+    flexShrink: 1,
+    marginRight: spacing.sm,
+  },
+  checkmark: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.bold,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.border.light,
+  },
 });

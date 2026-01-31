@@ -15,10 +15,10 @@
     "ios": {
       "version": "1.0.0",
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.dailymunim",
+      "bundleIdentifier": "com.anonymous.dailymunim"
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 4,
       "version": "1.0.0",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -43,7 +43,15 @@
       }
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true
+          }
+        }
+      ]
     ]
   }
 }

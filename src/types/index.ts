@@ -236,6 +236,7 @@ export type RootStackParamList = {
           debitAccountId?: string;
           creditAccountId?: string;
         };
+        postSaveNavigationTarget?: string;
       }
     | undefined;
   AddAccount: { editAccountId?: string } | undefined;
@@ -251,6 +252,8 @@ export type RootStackParamList = {
   AddRecurringTransaction: { editRecurringTransactionId?: string } | undefined;
   RecurringTransactions: undefined;
   SmsImport: undefined;
+  UserGuide: undefined;
+  PrivacyPolicy: undefined;
   SubCategoryTransactions: { 
     subCategory: string; 
     category: string; 

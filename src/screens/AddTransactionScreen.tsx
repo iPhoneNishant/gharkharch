@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -42,6 +43,7 @@ import {
   shadows,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 
@@ -49,6 +51,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddTransact
 type RouteType = RouteProp<RootStackParamList, 'AddTransaction'>;
 
 const AddTransactionScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
@@ -61,7 +64,17 @@ const AddTransactionScreen: React.FC = () => {
   const isEditing = !!editTransactionId;
   const existingTransaction = editTransactionId ? getTransactionById(editTransactionId) : null;
   const prefill = route.params?.prefill;
+  const postSaveNavigationTarget = route.params?.postSaveNavigationTarget;
   const hasAppliedPrefillRef = useRef(false);
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
+  React.useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -241,12 +254,12 @@ const AddTransactionScreen: React.FC = () => {
 
   const AddAccountFooter = () => (
     <View style={styles.addAccountFooter}>
-      <Text style={styles.addAccountFooterTitle}>Can’t find the account?</Text>
+      <Text style={styles.addAccountFooterTitle}>{t('addTransaction.cantFindAccount')}</Text>
       <Text style={styles.addAccountFooterSubtext}>
-        Create a new account and come back to select it.
+        {t('addTransaction.createAccountMessage')}
       </Text>
       <TouchableOpacity onPress={handleAddNewAccountFromPicker} activeOpacity={0.7}>
-        <Text style={styles.addAccountFooterLink}>Create new account</Text>
+        <Text style={styles.addAccountFooterLink}>{t('addTransaction.createNewAccount')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -339,7 +352,14 @@ const AddTransactionScreen: React.FC = () => {
       });
       }
 
-      navigation.goBack();
+      if (postSaveNavigationTarget) {
+        // Navigate to the target screen (e.g. Transactions)
+        // We cast to any because the target might be in a nested navigator (MainTab)
+        // and TS might not infer it directly from RootStackParamList
+        navigation.navigate(postSaveNavigationTarget as any);
+      } else {
+        navigation.goBack();
+      }
     } catch (error) {
       setIsSaving(false);
       Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'create'} transaction. Please try again.`);
@@ -513,7 +533,7 @@ const AddTransactionScreen: React.FC = () => {
   const clearCalc = () => setCalcExpr('');
   const useCalcAmount = () => {
     if (calcValue === null || !Number.isFinite(calcValue)) {
-      Alert.alert('Invalid amount', 'Please enter a valid calculation.');
+      Alert.alert(t('addTransaction.invalidAmountTitle'), t('addTransaction.invalidCalc'));
       return;
     }
     const formatted = calcValue.toFixed(2).replace(/\.00$/, '');
@@ -521,6 +541,485 @@ const AddTransactionScreen: React.FC = () => {
     setShowCalculator(false);
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    scrollContent: {
+      padding: spacing.base,
+    },
+    amountContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing['2xl'],
+    },
+    currencySymbol: {
+      fontSize: typography.fontSize['3xl'],
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+      marginRight: spacing.sm,
+    },
+    amountInput: {
+      fontSize: typography.fontSize['4xl'],
+      fontWeight: typography.fontWeight.bold,
+      color: colors.text.primary,
+      minWidth: 150,
+      textAlign: 'center',
+    },
+    calcButton: {
+      marginLeft: spacing.sm,
+      backgroundColor: 'transparent',
+    },
+    calcButtonIcon: {
+      width: 33,
+      height: 27,
+    },
+    typeSection: {
+      marginBottom: spacing.lg,
+      paddingHorizontal: spacing.base,
+    },
+    typeHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.sm,
+    },
+    typeHeaderLabel: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.secondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    typeHeaderHint: {
+      fontSize: typography.fontSize.xs,
+      color: colors.text.tertiary,
+    },
+    typeChipsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      justifyContent: 'center',
+    },
+    typeChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      backgroundColor: colors.background.elevated,
+    },
+    typeChipInactive: {
+      backgroundColor: colors.background.elevated,
+    },
+    typeChipText: {
+      fontSize: typography.fontSize.xs,
+      fontWeight: typography.fontWeight.semiBold,
+      letterSpacing: 0.3,
+    },
+    transactionTypeIndicator: {
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+      paddingHorizontal: spacing.base,
+    },
+    transactionTypeBadge: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+    },
+    transactionTypeText: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    formSection: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      marginBottom: spacing.lg,
+      ...shadows.sm,
+    },
+    accountSelector: {
+      padding: spacing.base,
+    },
+    accountSelectorContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    accountSelectorLeft: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    accountLabel: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      flexShrink: 0,
+    },
+    selectedAccount: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      minWidth: 0,
+    },
+    accountDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: spacing.sm,
+      flexShrink: 0,
+    },
+    accountName: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+      flexShrink: 1,
+    },
+    accountPlaceholder: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.tertiary,
+      flexShrink: 1,
+    },
+    chevron: {
+      fontSize: typography.fontSize.xl,
+      color: colors.neutral[400],
+    },
+    arrowContainer: {
+      alignItems: 'center',
+      paddingVertical: spacing.xs,
+    },
+    arrow: {
+      fontSize: typography.fontSize.lg,
+      color: colors.neutral[400],
+    },
+    dateSelector: {
+      padding: spacing.base,
+    },
+    dateValueContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: spacing.sm,
+    },
+    dateValue: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    inputContainer: {
+      padding: spacing.base,
+    },
+    inputLabel: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      marginBottom: spacing.sm,
+    },
+    textInput: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+      minHeight: 60,
+      textAlignVertical: 'top',
+    },
+    submitButton: {
+      backgroundColor: colors.primary[500],
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.base,
+      alignItems: 'center',
+      marginTop: spacing.lg,
+      ...shadows.md,
+    },
+    submitButtonDisabled: {
+      opacity: 0.7,
+    },
+    loadingContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    submitButtonText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.neutral[0],
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    bottomSheetBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      justifyContent: 'flex-end',
+    },
+    bottomSheetBackdropTouchable: {
+      flex: 1,
+    },
+    bottomSheet: {
+      backgroundColor: colors.background.primary,
+      borderTopLeftRadius: borderRadius.lg,
+      borderTopRightRadius: borderRadius.lg,
+      overflow: 'hidden',
+    },
+    bottomSheetHandle: {
+      alignSelf: 'center',
+      width: 48,
+      height: 5,
+      borderRadius: 999,
+      backgroundColor: colors.neutral[300],
+      marginTop: spacing.sm,
+      marginBottom: spacing.xs,
+    },
+    datePicker: {
+      height: 260,
+    },
+    modalCancel: {
+      fontSize: typography.fontSize.base,
+      color: colors.primary[500],
+      flexShrink: 0,
+      minWidth: 60,
+    },
+    modalDone: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.primary[500],
+      flexShrink: 0,
+      minWidth: 60,
+      textAlign: 'right',
+    },
+    modalTitle: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      flex: 1,
+      textAlign: 'center',
+      paddingHorizontal: spacing.sm,
+    },
+    calcBottomSheet: {
+      backgroundColor: colors.background.primary,
+      borderTopLeftRadius: borderRadius.lg,
+      borderTopRightRadius: borderRadius.lg,
+      overflow: 'hidden',
+      maxHeight: '85%',
+    },
+    calcHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    calcTitle: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      textAlign: 'center',
+      flex: 1,
+    },
+    calcDisplay: {
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    calcExpr: {
+      fontSize: typography.fontSize.xl,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      textAlign: 'right',
+    },
+    calcResult: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.tertiary,
+      textAlign: 'right',
+      marginTop: spacing.sm,
+    },
+    calcPad: {
+      padding: spacing.base,
+      gap: spacing.sm,
+    },
+    calcRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    calcKey: {
+      flex: 1,
+      height: 52,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.background.elevated,
+      borderWidth: 1,
+      borderColor: colors.border.light,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.sm,
+    },
+    calcKeyEmpty: {
+      backgroundColor: 'transparent',
+      borderColor: 'transparent',
+      ...shadows.sm,
+    },
+    calcKeyOp: {
+      backgroundColor: colors.primary[50],
+      borderColor: colors.primary[100],
+    },
+    calcKeyAction: {
+      backgroundColor: colors.neutral[100],
+    },
+    calcKeyPrimary: {
+      backgroundColor: colors.primary[500],
+      borderColor: colors.primary[500],
+    },
+    calcKeyText: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+    },
+    calcKeyTextPrimary: {
+      color: colors.neutral[0],
+    },
+    pickerContent: {
+      flex: 1,
+    },
+    accountSearchContainer: {
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    accountSearchInput: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.md,
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+      borderWidth: 1,
+      borderColor: colors.border.light,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.xl,
+    },
+    emptyStateText: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs,
+    },
+    emptyStateSubtext: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.tertiary,
+      textAlign: 'center',
+    },
+    addAccountFooter: {
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.lg,
+      paddingHorizontal: spacing.base,
+      alignItems: 'center',
+    },
+    addAccountFooterTitle: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      marginBottom: spacing.xs,
+    },
+    addAccountFooterSubtext: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.tertiary,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    addAccountFooterLink: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.primary[500],
+      textDecorationLine: 'underline',
+    },
+    accountOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.base,
+      backgroundColor: colors.background.elevated,
+    },
+    accountOptionIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    accountOptionIconText: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.bold,
+    },
+    accountOptionInfo: {
+      flex: 1,
+    },
+    accountOptionName: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    accountOptionCategory: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.tertiary,
+      marginTop: 2,
+    },
+    accountOptionBalance: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.asset,
+    },
+    liabilityBalance: {
+      color: colors.liability,
+    },
+    separator: {
+      height: 1,
+      backgroundColor: colors.border.light,
+    },
+    loadingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    },
+    loadingContent: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      padding: spacing.xl,
+      alignItems: 'center',
+      minWidth: 200,
+      ...shadows.lg,
+    },
+    loadingText: {
+      marginTop: spacing.base,
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+  });
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -536,9 +1035,9 @@ const AddTransactionScreen: React.FC = () => {
         {/* Transaction Type Selector */}
         <View style={styles.typeSection}>
           <View style={styles.typeHeaderRow}>
-            <Text style={styles.typeHeaderLabel}>Transaction Type</Text>
+            <Text style={styles.typeHeaderLabel}>{t('addTransaction.transactionType')}</Text>
             {selectedTransactionType && (
-              <Text style={styles.typeHeaderHint}>Manual</Text>
+              <Text style={styles.typeHeaderHint}>{t('addTransaction.manual')}</Text>
             )}
           </View>
           <View style={styles.typeChipsRow}>
@@ -553,12 +1052,12 @@ const AddTransactionScreen: React.FC = () => {
 
               const label =
                 type === 'expense'
-                  ? 'Expense'
+                  ? t('addTransaction.expense')
                   : type === 'income'
-                  ? 'Income'
+                  ? t('addTransaction.income')
                   : type === 'transfer'
-                  ? 'Transfer'
-                  : 'Return';
+                  ? t('addTransaction.transfer')
+                  : t('addTransaction.return');
 
               return (
           <TouchableOpacity
@@ -643,7 +1142,7 @@ const AddTransactionScreen: React.FC = () => {
                 <Text style={styles.accountName}>{creditAccount.name}</Text>
               </View>
             ) : (
-              <Text style={styles.accountPlaceholder}>Select account</Text>
+              <Text style={styles.accountPlaceholder}>{t('addTransaction.selectAccount')}</Text>
             )}
               </View>
             <Text style={styles.chevron}>›</Text>
@@ -672,7 +1171,7 @@ const AddTransactionScreen: React.FC = () => {
                 <Text style={styles.accountName}>{debitAccount.name}</Text>
               </View>
             ) : (
-              <Text style={styles.accountPlaceholder}>Select account</Text>
+              <Text style={styles.accountPlaceholder}>{t('addTransaction.selectAccount')}</Text>
             )}
               </View>
             <Text style={styles.chevron}>›</Text>
@@ -689,7 +1188,7 @@ const AddTransactionScreen: React.FC = () => {
               setShowDatePicker(true);
             }}
           >
-            <Text style={styles.inputLabel}>Transaction Date</Text>
+            <Text style={styles.inputLabel}>{t('addTransaction.transactionDate')}</Text>
             <View style={styles.dateValueContainer}>
               <Text style={styles.dateValue}>
                 {date.toLocaleDateString('en-IN', {
@@ -747,7 +1246,7 @@ const AddTransactionScreen: React.FC = () => {
           <View style={styles.loadingContent}>
             <ActivityIndicator size="large" color={colors.primary[500]} />
             <Text style={styles.loadingText}>
-              {isEditing ? 'Updating Transaction...' : 'Saving Transaction...'}
+              {isEditing ? t('addTransaction.updatingTransaction') : t('addTransaction.savingTransaction')}
             </Text>
           </View>
         </View>
@@ -773,7 +1272,7 @@ const AddTransactionScreen: React.FC = () => {
             </TouchableOpacity>
             <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{getAccountLabel(accountPickerType)}</Text>
             <TouchableOpacity onPress={handleAddNewAccountFromPicker}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Add</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('addTransaction.add')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -781,7 +1280,7 @@ const AddTransactionScreen: React.FC = () => {
           <View style={styles.accountSearchContainer}>
             <TextInput
               style={styles.accountSearchInput}
-              placeholder="Search accounts..."
+              placeholder={t('addTransaction.searchAccounts')}
               placeholderTextColor={colors.neutral[400]}
               value={accountSearchQuery}
               onChangeText={setAccountSearchQuery}
@@ -793,17 +1292,17 @@ const AddTransactionScreen: React.FC = () => {
           <View style={styles.pickerContent}>
             {availableAccountsForPicker.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No accounts available</Text>
+              <Text style={styles.emptyStateText}>{t('addTransaction.noAccountsAvailable')}</Text>
               <Text style={styles.emptyStateSubtext}>
-                Create an account to continue
+                {t('addTransaction.createAccountToContinue')}
               </Text>
                 <AddAccountFooter />
               </View>
             ) : filteredAccounts.length === 0 ? (
               <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No accounts found</Text>
+              <Text style={styles.emptyStateText}>{t('addTransaction.noAccountsFound')}</Text>
               <Text style={styles.emptyStateSubtext}>
-                Try a different search term
+                {t('addTransaction.tryDifferentSearchTerm')}
               </Text>
                 <AddAccountFooter />
             </View>
@@ -1002,486 +1501,5 @@ const AddTransactionScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  scrollContent: {
-    padding: spacing.base,
-  },
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing['2xl'],
-  },
-  currencySymbol: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-    marginRight: spacing.sm,
-  },
-  amountInput: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    minWidth: 150,
-    textAlign: 'center',
-  },
-  calcButton: {
-    marginLeft: spacing.sm,
-    backgroundColor: 'transparent',
-  },
-  calcButtonIcon: {
-    width: 33,
-    height: 27,
-  },
-  typeSection: {
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.base,
-  },
-  typeHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  typeHeaderLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  typeHeaderHint: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-  },
-  typeChipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    justifyContent: 'center',
-  },
-  typeChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    backgroundColor: colors.background.elevated,
-  },
-  typeChipInactive: {
-    backgroundColor: colors.background.elevated,
-  },
-  typeChipText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semiBold,
-    letterSpacing: 0.3,
-  },
-  transactionTypeIndicator: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.base,
-  },
-  transactionTypeBadge: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-  },
-  transactionTypeText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  formSection: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.lg,
-    ...shadows.sm,
-  },
-  accountSelector: {
-    padding: spacing.base,
-  },
-  accountSelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  accountSelectorLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  accountLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    flexShrink: 0,
-  },
-  selectedAccount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
-  },
-  accountDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.sm,
-    flexShrink: 0,
-  },
-  accountName: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-    flexShrink: 1,
-  },
-  accountPlaceholder: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.tertiary,
-    flexShrink: 1,
-  },
-  chevron: {
-    fontSize: typography.fontSize.xl,
-    color: colors.neutral[400],
-  },
-  arrowContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  arrow: {
-    fontSize: typography.fontSize.lg,
-    color: colors.neutral[400],
-  },
-  dateSelector: {
-    padding: spacing.base,
-  },
-  dateValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.sm,
-  },
-  dateValue: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  inputContainer: {
-    padding: spacing.base,
-  },
-  inputLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  textInput: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.base,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    ...shadows.md,
-  },
-  submitButtonDisabled: {
-    opacity: 0.7,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  submitButtonText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.neutral[0],
-  },
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  bottomSheetBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
-  },
-  bottomSheetBackdropTouchable: {
-    flex: 1,
-  },
-  bottomSheet: {
-    backgroundColor: colors.background.primary,
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
-    overflow: 'hidden',
-  },
-  bottomSheetHandle: {
-    alignSelf: 'center',
-    width: 48,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: colors.neutral[300],
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  datePicker: {
-    height: 260,
-  },
-  modalCancel: {
-    fontSize: typography.fontSize.base,
-    color: colors.primary[500],
-    flexShrink: 0,
-    minWidth: 60,
-  },
-  modalDone: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.primary[500],
-    flexShrink: 0,
-    minWidth: 60,
-    textAlign: 'right',
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    flex: 1,
-    textAlign: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  calcBottomSheet: {
-    backgroundColor: colors.background.primary,
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
-    overflow: 'hidden',
-    maxHeight: '85%',
-  },
-  calcHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  calcTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    flex: 1,
-  },
-  calcDisplay: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  calcExpr: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    textAlign: 'right',
-  },
-  calcResult: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    textAlign: 'right',
-    marginTop: spacing.sm,
-  },
-  calcPad: {
-    padding: spacing.base,
-    gap: spacing.sm,
-  },
-  calcRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  calcKey: {
-    flex: 1,
-    height: 52,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background.elevated,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.sm,
-  },
-  calcKeyEmpty: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    ...shadows.sm,
-  },
-  calcKeyOp: {
-    backgroundColor: colors.primary[50],
-    borderColor: colors.primary[100],
-  },
-  calcKeyAction: {
-    backgroundColor: colors.neutral[100],
-  },
-  calcKeyPrimary: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
-  },
-  calcKeyText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-  },
-  calcKeyTextPrimary: {
-    color: colors.neutral[0],
-  },
-  pickerContent: {
-    flex: 1,
-  },
-  accountSearchContainer: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  accountSearchInput: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs,
-  },
-  emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    textAlign: 'center',
-  },
-  addAccountFooter: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-    paddingHorizontal: spacing.base,
-    alignItems: 'center',
-  },
-  addAccountFooterTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  addAccountFooterSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  addAccountFooterLink: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.primary[500],
-    textDecorationLine: 'underline',
-  },
-  accountOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-    backgroundColor: colors.background.elevated,
-  },
-  accountOptionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  accountOptionIconText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-  },
-  accountOptionInfo: {
-    flex: 1,
-  },
-  accountOptionName: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  accountOptionCategory: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    marginTop: 2,
-  },
-  accountOptionBalance: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.asset,
-  },
-  liabilityBalance: {
-    color: colors.liability,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: colors.border.light,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  loadingContent: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    minWidth: 200,
-    ...shadows.lg,
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-});
 
 export default AddTransactionScreen;

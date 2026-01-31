@@ -6,7 +6,7 @@
 import { StyleSheet } from 'react-native';
 import { colors, typography, spacing, borderRadius, shadows } from '../../config/theme';
 
-export const dashboardScreenStyles = StyleSheet.create({
+export const getDashboardScreenStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,

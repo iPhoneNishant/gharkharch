@@ -270,3 +270,9 @@ export const ADMOB_CONFIG = {
  * Set to false when publishing to production
  */
 export const USE_TEST_ADS = true;
+
+/**
+ * Allowed font scale options for typography sizing
+ */
+export const FONT_SCALE_OPTIONS = [1, 1.2, 1.4, 1.6] as const;
+

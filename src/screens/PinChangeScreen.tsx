@@ -3,7 +3,7 @@
  * Allows users to change their existing PIN with verification
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { RootStackParamList } from '../types';
-import { colors, typography, spacing, borderRadius, shadows } from '../config/theme';
+import { colors, typography, spacing, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 import { setupPin, verifyPin } from '../services/pinAuthService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'PinChange'>;
@@ -40,12 +40,14 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
   const [confirmPin, setConfirmPin] = useState('');
   const [isChanging, setIsChanging] = useState(false);
   const [currentStep, setCurrentStep] = useState<'verify' | 'setup'>('verify');
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
 
   const oldPinRef = useRef<TextInput>(null);
   const newPinRef = useRef<TextInput>(null);
   const confirmPinRef = useRef<TextInput>(null);
 
   const allowBack = route.params?.allowBack ?? true; // Default to true for PIN change
+  const styles = useMemo(() => getStyles(), [fontScaleVersion]);
 
   // Handle back button on Android
   useFocusEffect(
@@ -61,6 +63,15 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
       return () => backHandler.remove();
     }, [allowBack])
   );
+
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   // Auto-focus old PIN input when component mounts
   useEffect(() => {
@@ -265,7 +276,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,

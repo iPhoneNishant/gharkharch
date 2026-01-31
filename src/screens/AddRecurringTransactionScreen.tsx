@@ -34,6 +34,7 @@ import {
   shadows,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { calculateNextOccurrence, scheduleRecurringTransactionNotification } from '../services/recurringTransactionService';
@@ -55,6 +56,282 @@ const AddRecurringTransactionScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+    },
+    amountContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing['2xl'],
+    },
+    currencySymbol: {
+      fontSize: typography.fontSize['3xl'],
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+      marginRight: spacing.sm,
+    },
+    amountInput: {
+      fontSize: typography.fontSize['4xl'],
+      fontWeight: typography.fontWeight.bold,
+      color: colors.text.primary,
+      minWidth: 150,
+      textAlign: 'center',
+    },
+    recurringIndicator: {
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+      paddingHorizontal: spacing.base,
+    },
+    recurringBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary[50],
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    recurringText: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.primary[500],
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    formSection: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      marginBottom: spacing.lg,
+      ...shadows.sm,
+    },
+    accountSelector: {
+      padding: spacing.base,
+      marginBottom: spacing.sm,
+    },
+    accountSelectorContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    accountSelectorLeft: {
+      flex: 1,
+    },
+    accountLabel: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs,
+    },
+    selectedAccount: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    accountDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: spacing.sm,
+    },
+    accountName: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    accountPlaceholder: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.tertiary,
+    },
+    arrowContainer: {
+      alignItems: 'center',
+      paddingVertical: spacing.xs,
+    },
+    selector: {
+      padding: spacing.base,
+    },
+    selectorContent: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+    },
+    selectorLeft: {
+      flex: 1,
+    },
+    selectorLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    selectorValueContainer: {
+      minHeight: 20,
+    },
+    selectorValue: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    selectorRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    clearButton: {
+      padding: spacing.xs,
+    },
+    inputContainer: {
+      padding: spacing.base,
+    },
+    inputLabel: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      marginBottom: spacing.sm,
+    },
+    textInput: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+      paddingVertical: spacing.xs,
+      minHeight: 40,
+    },
+    hint: {
+      fontSize: typography.fontSize.xs,
+      color: colors.text.tertiary,
+      marginTop: spacing.xs,
+    },
+    submitButton: {
+      backgroundColor: colors.primary[500],
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.base,
+      alignItems: 'center',
+      marginTop: spacing.lg,
+      ...shadows.md,
+    },
+    submitButtonDisabled: {
+      opacity: 0.7,
+    },
+    loadingContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    submitButtonText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.neutral[0],
+    },
+    loadingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    },
+    loadingContent: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      padding: spacing.xl,
+      alignItems: 'center',
+      minWidth: 200,
+      ...shadows.lg,
+    },
+    loadingText: {
+      marginTop: spacing.base,
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.base,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    modalCancelButton: {
+      minWidth: 90,
+      paddingHorizontal: spacing.sm,
+    },
+    modalCancel: {
+      fontSize: typography.fontSize.base,
+      color: colors.primary[500],
+    },
+    modalTitle: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      flex: 1,
+      textAlign: 'center',
+    },
+    searchInput: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.md,
+      padding: spacing.base,
+      margin: spacing.base,
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+    },
+    accountItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.base,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    accountItemInfo: {
+      flex: 1,
+      marginLeft: spacing.sm,
+    },
+    accountItemName: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    accountItemType: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      marginTop: 2,
+    },
+    checkmark: {
+      fontSize: typography.fontSize.lg,
+      color: colors.primary[500],
+      fontWeight: typography.fontWeight.bold,
+    },
+    optionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.base,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    optionText: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+    },
+  });
   
   const { user } = useAuthStore();
   const { accounts } = useAccountStore();
@@ -804,272 +1081,5 @@ const AddRecurringTransactionScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-  },
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing['2xl'],
-  },
-  currencySymbol: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.secondary,
-    marginRight: spacing.sm,
-  },
-  amountInput: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    minWidth: 150,
-    textAlign: 'center',
-  },
-  recurringIndicator: {
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.base,
-  },
-  recurringBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary[50],
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  recurringText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.primary[500],
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  formSection: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.lg,
-    ...shadows.sm,
-  },
-  accountSelector: {
-    padding: spacing.base,
-    marginBottom: spacing.sm,
-  },
-  accountSelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  accountSelectorLeft: {
-    flex: 1,
-  },
-  accountLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs,
-  },
-  selectedAccount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  accountDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.sm,
-  },
-  accountName: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  accountPlaceholder: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.tertiary,
-  },
-  arrowContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  selector: {
-    padding: spacing.base,
-  },
-  selectorContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  selectorLeft: {
-    flex: 1,
-  },
-  selectorLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  selectorValueContainer: {
-    minHeight: 20,
-  },
-  selectorValue: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  selectorRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  clearButton: {
-    padding: spacing.xs,
-  },
-  inputContainer: {
-    padding: spacing.base,
-  },
-  inputLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  textInput: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-    paddingVertical: spacing.xs,
-    minHeight: 40,
-  },
-  hint: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-    marginTop: spacing.xs,
-  },
-  submitButton: {
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.base,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    ...shadows.md,
-  },
-  submitButtonDisabled: {
-    opacity: 0.7,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  submitButtonText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.neutral[0],
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  loadingContent: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    minWidth: 200,
-    ...shadows.lg,
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  modalCancelButton: {
-    minWidth: 90,
-    paddingHorizontal: spacing.sm,
-  },
-  modalCancel: {
-    fontSize: typography.fontSize.base,
-    color: colors.primary[500],
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    flex: 1,
-    textAlign: 'center',
-  },
-  searchInput: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.md,
-    padding: spacing.base,
-    margin: spacing.base,
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-  },
-  accountItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  accountItemInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  accountItemName: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  accountItemType: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginTop: 2,
-  },
-  checkmark: {
-    fontSize: typography.fontSize.lg,
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.bold,
-  },
-  optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  optionText: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-  },
-});
 
 export default AddRecurringTransactionScreen;

@@ -3,7 +3,7 @@
  * Allows users to set up their MPIN (4 digits only)
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { RootStackParamList } from '../types';
-import { colors, typography, spacing, borderRadius, shadows } from '../config/theme';
+import { colors, typography, spacing, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 import { setupPin, isBiometricAvailable, enableBiometric, getBiometricType } from '../services/pinAuthService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'PinSetup'>;
@@ -41,10 +41,22 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState<string | null>(null);
   const [enableBiometricOption, setEnableBiometricOption] = useState(false);
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
 
   const confirmPinRef = useRef<TextInput>(null);
   const hasCheckedBiometricRef = useRef(false);
   const allowBack = route.params?.allowBack ?? false; // Default to false (required setup)
+
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  const styles = useMemo(() => getStyles(), [fontScaleVersion]);
 
   useEffect(() => {
     if (!hasCheckedBiometricRef.current) {
@@ -153,19 +165,8 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
         }
       }
 
-      Alert.alert(
-        'PIN Setup Complete',
-        'Your PIN has been set up successfully.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              route.params?.onComplete?.();
-              navigation.goBack();
-            },
-          },
-        ]
-      );
+      route.params?.onComplete?.();
+      navigation.goBack();
     } catch (error: any) {
       Alert.alert('Setup Failed', error.message || 'Failed to setup PIN. Please try again.');
       setIsSettingUp(false);
@@ -265,7 +266,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.xs,
+    borderRadius: borderRadius.sm,
   },
   biometricText: {
     fontSize: typography.fontSize.base,

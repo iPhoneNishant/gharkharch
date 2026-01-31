@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -22,6 +23,7 @@ import {
   spacing,
   borderRadius,
   shadows,
+  addFontScaleListener,
 } from '../config/theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -37,6 +39,82 @@ type ReportScreen =
 const ReportsListScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const { t } = useTranslation();
+  const [fontScaleVersion, setFontScaleVersion] = React.useState(0);
+  React.useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    header: {
+      marginBottom: spacing.md,
+      paddingHorizontal: spacing.xs,
+    },
+    title: {
+      fontSize: typography.fontSize['2xl'],
+      fontWeight: typography.fontWeight.bold,
+      color: colors.text.primary,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.secondary,
+      marginBottom: spacing.sm,
+    },
+    optionsContainer: {
+      gap: spacing.sm,
+    },
+    optionCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.base,
+      paddingHorizontal: spacing.base,
+      borderWidth: 1,
+      borderColor: colors.border.light,
+      ...shadows.sm,
+    },
+    optionIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.primary[50],
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    iconText: {
+      fontSize: typography.fontSize.lg,
+    },
+    optionContent: {
+      flex: 1,
+    },
+    optionTitle: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      marginBottom: 2,
+    },
+    optionDescription: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      lineHeight: Math.round(typography.fontSize.sm * typography.lineHeight.normal),
+    },
+    chevron: {
+      fontSize: typography.fontSize.xl,
+      color: colors.neutral[400],
+      marginLeft: spacing.sm,
+    },
+  });
 
   const reportOptions: Array<{
     id: string;
@@ -48,30 +126,30 @@ const ReportsListScreen: React.FC = () => {
   }> = [
     {
       id: 'summary',
-      title: 'Summary',
-      description: 'Category & sub-category summary',
+      title: t('reportsList.summaryTitle'),
+      description: t('reportsList.summaryDescription'),
       icon: '📊',
       variant: 'summary',
     },
     {
       id: 'transactions',
-      title: 'Transactions',
-      description: 'All transactions list for a period',
+      title: t('reportsList.transactionsTitle'),
+      description: t('reportsList.transactionsDescription'),
       icon: '📋',
       variant: 'transactions',
     },
     {
       id: 'month-to-month',
-      title: 'Month-to-Month Report',
-      description: 'View income and expenses breakdown by month',
+      title: t('reportsList.monthToMonthTitle'),
+      description: t('reportsList.monthToMonthDescription'),
       icon: '📅',
       screen: 'MonthToMonthReport',
       variant: 'single',
     },
     {
       id: 'day-to-day',
-      title: 'Day-to-Day Report',
-      description: 'View income and expenses breakdown by day (max 90 days)',
+      title: t('reportsList.dayToDayTitle'),
+      description: t('reportsList.dayToDayDescription'),
       icon: '📆',
       screen: 'DayToDayReport',
       variant: 'single',
@@ -122,71 +200,6 @@ const ReportsListScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  header: {
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
-  },
-  title: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  optionsContainer: {
-    gap: spacing.sm,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.base,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    ...shadows.sm,
-  },
-  optionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  iconText: {
-    fontSize: 20,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    marginBottom: 2,
-  },
-  optionDescription: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    lineHeight: 18,
-  },
-  chevron: {
-    fontSize: typography.fontSize.xl,
-    color: colors.neutral[400],
-    marginLeft: spacing.sm,
-  },
-});
+ 
 
 export default ReportsListScreen;

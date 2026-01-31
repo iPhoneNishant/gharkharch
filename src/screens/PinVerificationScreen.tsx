@@ -3,7 +3,7 @@
  * Required on every app launch for security
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { RootStackParamList } from '../types';
-import { colors, typography, spacing, borderRadius, shadows } from '../config/theme';
+import { colors, typography, spacing, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 import { 
   verifyPin, 
   authenticateWithBiometric, 
@@ -50,7 +50,19 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricType, setBiometricType] = useState<string | null>(null);
   const [biometricAttempted, setBiometricAttempted] = useState(false);
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
   const pinInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  const styles = useMemo(() => getStyles(), [fontScaleVersion]);
 
   useEffect(() => {
     // Check biometric status and try authentication on mount
@@ -355,7 +367,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,

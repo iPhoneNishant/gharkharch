@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -28,16 +29,20 @@ import {
   spacing,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
-import { transactionsScreenStyles as styles } from '../styles/screens/TransactionsScreen.styles';
+import { getTransactionsScreenStyles } from '../styles/screens/TransactionsScreen.styles';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { getTransactionsForMonth, getAvailableMonths } from '../utils/reports';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const TransactionsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const styles = getTransactionsScreenStyles();
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
   
   const { user } = useAuthStore();
   const { transactions, isLoading, subscribeToTransactions, error } = useTransactionStore();
@@ -115,6 +120,14 @@ const TransactionsScreen: React.FC = () => {
       }, 100);
     }
   }, [selectedYear, selectedMonth, monthsForSelectedYear]);
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   // Scroll to selected values when picker opens
   useEffect(() => {
@@ -159,21 +172,21 @@ const TransactionsScreen: React.FC = () => {
     if (debitAccount?.accountType === 'expense') {
       return {
         title: debitAccount.name,
-        subtitle: `from ${creditAccount?.name ?? 'Unknown'}`,
+        subtitle: `${t('common.from')} ${creditAccount?.name ?? t('common.unknown')}`,
         type: 'expense' as AccountType,
         isExpense: true,
       };
     } else if (creditAccount?.accountType === 'income') {
       return {
         title: creditAccount.name,
-        subtitle: `to ${debitAccount?.name ?? 'Unknown'}`,
+        subtitle: `${t('common.to')} ${debitAccount?.name ?? t('common.unknown')}`,
         type: 'income' as AccountType,
         isExpense: false,
       };
     } else {
       return {
-        title: `${creditAccount?.name ?? 'Unknown'} → ${debitAccount?.name ?? 'Unknown'}`,
-        subtitle: 'Transfer',
+        title: `${creditAccount?.name ?? t('common.unknown')} → ${debitAccount?.name ?? t('common.unknown')}`,
+        subtitle: t('transactions.transfer'),
         type: 'asset' as AccountType,
         isExpense: false,
       };
@@ -302,7 +315,7 @@ const TransactionsScreen: React.FC = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search transactions..."
+          placeholder={t('transactions.searchPlaceholder')}
           placeholderTextColor={colors.neutral[400]}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -324,16 +337,16 @@ const TransactionsScreen: React.FC = () => {
       {/* Transactions List */}
       {isLoading ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>Loading...</Text>
+          <Text style={styles.emptyStateText}>{t('common.loading')}</Text>
         </View>
       ) : flatTransactions.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateIcon}>📝</Text>
           <Text style={styles.emptyStateText}>
-            {searchQuery ? 'No transactions found' : 'No transactions yet'}
+            {searchQuery ? t('transactions.noResults') : t('transactions.emptyTitle')}
           </Text>
           <Text style={styles.emptyStateSubtext}>
-            {searchQuery ? 'Try a different search' : 'Add your first transaction to get started'}
+            {searchQuery ? t('transactions.noResultsSubtext') : t('transactions.emptySubtext')}
           </Text>
         </View>
       ) : (
@@ -365,17 +378,17 @@ const TransactionsScreen: React.FC = () => {
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowMonthYearPicker(false)}>
-              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select Month & Year</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('transactions.selectMonthYear')}</Text>
             <TouchableOpacity onPress={() => setShowMonthYearPicker(false)}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.monthYearPickerContainer}>
             {/* Year Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Year</Text>
+              <Text style={styles.pickerColumnLabel}>{t('transactions.year')}</Text>
               <FlatList
                 ref={yearListRef}
                 data={availableYears}
@@ -420,7 +433,7 @@ const TransactionsScreen: React.FC = () => {
             
             {/* Month Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Month</Text>
+              <Text style={styles.pickerColumnLabel}>{t('transactions.month')}</Text>
               <FlatList
                 ref={monthListRef}
                 data={monthsForSelectedYear.map(m => m.month)}

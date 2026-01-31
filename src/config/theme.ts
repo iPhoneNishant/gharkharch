@@ -6,6 +6,8 @@
  * for easy theming and future dark mode support.
  */
 
+import i18n from '../i18n';
+
 // ============================================================================
 // COLOR CUSTOMIZATION - Change these values to customize the app's appearance
 // ============================================================================
@@ -132,6 +134,31 @@ export const colors = {
   },
 };
 
+let BASE_FONT_SCALE = (() => {
+  try {
+    return i18n.language === 'hi' ? 1.12 : 1;
+  } catch {
+    return 1;
+  }
+})();
+
+let USER_FONT_SCALE = 1;
+
+let FONT_SCALE = BASE_FONT_SCALE * USER_FONT_SCALE;
+
+const BASE_FONT_SIZES = {
+  xs: 10,
+  sm: 12,
+  md: 14,
+  base: 16,
+  lg: 18,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 30,
+  '4xl': 36,
+  '5xl': 48,
+};
+
 export const typography = {
   // Font families - using system fonts for optimal performance
   fontFamily: {
@@ -143,16 +170,16 @@ export const typography = {
   
   // Font sizes
   fontSize: {
-    xs: 10,
-    sm: 12,
-    md: 14,
-    base: 16,
-    lg: 18,
-    xl: 20,
-    '2xl': 24,
-    '3xl': 30,
-    '4xl': 36,
-    '5xl': 48,
+    xs: Math.round(BASE_FONT_SIZES.xs * FONT_SCALE),
+    sm: Math.round(BASE_FONT_SIZES.sm * FONT_SCALE),
+    md: Math.round(BASE_FONT_SIZES.md * FONT_SCALE),
+    base: Math.round(BASE_FONT_SIZES.base * FONT_SCALE),
+    lg: Math.round(BASE_FONT_SIZES.lg * FONT_SCALE),
+    xl: Math.round(BASE_FONT_SIZES.xl * FONT_SCALE),
+    '2xl': Math.round(BASE_FONT_SIZES['2xl'] * FONT_SCALE),
+    '3xl': Math.round(BASE_FONT_SIZES['3xl'] * FONT_SCALE),
+    '4xl': Math.round(BASE_FONT_SIZES['4xl'] * FONT_SCALE),
+    '5xl': Math.round(BASE_FONT_SIZES['5xl'] * FONT_SCALE),
   },
   
   // Line heights
@@ -170,6 +197,44 @@ export const typography = {
     bold: '700' as const,
   },
 };
+
+const fontScaleListeners = new Set<() => void>();
+
+const recalcTypography = () => {
+  FONT_SCALE = BASE_FONT_SCALE * USER_FONT_SCALE;
+  typography.fontSize.xs = Math.round(BASE_FONT_SIZES.xs * FONT_SCALE);
+  typography.fontSize.sm = Math.round(BASE_FONT_SIZES.sm * FONT_SCALE);
+  typography.fontSize.md = Math.round(BASE_FONT_SIZES.md * FONT_SCALE);
+  typography.fontSize.base = Math.round(BASE_FONT_SIZES.base * FONT_SCALE);
+  typography.fontSize.lg = Math.round(BASE_FONT_SIZES.lg * FONT_SCALE);
+  typography.fontSize.xl = Math.round(BASE_FONT_SIZES.xl * FONT_SCALE);
+  typography.fontSize['2xl'] = Math.round(BASE_FONT_SIZES['2xl'] * FONT_SCALE);
+  typography.fontSize['3xl'] = Math.round(BASE_FONT_SIZES['3xl'] * FONT_SCALE);
+  typography.fontSize['4xl'] = Math.round(BASE_FONT_SIZES['4xl'] * FONT_SCALE);
+  typography.fontSize['5xl'] = Math.round(BASE_FONT_SIZES['5xl'] * FONT_SCALE);
+};
+
+export const setFontScale = (scale: number) => {
+  const clamped = Math.max(0.8, Math.min(scale, 1.5));
+  USER_FONT_SCALE = clamped;
+  recalcTypography();
+  fontScaleListeners.forEach(fn => fn());
+};
+
+export const getFontScale = () => USER_FONT_SCALE;
+export const addFontScaleListener = (fn: () => void) => {
+  fontScaleListeners.add(fn);
+  return () => fontScaleListeners.delete(fn);
+};
+export const removeFontScaleListener = (fn: () => void) => {
+  fontScaleListeners.delete(fn);
+};
+
+i18n.on('languageChanged', (lang) => {
+  BASE_FONT_SCALE = lang === 'hi' ? 1.12 : 1;
+  recalcTypography();
+  fontScaleListeners.forEach(fn => fn());
+});
 
 export const spacing = {
   xs: 4,

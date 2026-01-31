@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import { parseBankSms } from '../utils/smsParser';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SmsImportScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const [smsText, setSmsText] = useState('');
@@ -26,11 +28,11 @@ const SmsImportScreen: React.FC = () => {
 
   const handleContinue = () => {
     if (Platform.OS !== 'android') {
-      Alert.alert('Not Available', 'SMS import is currently available on Android only.');
+      Alert.alert(t('smsImport.notAvailableTitle'), t('smsImport.notAvailableMessage'));
       return;
     }
     if (!parsed.amount) {
-      Alert.alert('Could not detect amount', 'Please paste a complete bank SMS that contains an amount (e.g. INR 123.45).');
+      Alert.alert(t('smsImport.noAmountTitle'), t('smsImport.noAmountMessage'));
       return;
     }
 
@@ -40,6 +42,7 @@ const SmsImportScreen: React.FC = () => {
         note: parsed.note,
         date: (parsed.date ?? new Date()).toISOString(),
       },
+      postSaveNavigationTarget: 'Transactions',
     });
   };
 
@@ -50,17 +53,17 @@ const SmsImportScreen: React.FC = () => {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Import from SMS</Text>
+        <Text style={styles.title}>{t('smsImport.title')}</Text>
         <Text style={styles.subtitle}>
-          Paste a bank SMS below. We’ll detect amount/date and open Add Transaction with prefilled values.
+          {t('smsImport.subtitle')}
         </Text>
 
-        <Text style={styles.label}>SMS Text</Text>
+        <Text style={styles.label}>{t('smsImport.smsTextLabel')}</Text>
         <TextInput
           value={smsText}
           onChangeText={setSmsText}
           style={styles.textArea}
-          placeholder="Paste your SMS here…"
+          placeholder={t('smsImport.placeholder')}
           placeholderTextColor={colors.text.tertiary}
           multiline
           textAlignVertical="top"
@@ -69,19 +72,19 @@ const SmsImportScreen: React.FC = () => {
 
         <View style={styles.previewRow}>
           <View style={styles.previewItem}>
-            <Text style={styles.previewLabel}>Amount</Text>
+            <Text style={styles.previewLabel}>{t('smsImport.amount')}</Text>
             <Text style={styles.previewValue}>{parsed.amount ? `₹${parsed.amount}` : '—'}</Text>
           </View>
           <View style={styles.previewItem}>
-            <Text style={styles.previewLabel}>Date</Text>
+            <Text style={styles.previewLabel}>{t('smsImport.date')}</Text>
             <Text style={styles.previewValue}>
               {parsed.date ? parsed.date.toLocaleDateString() : '—'}
             </Text>
           </View>
           <View style={styles.previewItem}>
-            <Text style={styles.previewLabel}>Type</Text>
+            <Text style={styles.previewLabel}>{t('smsImport.type')}</Text>
             <Text style={styles.previewValue}>
-              {parsed.direction === 'unknown' ? '—' : parsed.direction}
+              {parsed.direction === 'unknown' ? '—' : parsed.direction === 'credit' ? t('smsImport.credit') : parsed.direction === 'debit' ? t('smsImport.debit') : '—'}
             </Text>
           </View>
         </View>
@@ -92,11 +95,11 @@ const SmsImportScreen: React.FC = () => {
           disabled={!canContinue}
           activeOpacity={0.8}
         >
-          <Text style={[styles.ctaText, !canContinue && styles.ctaTextDisabled]}>Create Transaction</Text>
+          <Text style={[styles.ctaText, !canContinue && styles.ctaTextDisabled]}>{t('smsImport.createTransaction')}</Text>
         </TouchableOpacity>
 
         <Text style={styles.helper}>
-          Note: this does not read your inbox automatically; it only parses the SMS text you paste.
+          {t('smsImport.helperNote')}
         </Text>
       </View>
     </ScrollView>
@@ -192,4 +195,3 @@ const styles = StyleSheet.create({
 });
 
 export default SmsImportScreen;
-

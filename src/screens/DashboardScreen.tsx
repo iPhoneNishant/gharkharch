@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -23,8 +24,9 @@ import {
   spacing,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
-import { dashboardScreenStyles as styles } from '../styles/screens/DashboardScreen.styles';
+import { getDashboardScreenStyles } from '../styles/screens/DashboardScreen.styles';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { getClosingBalance } from '../utils/reports';
 
@@ -33,6 +35,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const DashboardScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const { t } = useTranslation();
+  const styles = getDashboardScreenStyles();
+  const [fontScaleVersion, setFontScaleVersion] = React.useState(0);
   
   const { user } = useAuthStore();
   const { 
@@ -56,6 +61,14 @@ const DashboardScreen: React.FC = () => {
     }
   }, [user?.id, subscribeToAccounts, subscribeToTransactions]);
 
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     // Subscriptions auto-refresh, so just simulate a delay
@@ -105,7 +118,7 @@ const DashboardScreen: React.FC = () => {
     if (accountType === 'liability') {
       return {
         color: isNegative ? colors.success : colors.error,
-        label: isNegative ? '(to receive)' : null,
+        label: isNegative ? t('dashboard.toReceive') : null,
       };
     }
 
@@ -114,7 +127,7 @@ const DashboardScreen: React.FC = () => {
     // - negative => red (to pay)
     return {
       color: isNegative ? colors.error : colors.success,
-      label: isNegative ? '(to pay)' : null,
+      label: isNegative ? t('dashboard.toPay') : null,
     };
   };
 
@@ -139,7 +152,7 @@ const DashboardScreen: React.FC = () => {
     >
       {/* Net Worth Card */}
       <View style={styles.netWorthCard}>
-        <Text style={styles.netWorthLabel}>Net Worth</Text>
+        <Text style={styles.netWorthLabel}>{t('dashboard.netWorth')}</Text>
         <Text style={[
           styles.netWorthValue,
           netWorth < 0 && styles.negativeValue
@@ -150,28 +163,28 @@ const DashboardScreen: React.FC = () => {
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <View>
-              <Text style={styles.summaryLabel}>Assets</Text>
-              <Text style={styles.summaryMeaningLabel}>What we have</Text>
+              <Text style={styles.summaryLabel}>{t('dashboard.assets')}</Text>
+              <Text style={styles.summaryMeaningLabel}>{t('dashboard.assetsMeaning')}</Text>
               <Text style={[styles.summaryValue, { color: colors.neutral[0]  }]}>
                 {formatCurrency(Math.abs(totalAssets), currency)}
               </Text>
               {totalAssets < 0 && (
                 <Text style={[styles.summarySubLabel, { color: colors.error }]}>
-                  (to pay)
+                  {t('dashboard.toPay')}
                 </Text>
               )}
             </View>
           </View>
           <View style={styles.summaryItem}>
             <View>
-              <Text style={styles.summaryLabel}>Liabilities</Text>
-              <Text style={styles.summaryMeaningLabel}>What We Have to Pay </Text>
+              <Text style={styles.summaryLabel}>{t('dashboard.liabilities')}</Text>
+              <Text style={styles.summaryMeaningLabel}>{t('dashboard.liabilitiesMeaning')}</Text>
               <Text style={[styles.summaryValue, { color: colors.neutral[0] }]}>
                 {formatCurrency(totalLiabilities, currency)}
               </Text>
               {totalLiabilities < 0 && (
                 <Text style={[styles.summarySubLabel, { color: colors.neutral[0]  }]}>
-                  (to receive)
+                  {t('dashboard.toReceive')}
                 </Text>
               )}
             </View>
@@ -186,7 +199,7 @@ const DashboardScreen: React.FC = () => {
           onPress={() => setShowAddMenu(!showAddMenu)}
         >
           <Text style={styles.addButtonIcon}>+</Text>
-          <Text style={styles.addButtonText}>Add Transaction</Text>
+          <Text style={styles.addButtonText}>{t('dashboard.addTransaction')}</Text>
         </TouchableOpacity>
         
         {/* Add Menu */}
@@ -197,14 +210,14 @@ const DashboardScreen: React.FC = () => {
               onPress={handleAddTransaction}
             >
               <Text style={styles.addMenuItemIcon}>📝</Text>
-              <Text style={styles.addMenuItemText}>Add Transaction</Text>
+              <Text style={styles.addMenuItemText}>{t('dashboard.addTransaction')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.addMenuItem}
               onPress={handleAddRecurringTransaction}
             >
               <Text style={styles.addMenuItemIcon}>🔄</Text>
-              <Text style={styles.addMenuItemText}>Add Recurring</Text>
+              <Text style={styles.addMenuItemText}>{t('dashboard.addRecurring')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -214,27 +227,27 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.sectionTitle}>Assets</Text>
-            <Text style={styles.sectionMeaning}>What we have</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.assets')}</Text>
+            <Text style={styles.sectionMeaning}>{t('dashboard.assetsMeaning')}</Text>
           </View>
           <View style={styles.sectionTotalContainer}>
             <Text style={[styles.sectionTotal, { color: totalAssets < 0 ? colors.error : colors.success }]}>
               {formatCurrency(Math.abs(totalAssets), currency)}
             </Text>
             {totalAssets < 0 && (
-              <Text style={[styles.sectionSubLabel, { color: colors.error }]}>(to pay)</Text>
+              <Text style={[styles.sectionSubLabel, { color: colors.error }]}>{t('dashboard.toPay')}</Text>
             )}
           </View>
         </View>
 
         {accountsLoading ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Loading...</Text>
+            <Text style={styles.emptyStateText}>{t('common.loading')}</Text>
           </View>
         ) : activeAssets.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No asset accounts yet</Text>
-            <Text style={styles.emptyStateSubtext}>Add your bank accounts and cash</Text>
+            <Text style={styles.emptyStateText}>{t('dashboard.emptyAssetsTitle')}</Text>
+            <Text style={styles.emptyStateSubtext}>{t('dashboard.emptyAssetsSubtext')}</Text>
           </View>
         ) : (
           <View style={styles.accountsList}>
@@ -290,27 +303,27 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.sectionTitle}>Liabilities</Text>
-            <Text style={styles.sectionMeaning}>What We Have to Pay</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.liabilities')}</Text>
+            <Text style={styles.sectionMeaning}>{t('dashboard.liabilitiesMeaning')}</Text>
           </View>
           <View style={styles.sectionTotalContainer}>
             <Text style={[styles.sectionTotal, { color: totalLiabilities < 0 ? colors.success : colors.error }]}>
               {formatCurrency(Math.abs(totalLiabilities), currency)}
             </Text>
             {totalLiabilities < 0 && (
-              <Text style={[styles.sectionSubLabel, { color: colors.success }]}>(to receive)</Text>
+              <Text style={[styles.sectionSubLabel, { color: colors.success }]}>{t('dashboard.toReceive')}</Text>
             )}
           </View>
         </View>
 
         {accountsLoading ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Loading...</Text>
+            <Text style={styles.emptyStateText}>{t('common.loading')}</Text>
           </View>
         ) : activeLiabilities.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No liability accounts yet</Text>
-            <Text style={styles.emptyStateSubtext}>Add your credit cards and loans</Text>
+            <Text style={styles.emptyStateText}>{t('dashboard.emptyLiabilitiesTitle')}</Text>
+            <Text style={styles.emptyStateSubtext}>{t('dashboard.emptyLiabilitiesSubtext')}</Text>
           </View>
         ) : (
           <View style={styles.accountsList}>

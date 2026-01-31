@@ -72,6 +72,18 @@ const MainTabNavigator: React.FC = () => {
           ),
           tabBarActiveTintColor: colors.primary[500],
           tabBarInactiveTintColor: colors.neutral[500],
+          tabBarLabel: ({ focused, color }) => (
+            <Text
+              allowFontScaling={false}
+              style={{
+                fontSize: 12,
+                fontWeight: typography.fontWeight.medium,
+                color,
+              }}
+            >
+              {route.name}
+            </Text>
+          ),
           tabBarStyle: {
             backgroundColor: colors.background.elevated,
             borderTopColor: colors.border.light,
@@ -81,10 +93,6 @@ const MainTabNavigator: React.FC = () => {
             paddingBottom: Math.max(insets.bottom, spacing.sm),
             paddingTop: spacing.sm,
             height: 60 + Math.max(insets.bottom, spacing.sm),
-          },
-          tabBarLabelStyle: {
-            fontSize: typography.fontSize.xs,
-            fontWeight: typography.fontWeight.medium,
           },
           headerStyle: {
             backgroundColor: colors.background.elevated,

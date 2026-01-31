@@ -260,10 +260,17 @@ export const disableAllNotifications = async (): Promise<void> => {
  * Reschedule notifications for all active recurring transactions
  */
 export const rescheduleAllRecurringTransactionNotifications = async (
-  recurringTransactions: RecurringTransaction[]
+  recurringTransactions: RecurringTransaction[],
+  shouldRequestPermissions = false
 ): Promise<void> => {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
+    let { status } = await Notifications.getPermissionsAsync();
+    
+    if (status !== 'granted' && shouldRequestPermissions) {
+      const { status: newStatus } = await Notifications.requestPermissionsAsync();
+      status = newStatus;
+    }
+
     if (status !== 'granted') {
       return;
     }
@@ -329,7 +336,7 @@ export const testNotification = async (): Promise<boolean> => {
           }
         : {
             date: testDate,
-          },
+          } as any,
     });
 
     console.log(`✓ Test notification scheduled for ${testDate.toISOString()}, ID: ${notificationId}`);
@@ -341,17 +348,11 @@ export const testNotification = async (): Promise<boolean> => {
 };
 
 /**
- * Initialize notification handling
+ * Setup notification channels (Android)
+ * Note: Does not request permissions, call requestPermissionsAsync() when needed
  */
-export const initializeNotifications = async (): Promise<void> => {
+export const setupNotificationChannels = async (): Promise<void> => {
   try {
-    // Request permissions
-    const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== 'granted') {
-      console.warn('Notification permissions not granted. Please enable notifications in settings.');
-      return;
-    }
-
     // Configure notification channel for Android
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('recurring-transactions', {
@@ -364,6 +365,6 @@ export const initializeNotifications = async (): Promise<void> => {
       });
     }
   } catch (error) {
-    console.error('Error initializing notifications:', error);
+    console.error('Error setting up notification channels:', error);
   }
 };

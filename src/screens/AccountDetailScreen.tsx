@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -31,6 +32,7 @@ import {
   shadows,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { 
@@ -43,9 +45,355 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AccountDeta
 type RouteType = RouteProp<RootStackParamList, 'AccountDetail'>;
 
 const AccountDetailScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyStateText: {
+      fontSize: typography.fontSize.lg,
+      color: colors.text.secondary,
+    },
+    headerCard: {
+      margin: spacing.base,
+      padding: spacing.base,
+      borderRadius: borderRadius.lg,
+      alignItems: 'center',
+      ...shadows.md,
+    },
+    headerIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    headerIconText: {
+      fontSize: typography.fontSize.xl,
+      fontWeight: typography.fontWeight.bold,
+      color: colors.neutral[0],
+    },
+    accountName: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.bold,
+      color: colors.neutral[0],
+      marginBottom: spacing.xs / 2,
+    },
+    accountCategoryContainer: {
+      width: '100%',
+      paddingHorizontal: spacing.base,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    accountCategory: {
+      fontSize: typography.fontSize.xs,
+      color: 'rgba(255, 255, 255, 0.8)',
+      textAlign: 'center',
+      width: '100%',
+    },
+    balanceContainer: {
+      marginTop: spacing.xl,
+      alignItems: 'center',
+    },
+    balanceLabel: {
+      fontSize: typography.fontSize.sm,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginBottom: spacing.xs,
+    },
+    balanceValue: {
+      fontSize: typography.fontSize['3xl'],
+      fontWeight: typography.fontWeight.bold,
+      color: colors.neutral[0],
+    },
+    infoSection: {
+      backgroundColor: colors.background.elevated,
+      marginHorizontal: spacing.base,
+      borderRadius: borderRadius.lg,
+      ...shadows.sm,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.base,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    infoLabel: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.secondary,
+    },
+    infoValue: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    infoValueText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    typeBadge: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+    },
+    typeBadgeText: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+    },
+    transactionsHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.base,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    transactionsTitle: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+    },
+    transactionsCount: {
+      fontSize: typography.fontSize.xs,
+      color: colors.text.tertiary,
+    },
+    transactionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background.elevated,
+      marginHorizontal: spacing.base,
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    transactionInfo: {
+      flex: 1,
+    },
+    transactionTitle: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    transactionDate: {
+      fontSize: typography.fontSize.xs,
+      color: colors.text.tertiary,
+      marginTop: 1,
+    },
+    transactionAmount: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+    },
+    inflowText: {
+      color: colors.income,
+    },
+    outflowText: {
+      color: colors.expense,
+    },
+    emptyTransactions: {
+      backgroundColor: colors.background.elevated,
+      marginHorizontal: spacing.base,
+      padding: spacing.base,
+      borderRadius: borderRadius.md,
+      alignItems: 'center',
+    },
+    emptyTransactionsText: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.tertiary,
+    },
+    deleteButton: {
+      marginHorizontal: spacing.base,
+      marginTop: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md,
+      alignItems: 'center',
+      backgroundColor: colors.background.elevated,
+      ...shadows.sm,
+    },
+    deleteButtonText: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.error,
+    },
+    dateRangeSection: {
+      padding: spacing.base,
+      backgroundColor: colors.background.elevated,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    dateRangeRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    dateButton: {
+      flex: 1,
+      padding: spacing.sm,
+      backgroundColor: colors.background.primary,
+      borderRadius: borderRadius.md,
+      borderWidth: 2,
+      borderColor: colors.primary[200],
+      ...shadows.md,
+    },
+    dateButtonContent: {
+      flex: 1,
+    },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.xs / 2,
+    },
+    dateLabel: {
+      fontSize: typography.fontSize.xs,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.secondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginLeft: spacing.xs,
+    },
+    dateValue: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.primary,
+    },
+    chevron: {
+      fontSize: typography.fontSize.sm,
+      color: colors.primary[500],
+      fontWeight: typography.fontWeight.bold,
+    },
+    balanceSection: {
+      padding: spacing.base,
+      backgroundColor: colors.background.elevated,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    balanceGrid: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    balanceItem: {
+      flex: 1,
+      padding: spacing.sm,
+      backgroundColor: colors.background.primary,
+      borderRadius: borderRadius.md,
+      alignItems: 'center',
+    },
+    balanceItemLabel: {
+      fontSize: typography.fontSize.xs,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs / 2,
+    },
+    balanceItemValue: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.bold,
+      color: colors.text.primary,
+    },
+    summarySection: {
+      padding: spacing.base,
+      backgroundColor: colors.background.elevated,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    summaryItem: {
+      flex: 1,
+      minWidth: 0,
+      padding: spacing.sm,
+      backgroundColor: colors.background.primary,
+      borderRadius: borderRadius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    summaryLabel: {
+      fontSize: typography.fontSize.xs,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs / 2,
+      textAlign: 'center',
+      width: '100%',
+      flexShrink: 1,
+    },
+    summaryValue: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.bold,
+      textAlign: 'center',
+      width: '100%',
+      flexShrink: 0,
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+    },
+    modalCancel: {
+      fontSize: typography.fontSize.base,
+      color: colors.primary[500],
+      flexShrink: 0,
+      minWidth: 60,
+      textAlign: 'left',
+    },
+    modalTitle: {
+      flex: 1,
+      textAlign: 'center',
+      flexShrink: 1,
+      marginHorizontal: spacing.sm,
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+    },
+    modalDone: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.primary[500],
+      flexShrink: 0,
+      minWidth: 60,
+      textAlign: 'right',
+    },
+    loadMoreButton: {
+      marginHorizontal: spacing.base,
+      marginTop: spacing.md,
+      backgroundColor: colors.primary[500],
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md,
+      alignItems: 'center',
+      ...shadows.md,
+    },
+    loadMoreButtonText: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.neutral[0],
+    },
+  });
   
   const { accountId, fromDate: initialFromDate, toDate: initialToDate } = route.params;
   
@@ -261,7 +609,7 @@ const AccountDetailScreen: React.FC = () => {
     }
 
     return {
-      otherAccountName: otherAccount?.name ?? 'Unknown',
+      otherAccountName: otherAccount?.name ?? t('common.unknown'),
       isInflow,
     };
   };
@@ -271,19 +619,19 @@ const AccountDetailScreen: React.FC = () => {
    */
   const handleDelete = () => {
     Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete this account? This action cannot be undone.',
+      t('accountDetail.deleteAccountConfirmTitle'),
+      t('accountDetail.deleteAccountConfirmMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteAccount(accountId);
               navigation.goBack();
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete account. Please try again.');
+              Alert.alert(t('common.error'), 'Failed to delete account. Please try again.');
             }
           },
         },
@@ -294,7 +642,7 @@ const AccountDetailScreen: React.FC = () => {
   if (!account) {
     return (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyStateText}>Account not found</Text>
+        <Text style={styles.emptyStateText}>{t('common.error')}</Text>
       </View>
     );
   }
@@ -358,7 +706,7 @@ const AccountDetailScreen: React.FC = () => {
             <View style={styles.dateButtonContent}>
               <View style={styles.labelRow}>
                 <Text style={styles.chevron}>‹</Text>
-                <Text style={styles.dateLabel}>From</Text>
+                <Text style={styles.dateLabel}>{t('accountDetail.fromDateTitle')}</Text>
               </View>
               <Text style={styles.dateValue} numberOfLines={1}>
                 {fromDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -375,7 +723,7 @@ const AccountDetailScreen: React.FC = () => {
             <View style={styles.dateButtonContent}>
               <View style={styles.labelRow}>
                 <Text style={styles.chevron}>‹</Text>
-                <Text style={styles.dateLabel}>To</Text>
+                <Text style={styles.dateLabel}>{t('accountDetail.toDateTitle')}</Text>
               </View>
               <Text style={styles.dateValue} numberOfLines={1}>
                 {toDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -390,13 +738,13 @@ const AccountDetailScreen: React.FC = () => {
         <View style={styles.balanceSection}>
           <View style={styles.balanceGrid}>
             <View style={styles.balanceItem}>
-              <Text style={styles.balanceItemLabel}>Opening Balance</Text>
+              <Text style={styles.balanceItemLabel}>{t('accountDetail.openingBalance')}</Text>
               <Text style={styles.balanceItemValue}>
                 {formatCurrency(openingBalance, currency)}
               </Text>
             </View>
             <View style={styles.balanceItem}>
-              <Text style={styles.balanceItemLabel}>Closing Balance</Text>
+              <Text style={styles.balanceItemLabel}>{t('accountDetail.closingBalance')}</Text>
               <Text style={styles.balanceItemValue}>
                 {formatCurrency(closingBalance, currency)}
               </Text>
@@ -409,17 +757,13 @@ const AccountDetailScreen: React.FC = () => {
       <View style={styles.summarySection}>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel} numberOfLines={2}>
-              Total Debit
-            </Text>
+            <Text style={styles.summaryLabel} numberOfLines={2}>{t('accountDetail.totalDebit')}</Text>
             <Text style={[styles.summaryValue, { color: colors.expense }]} numberOfLines={1}>
               {formatCurrency(debitCreditData.totalDebit, currency, false)}
             </Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel} numberOfLines={2}>
-              Total Credit
-            </Text>
+            <Text style={styles.summaryLabel} numberOfLines={2}>{t('accountDetail.totalCredit')}</Text>
             <Text style={[styles.summaryValue, { color: colors.income }]} numberOfLines={1}>
               {formatCurrency(debitCreditData.totalCredit, currency, true)}
             </Text>
@@ -431,9 +775,9 @@ const AccountDetailScreen: React.FC = () => {
 
       {/* Transactions Header */}
       <View style={styles.transactionsHeader}>
-        <Text style={styles.transactionsTitle}>Transactions</Text>
+        <Text style={styles.transactionsTitle}>{t('accountDetail.transactions')}</Text>
         <Text style={styles.transactionsCount}>
-          {accountTransactions.length} total
+          {accountTransactions.length} {t('accountDetail.transactionsTotal')}
         </Text>
       </View>
     </>
@@ -441,7 +785,7 @@ const AccountDetailScreen: React.FC = () => {
 
   const ListEmpty = () => (
     <View style={styles.emptyTransactions}>
-      <Text style={styles.emptyTransactionsText}>No transactions yet</Text>
+      <Text style={styles.emptyTransactionsText}>{t('accountDetail.noTransactions')}</Text>
     </View>
   );
 
@@ -450,7 +794,7 @@ const AccountDetailScreen: React.FC = () => {
       style={styles.deleteButton}
       onPress={handleDelete}
     >
-      <Text style={styles.deleteButtonText}>Delete Account</Text>
+      <Text style={styles.deleteButtonText}>{t('settings.deleteAccount')}</Text>
     </TouchableOpacity>
   );
 
@@ -458,7 +802,7 @@ const AccountDetailScreen: React.FC = () => {
     const currentDate = selectedDate || fromDate;
     setShowFromDatePicker(Platform.OS === 'ios');
     if (currentDate > toDate) {
-      Alert.alert('Invalid Date', 'From Date cannot be after To Date.');
+      Alert.alert(t('accountDetail.invalidDateTitle'), t('accountDetail.invalidFromAfterTo'));
       return;
     }
     setFromDate(currentDate);
@@ -468,7 +812,7 @@ const AccountDetailScreen: React.FC = () => {
     const currentDate = selectedDate || toDate;
     setShowToDatePicker(Platform.OS === 'ios');
     if (currentDate < fromDate) {
-      Alert.alert('Invalid Date', 'To Date cannot be before From Date.');
+      Alert.alert(t('accountDetail.invalidDateTitle'), t('accountDetail.invalidToBeforeFrom'));
       return;
     }
     setToDate(currentDate);
@@ -516,11 +860,11 @@ const AccountDetailScreen: React.FC = () => {
             <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
-                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">{t('common.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">From Date</Text>
+                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('accountDetail.fromDateTitle')}</Text>
                 <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
-                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
                 </TouchableOpacity>
               </View>
               <DateTimePicker
@@ -556,11 +900,11 @@ const AccountDetailScreen: React.FC = () => {
             <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
-                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+                  <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">{t('common.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">To Date</Text>
+                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('accountDetail.toDateTitle')}</Text>
                 <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
-                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+                  <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
                 </TouchableOpacity>
               </View>
               <DateTimePicker
@@ -589,341 +933,5 @@ const AccountDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.lg,
-    color: colors.text.secondary,
-  },
-  headerCard: {
-    margin: spacing.base,
-    padding: spacing.base,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    ...shadows.md,
-  },
-  headerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  headerIconText: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[0],
-  },
-  accountName: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[0],
-    marginBottom: spacing.xs / 2,
-  },
-  accountCategoryContainer: {
-    width: '100%',
-    paddingHorizontal: spacing.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accountCategory: {
-    fontSize: typography.fontSize.xs,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    width: '100%',
-  },
-  balanceContainer: {
-    marginTop: spacing.xl,
-    alignItems: 'center',
-  },
-  balanceLabel: {
-    fontSize: typography.fontSize.sm,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: spacing.xs,
-  },
-  balanceValue: {
-    fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.neutral[0],
-  },
-  infoSection: {
-    backgroundColor: colors.background.elevated,
-    marginHorizontal: spacing.base,
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  infoLabel: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
-  },
-  infoValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoValueText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  typeBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  typeBadgeText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-  },
-  transactionsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  transactionsTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-  },
-  transactionsCount: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.elevated,
-    marginHorizontal: spacing.base,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  transactionDate: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-    marginTop: 1,
-  },
-  transactionAmount: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-  },
-  inflowText: {
-    color: colors.income,
-  },
-  outflowText: {
-    color: colors.expense,
-  },
-  emptyTransactions: {
-    backgroundColor: colors.background.elevated,
-    marginHorizontal: spacing.base,
-    padding: spacing.base,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  emptyTransactionsText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-  },
-  deleteButton: {
-    marginHorizontal: spacing.base,
-    marginTop: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    backgroundColor: colors.background.elevated,
-    ...shadows.sm,
-  },
-  deleteButtonText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.error,
-  },
-  dateRangeSection: {
-    padding: spacing.base,
-    backgroundColor: colors.background.elevated,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  dateRangeRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  dateButton: {
-    flex: 1,
-    padding: spacing.sm,
-    backgroundColor: colors.background.primary,
-    borderRadius: borderRadius.md,
-    borderWidth: 2,
-    borderColor: colors.primary[200],
-    ...shadows.md,
-  },
-  dateButtonContent: {
-    flex: 1,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xs / 2,
-  },
-  dateLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginLeft: spacing.xs,
-  },
-  dateValue: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  chevron: {
-    fontSize: typography.fontSize.sm,
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.bold,
-  },
-  balanceSection: {
-    padding: spacing.base,
-    backgroundColor: colors.background.elevated,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  balanceGrid: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  balanceItem: {
-    flex: 1,
-    padding: spacing.sm,
-    backgroundColor: colors.background.primary,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  balanceItemLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs / 2,
-  },
-  balanceItemValue: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  summarySection: {
-    padding: spacing.base,
-    backgroundColor: colors.background.elevated,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  summaryItem: {
-    flex: 1,
-    minWidth: 0,
-    padding: spacing.sm,
-    backgroundColor: colors.background.primary,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs / 2,
-    textAlign: 'center',
-    width: '100%',
-    flexShrink: 1,
-  },
-  summaryValue: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    textAlign: 'center',
-    width: '100%',
-    flexShrink: 0,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  modalCancel: {
-    fontSize: typography.fontSize.base,
-    color: colors.primary[500],
-    flexShrink: 0,
-    minWidth: 60,
-    textAlign: 'left',
-  },
-  modalTitle: {
-    flex: 1,
-    textAlign: 'center',
-    flexShrink: 1,
-    marginHorizontal: spacing.sm,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-  },
-  modalDone: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.primary[500],
-    flexShrink: 0,
-    minWidth: 60,
-    textAlign: 'right',
-  },
-  loadMoreButton: {
-    marginHorizontal: spacing.base,
-    marginTop: spacing.md,
-    backgroundColor: colors.primary[500],
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    ...shadows.md,
-  },
-  loadMoreButtonText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.neutral[0],
-  },
-});
 
 export default AccountDetailScreen;

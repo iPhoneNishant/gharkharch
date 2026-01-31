@@ -17,6 +17,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
@@ -31,6 +32,7 @@ import {
   shadows,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import {
@@ -50,9 +52,11 @@ const ReportsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<ReportsScreenRouteProp>();
   const navigation = useNavigation<NavigationProp>();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { accounts } = useAccountStore();
   const { transactions } = useTransactionStore();
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
 
   // Get viewMode from route name
   const getViewModeFromRoute = (routeName: string): 'summary-month' | 'summary-custom' | 'transactions-month' | 'transactions-custom' => {
@@ -75,6 +79,14 @@ const ReportsScreen: React.FC = () => {
 
   // Get available months
   const availableMonths = useMemo(() => getAvailableMonths(transactions), [transactions]);
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
   
   // Get available years from first transaction to current date
   const availableYears = useMemo(() => {
@@ -112,7 +124,7 @@ const ReportsScreen: React.FC = () => {
         return [{
           year: now.getFullYear(),
           month: now.getMonth() + 1,
-          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString(i18n.language, { month: 'long' }),
         }];
       }
       return [];
@@ -135,7 +147,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     } else if (year === startYear) {
@@ -144,7 +156,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     } else if (year === endYear) {
@@ -153,7 +165,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     } else if (year > startYear && year < endYear) {
@@ -162,7 +174,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     }
@@ -178,7 +190,7 @@ const ReportsScreen: React.FC = () => {
         return [{
           year: now.getFullYear(),
           month: now.getMonth() + 1,
-          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString(i18n.language, { month: 'long' }),
         }];
       }
       return [];
@@ -201,7 +213,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     } else if (selectedYear === startYear) {
@@ -210,7 +222,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     } else if (selectedYear === endYear) {
@@ -219,7 +231,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     } else if (selectedYear > startYear && selectedYear < endYear) {
@@ -228,7 +240,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
         });
       }
     }
@@ -554,7 +566,7 @@ const ReportsScreen: React.FC = () => {
               <>
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>
-                    {accountType === 'income' ? 'Total Income' : 'Total Expenses'}
+                    {accountType === 'income' ? t('reports.totalIncome') : t('reports.totalExpenses')}
                   </Text>
                   <Text style={[
                     styles.statValue,
@@ -600,7 +612,7 @@ const ReportsScreen: React.FC = () => {
 
         {subCategoryReport.transactionCount > 0 && !isIncomeOrExpense && (
           <View style={styles.transactionSummary}>
-            <View style={styles.summaryRow}>
+            <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
                 Total Debits:
               </Text>
@@ -608,7 +620,7 @@ const ReportsScreen: React.FC = () => {
                 {formatCurrency(subCategoryReport.totalDebits, currency)}
               </Text>
             </View>
-            <View style={styles.summaryRow}>
+            <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
                 Total Credits:
               </Text>
@@ -616,7 +628,7 @@ const ReportsScreen: React.FC = () => {
                 {formatCurrency(subCategoryReport.totalCredits, currency)}
               </Text>
             </View>
-            <View style={styles.summaryRow}>
+            <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
                 Net Change:
               </Text>
@@ -631,7 +643,7 @@ const ReportsScreen: React.FC = () => {
         )}
         {subCategoryReport.transactionCount > 0 && isIncomeOrExpense && (
           <View style={styles.transactionSummary}>
-            <View style={styles.summaryRow}>
+            <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
                 Total Debits:
               </Text>
@@ -639,7 +651,7 @@ const ReportsScreen: React.FC = () => {
                 {formatCurrency(subCategoryReport.totalDebits, currency)}
               </Text>
             </View>
-            <View style={styles.summaryRow}>
+            <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
                 Total Credits:
               </Text>
@@ -686,7 +698,7 @@ const ReportsScreen: React.FC = () => {
             {categoryReport.accountType === 'income' || categoryReport.accountType === 'expense' ? (
               <>
                 <Text style={styles.categoryBalanceLabel}>
-                  {categoryReport.accountType === 'income' ? 'Total Income' : 'Total Expenses'}
+                  {categoryReport.accountType === 'income' ? t('reports.totalIncome') : t('reports.totalExpenses')}
                 </Text>
                 <Text style={[
                   styles.categoryBalanceValue,
@@ -817,8 +829,8 @@ const ReportsScreen: React.FC = () => {
               </View>
               <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
                 {selectedMonth && selectedYear 
-                  ? `${new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-US', { month: 'long' })} ${selectedYear}`
-                  : 'Select Month'}
+                  ? `${new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString(i18n.language, { month: 'long' })} ${selectedYear}`
+                  : t('reports.selectMonth')}
               </Text>
               <View style={styles.chevronContainer}>
                 <Text style={styles.dateSelectionChevron}>›</Text>
@@ -838,7 +850,7 @@ const ReportsScreen: React.FC = () => {
                   <Text style={styles.dateSelectionLabel}>From</Text>
                 </View>
                 <Text style={styles.selectedDateText}>
-                  {fromDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {fromDate.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Text>
                 <View style={styles.chevronContainer}>
                   <Text style={styles.dateSelectionChevron}>›</Text>
@@ -856,7 +868,7 @@ const ReportsScreen: React.FC = () => {
                   <Text style={styles.dateSelectionLabel}>To</Text>
                 </View>
                 <Text style={styles.selectedDateText}>
-                  {toDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {toDate.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Text>
                 <View style={styles.chevronContainer}>
                   <Text style={styles.dateSelectionChevron}>›</Text>
@@ -879,7 +891,7 @@ const ReportsScreen: React.FC = () => {
                   <Text style={styles.dateSelectionLabel}>Category</Text>
                 </View>
                 <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
-                  {selectedCategory || 'All Categories'}
+                  {selectedCategory || t('reports.allCategories')}
                 </Text>
                 <View style={styles.chevronContainer}>
                   <Text style={styles.dateSelectionChevron}>›</Text>
@@ -899,7 +911,7 @@ const ReportsScreen: React.FC = () => {
                     <Text style={styles.dateSelectionLabel}>Sub-Category</Text>
                   </View>
                   <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
-                    {selectedSubCategory || 'All Sub-Categories'}
+                    {selectedSubCategory || t('reports.allSubCategories')}
                   </Text>
                   <View style={styles.chevronContainer}>
                     <Text style={styles.dateSelectionChevron}>›</Text>
@@ -1027,7 +1039,7 @@ const ReportsScreen: React.FC = () => {
                             {isExpense ? debitAccount?.subCategory : isIncome ? creditAccount?.subCategory : `${debitAccount?.subCategory} / ${creditAccount?.subCategory}`}
                           </Text>
                           <Text style={styles.transactionDate}>
-                            {txn.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {txn.date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })}
                           </Text>
                         </View>
                       </View>
@@ -1275,7 +1287,7 @@ const ReportsScreen: React.FC = () => {
                 data={Array.from({ length: 12 }, (_, i) => i + 1)}
                 keyExtractor={(item) => item.toString()}
                 renderItem={({ item }) => {
-                  const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString('en-US', { month: 'long' });
+                  const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString(i18n.language, { month: 'long' });
                   const isSelected = selectedMonth === item;
                   
                   return (
@@ -1341,7 +1353,7 @@ const ReportsScreen: React.FC = () => {
           </View>
           <FlatList
             data={[
-              { category: null, displayName: 'All Categories' },
+              { category: null, displayName: t('reports.allCategories') },
               ...availableCategories.map(c => ({ category: c, displayName: c }))
             ]}
             keyExtractor={(item) => item.category || 'all'}
@@ -1387,7 +1399,7 @@ const ReportsScreen: React.FC = () => {
           </View>
           <FlatList
             data={[
-              { subCategory: null, displayName: 'All Sub-Categories' },
+              { subCategory: null, displayName: t('reports.allSubCategories') },
               ...subCategoriesForSelectedCategory.map((sc: string) => ({ subCategory: sc, displayName: sc }))
             ]}
             keyExtractor={(item) => item.subCategory || 'all'}
@@ -1432,7 +1444,7 @@ const ReportsScreen: React.FC = () => {
           </View>
           <FlatList
             data={[
-              { accountId: null, displayName: 'All Accounts' }, 
+              { accountId: null, displayName: t('reports.allAccounts') }, 
               ...accounts.filter(acc => acc.isActive).map(acc => ({ accountId: acc.id, displayName: acc.name }))
             ]}
             keyExtractor={(item) => item.accountId || 'all'}
@@ -1799,7 +1811,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
   },
-  summaryRow: {
+  summaryRowCompact: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

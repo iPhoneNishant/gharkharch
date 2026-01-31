@@ -5,6 +5,7 @@
 
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
+import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
 const PIN_KEY = 'user_pin';
@@ -16,11 +17,11 @@ const PIN_SETUP_KEY = 'pin_setup_complete';
  * In production, consider using a more secure hashing method
  */
 const hashPin = async (pin: string): Promise<string> => {
-  // Simple hash for now - in production, use a proper hashing library
-  // For React Native, you could use expo-crypto or react-native-crypto-js
-  // This is a basic implementation - consider upgrading for production
-  return pin; // For now, store as-is (SecureStore encrypts at rest)
-  // TODO: Implement proper hashing with expo-crypto
+  return Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    pin,
+    { encoding: Crypto.CryptoEncoding.HEX }
+  );
 };
 
 /**
@@ -95,7 +96,11 @@ export const verifyPin = async (pin: string): Promise<boolean> => {
     }
 
     const hashedPin = await hashPin(pin);
-    return hashedPin === storedPin;
+    // Backward compatibility: accept both hashed and plain PIN stored previously
+    if (storedPin === hashedPin || storedPin === pin) {
+      return true;
+    }
+    return false;
   } catch (error) {
     console.error('Error verifying PIN:', error);
     return false;

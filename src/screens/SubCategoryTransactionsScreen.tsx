@@ -29,10 +29,11 @@ import {
   shadows,
   getAccountTypeColor,
   getAccountTypeBgColor,
+  addFontScaleListener,
 } from '../config/theme';
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { getTransactionsForDateRange } from '../utils/reports';
-import { transactionsScreenStyles } from '../styles/screens/TransactionsScreen.styles';
+import { getTransactionsScreenStyles } from '../styles/screens/TransactionsScreen.styles';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SubCategoryTransactions'>;
 type RouteType = RouteProp<RootStackParamList, 'SubCategoryTransactions'>;
@@ -41,6 +42,89 @@ const SubCategoryTransactionsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
+  const transactionsScreenStyles = getTransactionsScreenStyles();
+  const [fontScaleVersion, setFontScaleVersion] = useState(0);
+  useEffect(() => {
+    const unsub = addFontScaleListener(() => {
+      setFontScaleVersion(v => v + 1);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.md,
+    },
+    searchIcon: {
+      marginRight: spacing.sm,
+    },
+    searchInput: {
+      flex: 1,
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.sm,
+      fontSize: typography.fontSize.sm,
+      color: colors.text.primary,
+      borderWidth: 1,
+      borderColor: colors.border.light,
+    },
+    clearButton: {
+      marginLeft: spacing.sm,
+      padding: 2,
+    },
+    listContent: {
+      paddingBottom: spacing.md,
+    },
+    listContentEmpty: {
+      flexGrow: 1,
+    },
+    dateSection: {
+      marginBottom: spacing.md,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing['2xl'],
+      marginTop: spacing['2xl'],
+    },
+    emptyStateIconContainer: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: colors.neutral[50],
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.lg,
+      borderWidth: 2,
+      borderColor: colors.neutral[100],
+      borderStyle: 'dashed',
+    },
+    emptyStateText: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      marginBottom: spacing.sm,
+      textAlign: 'center',
+    },
+    emptyStateSubtext: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      paddingHorizontal: spacing.base,
+    },
+  });
   
   const { subCategory, category, accountType, fromDate, toDate } = route.params;
   
@@ -325,78 +409,6 @@ const SubCategoryTransactionsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    fontSize: typography.fontSize.sm,
-    color: colors.text.primary,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  clearButton: {
-    marginLeft: spacing.sm,
-    padding: 2,
-  },
-  listContent: {
-    paddingBottom: spacing.md,
-  },
-  listContentEmpty: {
-    flexGrow: 1,
-  },
-  dateSection: {
-    marginBottom: spacing.md,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
-    marginTop: spacing.xxl,
-  },
-  emptyStateIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.neutral[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-    borderWidth: 2,
-    borderColor: colors.neutral[100],
-    borderStyle: 'dashed',
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: spacing.base,
-  },
-});
+ 
 
 export default SubCategoryTransactionsScreen;
