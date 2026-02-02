@@ -340,9 +340,8 @@ const TransactionDetailScreen: React.FC = () => {
         </Text>
         <Text style={styles.amountDate}>
           {transaction.date.toLocaleDateString('en-IN', {
-            weekday: 'long',
             day: 'numeric',
-            month: 'long',
+            month: 'short',
             year: 'numeric',
           })}
         </Text>

@@ -641,7 +641,7 @@ export function generateDayToDayBreakdown(
       month,
       day,
       date: new Date(current),
-      displayName: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      displayName: current.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       income,
       expense,
       net: income - expense,

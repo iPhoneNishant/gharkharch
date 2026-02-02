@@ -78,7 +78,7 @@ const SmsImportScreen: React.FC = () => {
           <View style={styles.previewItem}>
             <Text style={styles.previewLabel}>{t('smsImport.date')}</Text>
             <Text style={styles.previewValue}>
-              {parsed.date ? parsed.date.toLocaleDateString() : '—'}
+              {parsed.date ? parsed.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
             </Text>
           </View>
           <View style={styles.previewItem}>

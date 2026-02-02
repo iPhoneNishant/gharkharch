@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
 import {
@@ -37,6 +38,7 @@ const MAX_DAYS_DIFFERENCE = 90;
 
 const DayToDayReportScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { accounts } = useAccountStore();
   const { transactions } = useTransactionStore();
@@ -173,8 +175,8 @@ const DayToDayReportScreen: React.FC = () => {
         setToDate(selectedDate);
       } else {
         Alert.alert(
-          'Invalid Date Range',
-          `Maximum ${MAX_DAYS_DIFFERENCE} days difference allowed between from and to dates.`
+          t('reportsActions.invalidDateRange'),
+          t('reportsActions.maxDaysDifference', { days: MAX_DAYS_DIFFERENCE })
         );
       }
     }
@@ -200,10 +202,10 @@ const DayToDayReportScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <View style={styles.labelRow}>
-              <Text style={styles.summaryLabel}>From</Text>
+              <Text style={styles.summaryLabel}>{t('reportsActions.from')}</Text>
             </View>
             <Text style={styles.selectedDateText}>
-              {fromDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {fromDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </Text>
             <View style={styles.chevronContainer}>
               <Text style={styles.chevron}>›</Text>
@@ -215,10 +217,10 @@ const DayToDayReportScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <View style={styles.labelRow}>
-              <Text style={styles.summaryLabel}>To</Text>
+              <Text style={styles.summaryLabel}>{t('reportsActions.to')}</Text>
             </View>
             <Text style={styles.selectedDateText}>
-              {toDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {toDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </Text>
             <View style={styles.chevronContainer}>
               <Text style={styles.chevron}>›</Text>
@@ -230,7 +232,7 @@ const DayToDayReportScreen: React.FC = () => {
         {!isDateRangeValid && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>
-              Date range exceeds {MAX_DAYS_DIFFERENCE} days. Please select a smaller range.
+              {t('reportsActions.dateRangeExceeds', { days: MAX_DAYS_DIFFERENCE })}
             </Text>
           </View>
         )}
@@ -239,7 +241,7 @@ const DayToDayReportScreen: React.FC = () => {
         <View style={styles.filtersContainer}>
           {/* Radio Buttons for Filter Type */}
           <View style={styles.radioButtonContainer}>
-            <Text style={styles.radioButtonLabel}>Filter by:</Text>
+            <Text style={styles.radioButtonLabel}>{t('reportsActions.filterBy')}</Text>
             <View style={styles.radioButtonRow}>
               <TouchableOpacity
                 style={styles.radioButton}
@@ -251,7 +253,7 @@ const DayToDayReportScreen: React.FC = () => {
                 <View style={styles.radioButtonCircle}>
                   {filterType === 'category' && <View style={styles.radioButtonInner} />}
                 </View>
-                <Text style={styles.radioButtonText}>Category </Text>
+                <Text style={styles.radioButtonText}>{t('reportsActions.category')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.radioButton}
@@ -264,7 +266,7 @@ const DayToDayReportScreen: React.FC = () => {
                 <View style={styles.radioButtonCircle}>
                   {filterType === 'account' && <View style={styles.radioButtonInner} />}
                 </View>
-                <Text style={styles.radioButtonText}>Account </Text>
+                <Text style={styles.radioButtonText}>{t('reportsActions.account')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -276,9 +278,9 @@ const DayToDayReportScreen: React.FC = () => {
                 style={styles.filterButton}
                 onPress={() => setShowCategoryPicker(true)}
               >
-                <Text style={styles.filterLabel}>Category</Text>
+                <Text style={styles.filterLabel}>{t('reportsActions.category')}</Text>
                 <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                  {selectedCategory || 'All Categories'}
+                  {selectedCategory || t('reports.allCategories')}
                 </Text>
                 <Text style={styles.chevron}>›</Text>
               </TouchableOpacity>
@@ -288,9 +290,9 @@ const DayToDayReportScreen: React.FC = () => {
                   style={styles.filterButton}
                   onPress={() => setShowSubCategoryPicker(true)}
                 >
-                  <Text style={styles.filterLabel}>Sub-Category</Text>
+                  <Text style={styles.filterLabel}>{t('reportsSummary.subCategory')}</Text>
                   <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                    {selectedSubCategory || 'All Sub-Categories'}
+                    {selectedSubCategory || t('reports.allSubCategories')}
                   </Text>
                   <Text style={styles.chevron}>›</Text>
                 </TouchableOpacity>
@@ -304,11 +306,11 @@ const DayToDayReportScreen: React.FC = () => {
               style={styles.filterButton}
               onPress={() => setShowAccountPicker(true)}
             >
-              <Text style={styles.filterLabel}>Account</Text>
+              <Text style={styles.filterLabel}>{t('reportsActions.account')}</Text>
               <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
                 {selectedAccountId
-                  ? accounts.find(acc => acc.id === selectedAccountId)?.name || 'Select Account'
-                  : 'All Accounts'}
+                  ? accounts.find(acc => acc.id === selectedAccountId)?.name || t('reportsActions.selectAccount')
+                  : t('reports.allAccounts')}
               </Text>
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
@@ -317,24 +319,24 @@ const DayToDayReportScreen: React.FC = () => {
 
         {/* Day-to-Day Breakdown - Table Format */}
         <View style={styles.dayToDayContainer}>
-          <Text style={styles.sectionTitle}>Day to Day Breakdown</Text>
+          <Text style={styles.sectionTitle}>{t('reportsActions.dayToDayBreakdown')}</Text>
           {!isDateRangeValid ? (
             <View style={styles.emptyTransactions}>
               <Text style={styles.emptyTransactionsText}>
-                Please select a date range within {MAX_DAYS_DIFFERENCE} days
+                {t('reportsActions.selectDateRangeWithin', { days: MAX_DAYS_DIFFERENCE })}
               </Text>
             </View>
           ) : dayToDayData.length === 0 ? (
             <View style={styles.emptyTransactions}>
-              <Text style={styles.emptyTransactionsText}>No data available for selected date range</Text>
+              <Text style={styles.emptyTransactionsText}>{t('reportsActions.noDataForDateRange')}</Text>
             </View>
           ) : (
             <View style={styles.tableContainer}>
               {/* Table Header */}
               <View style={styles.tableHeader}>
-                <Text style={styles.tableHeaderText}>Date</Text>
-                <Text style={styles.tableHeaderText}>In</Text>
-                <Text style={styles.tableHeaderText}>Out</Text>
+                <Text style={styles.tableHeaderText}>{t('reportsActions.date')}</Text>
+                <Text style={styles.tableHeaderText}>{t('reportsActions.in')}</Text>
+                <Text style={styles.tableHeaderText}>{t('reportsActions.out')}</Text>
               </View>
               {/* Table Rows */}
               {dayToDayData.map((dayData) => (
@@ -364,9 +366,9 @@ const DayToDayReportScreen: React.FC = () => {
           >
             <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select From Date</Text>
+                <Text style={styles.modalTitle}>{t('reportsActions.selectFromDate')}</Text>
                 <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
-                  <Text style={styles.modalDone}>Done</Text>
+                  <Text style={styles.modalDone}>{t('common.done')}</Text>
                 </TouchableOpacity>
               </View>
               <DateTimePicker
@@ -400,9 +402,9 @@ const DayToDayReportScreen: React.FC = () => {
           >
             <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select To Date</Text>
+                <Text style={styles.modalTitle}>{t('reportsActions.selectToDate')}</Text>
                 <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
-                  <Text style={styles.modalDone}>Done</Text>
+                  <Text style={styles.modalDone}>{t('common.done')}</Text>
                 </TouchableOpacity>
               </View>
               <DateTimePicker
@@ -436,14 +438,14 @@ const DayToDayReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Category</Text>
+            <Text style={styles.modalTitle}>{t('reportsActions.selectCategory')}</Text>
             <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <FlatList
             data={[
-              { category: null, displayName: 'All Categories' },
+              { category: null, displayName: t('reports.allCategories') },
               ...availableCategories.map(c => ({ category: c, displayName: c }))
             ]}
             keyExtractor={(item) => item.category || 'all'}
@@ -480,14 +482,14 @@ const DayToDayReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Sub-Category</Text>
+            <Text style={styles.modalTitle}>{t('reportsActions.selectSubCategory')}</Text>
             <TouchableOpacity onPress={() => setShowSubCategoryPicker(false)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <FlatList
             data={[
-              { subCategory: null, displayName: 'All Sub-Categories' },
+              { subCategory: null, displayName: t('reports.allSubCategories') },
               ...availableSubCategories.map(sc => ({ subCategory: sc, displayName: sc }))
             ]}
             keyExtractor={(item) => item.subCategory || 'all'}
@@ -521,14 +523,14 @@ const DayToDayReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Account</Text>
+            <Text style={styles.modalTitle}>{t('reportsActions.selectAccount')}</Text>
             <TouchableOpacity onPress={() => setShowAccountPicker(false)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <FlatList
             data={[
-              { accountId: null, displayName: 'All Accounts' },
+              { accountId: null, displayName: t('reports.allAccounts') },
               ...availableAccounts.map(acc => ({ accountId: acc.id, displayName: acc.name }))
             ]}
             keyExtractor={(item) => item.accountId || 'all'}

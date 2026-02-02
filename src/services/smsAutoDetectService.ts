@@ -46,7 +46,7 @@ export function startSmsAutoDetect() {
 
     Alert.alert(
       'Bank SMS detected',
-      `${parsed.note}\n\nAmount: ₹${parsed.amount}${parsed.date ? `\nDate: ${parsed.date.toLocaleDateString()}` : ''}`,
+      `${parsed.note}\n\nAmount: ₹${parsed.amount}${parsed.date ? `\nDate: ${parsed.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`,
       [
         { text: 'Ignore', style: 'cancel' },
         {

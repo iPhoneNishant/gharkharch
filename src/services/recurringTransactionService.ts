@@ -160,7 +160,7 @@ export const scheduleRecurringTransactionNotification = async (
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Repeat Transaction Reminder',
-        body: `Reminder: ${recurringTransaction.note || 'Repeat transaction'} of ₹${recurringTransaction.amount} is due on ${nextOccurrence.toLocaleDateString()}`,
+        body: `Reminder: ${recurringTransaction.note || 'Repeat transaction'} of ₹${recurringTransaction.amount} is due on ${nextOccurrence.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`,
         data: {
           recurringTransactionId: recurringTransaction.id,
           type: 'recurring_transaction_reminder',

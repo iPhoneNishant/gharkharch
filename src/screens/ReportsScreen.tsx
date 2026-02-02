@@ -124,7 +124,7 @@ const ReportsScreen: React.FC = () => {
         return [{
           year: now.getFullYear(),
           month: now.getMonth() + 1,
-          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-IN', { month: 'short' }),
         }];
       }
       return [];
@@ -147,7 +147,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (year === startYear) {
@@ -156,7 +156,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (year === endYear) {
@@ -165,7 +165,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (year > startYear && year < endYear) {
@@ -174,7 +174,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     }
@@ -190,7 +190,7 @@ const ReportsScreen: React.FC = () => {
         return [{
           year: now.getFullYear(),
           month: now.getMonth() + 1,
-          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-IN', { month: 'short' }),
         }];
       }
       return [];
@@ -213,7 +213,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (selectedYear === startYear) {
@@ -222,7 +222,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (selectedYear === endYear) {
@@ -231,7 +231,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (selectedYear > startYear && selectedYear < endYear) {
@@ -240,7 +240,7 @@ const ReportsScreen: React.FC = () => {
         months.push({
           year: selectedYear,
           month,
-          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString(i18n.language, { month: 'long' }),
+          displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     }
@@ -790,7 +790,7 @@ const ReportsScreen: React.FC = () => {
                   dateRangeMode === 'month' && styles.rangeModeChipTextSelected,
                 ]}
               >
-                Month Wise
+                {t('reportsActions.monthWise')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -810,7 +810,7 @@ const ReportsScreen: React.FC = () => {
                   dateRangeMode === 'custom' && styles.rangeModeChipTextSelected,
                 ]}
               >
-                Custom Range
+                {t('reportsActions.customRange')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -824,12 +824,12 @@ const ReportsScreen: React.FC = () => {
               }}
               activeOpacity={0.7}
             >
-              <View style={styles.labelRow}>
-                <Text style={styles.dateSelectionLabel}>Month</Text>
-              </View>
+                <View style={styles.labelRow}>
+                  <Text style={styles.dateSelectionLabel}>{t('reportsActions.month')}</Text>
+                </View>
               <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
                 {selectedMonth && selectedYear 
-                  ? `${new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString(i18n.language, { month: 'long' })} ${selectedYear}`
+                  ? `${new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-IN', { month: 'short' })} ${selectedYear}`
                   : t('reports.selectMonth')}
               </Text>
               <View style={styles.chevronContainer}>
@@ -847,10 +847,10 @@ const ReportsScreen: React.FC = () => {
                 activeOpacity={0.7}
               >
                 <View style={styles.labelRow}>
-                  <Text style={styles.dateSelectionLabel}>From</Text>
+                  <Text style={styles.dateSelectionLabel}>{t('reportsActions.from')}</Text>
                 </View>
                 <Text style={styles.selectedDateText}>
-                  {fromDate.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {fromDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </Text>
                 <View style={styles.chevronContainer}>
                   <Text style={styles.dateSelectionChevron}>›</Text>
@@ -865,10 +865,10 @@ const ReportsScreen: React.FC = () => {
                 activeOpacity={0.7}
               >
                 <View style={styles.labelRow}>
-                  <Text style={styles.dateSelectionLabel}>To</Text>
+                  <Text style={styles.dateSelectionLabel}>{t('reportsActions.to')}</Text>
                 </View>
                 <Text style={styles.selectedDateText}>
-                  {toDate.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {toDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </Text>
                 <View style={styles.chevronContainer}>
                   <Text style={styles.dateSelectionChevron}>›</Text>
@@ -888,7 +888,7 @@ const ReportsScreen: React.FC = () => {
                 activeOpacity={0.7}
               >
                 <View style={styles.labelRow}>
-                  <Text style={styles.dateSelectionLabel}>Category</Text>
+                  <Text style={styles.dateSelectionLabel}>{t('reportsActions.category')}</Text>
                 </View>
                 <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
                   {selectedCategory || t('reports.allCategories')}
@@ -908,7 +908,7 @@ const ReportsScreen: React.FC = () => {
                   activeOpacity={0.7}
                 >
                   <View style={styles.labelRow}>
-                    <Text style={styles.dateSelectionLabel}>Sub-Category</Text>
+                    <Text style={styles.dateSelectionLabel}>{t('reportsSummary.subCategory')}</Text>
                   </View>
                   <Text style={styles.selectedDateText} numberOfLines={1} ellipsizeMode="tail">
                     {selectedSubCategory || t('reports.allSubCategories')}
@@ -927,7 +927,7 @@ const ReportsScreen: React.FC = () => {
                     setSelectedSubCategory(null);
                   }}
                 >
-                  <Text style={styles.clearFiltersText}>Clear Filters</Text>
+                  <Text style={styles.clearFiltersText}>{t('reportsSummary.clearFilters')}</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -935,24 +935,24 @@ const ReportsScreen: React.FC = () => {
 
         {/* Summary Card */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Period Summary</Text>
+          <Text style={styles.summaryTitle}>{t('reportsSummary.title')}</Text>
           <View style={styles.summaryGrid}>
             {/* Row 1: Opening, Closing, Net */}
             <View style={styles.summaryRow}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>Opening</Text>
+                <Text style={styles.summaryItemLabel}>{t('reportsSummary.opening')}</Text>
                 <Text style={styles.summaryItemValue}>
                   {formatCurrency(filteredReport.totalOpeningBalance, currency)}
                 </Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>Closing</Text>
+                <Text style={styles.summaryItemLabel}>{t('reportsSummary.closing')}</Text>
                 <Text style={styles.summaryItemValue}>
                   {formatCurrency(filteredReport.totalClosingBalance, currency)}
                 </Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>Net</Text>
+                <Text style={styles.summaryItemLabel}>{t('reportsSummary.net')}</Text>
                 <Text style={[
                   styles.summaryItemValue,
                   {
@@ -971,7 +971,7 @@ const ReportsScreen: React.FC = () => {
             {/* Row 2: Income, Expenses, Txn */}
             <View style={styles.summaryRow}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>Income</Text>
+                <Text style={styles.summaryItemLabel}>{t('reports.totalIncome')}</Text>
                 <Text style={[styles.summaryItemValue, { color: colors.income }]}>
                   {formatCurrency(
                     Array.from(expenseIncomeTotals.income.values()).reduce((sum, item) => sum + item.total, 0),
@@ -981,7 +981,7 @@ const ReportsScreen: React.FC = () => {
                 </Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>Expenses</Text>
+                <Text style={styles.summaryItemLabel}>{t('reports.totalExpenses')}</Text>
                 <Text style={[styles.summaryItemValue, { color: colors.expense }]}>
                   {formatCurrency(
                     -Array.from(expenseIncomeTotals.expenses.values()).reduce((sum, item) => sum + item.total, 0),
@@ -991,7 +991,7 @@ const ReportsScreen: React.FC = () => {
                 </Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryItemLabel}>Txn</Text>
+                <Text style={styles.summaryItemLabel}>{t('reports.totalTransactions')}</Text>
                 <Text style={styles.summaryItemValue}>
                   {filteredTransactions.length}
                 </Text>
@@ -1039,7 +1039,7 @@ const ReportsScreen: React.FC = () => {
                             {isExpense ? debitAccount?.subCategory : isIncome ? creditAccount?.subCategory : `${debitAccount?.subCategory} / ${creditAccount?.subCategory}`}
                           </Text>
                           <Text style={styles.transactionDate}>
-                            {txn.date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {txn.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </Text>
                         </View>
                       </View>
@@ -1072,7 +1072,7 @@ const ReportsScreen: React.FC = () => {
         {/* Category Reports - Only show in summary mode */}
         {(viewMode === 'summary-month' || viewMode === 'summary-custom') && (
           <View style={styles.reportsContainer}>
-            <Text style={styles.sectionTitle}>Category Breakdown</Text>
+          <Text style={styles.sectionTitle}>{t('reportsActions.categoryBreakdown')}</Text>
             {Array.from(categoryReportsByAccountType.entries()).map(([accountType, categoryReports]) => (
               <View key={accountType} style={styles.accountTypeSection}>
                 <View style={styles.accountTypeHeader}>
@@ -1234,7 +1234,7 @@ const ReportsScreen: React.FC = () => {
           <View style={styles.monthYearPickerContainer}>
             {/* Year Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Year</Text>
+              <Text style={styles.pickerColumnLabel}>{t('reportsActions.year')}</Text>
               <FlatList
                 ref={yearListRef}
                 key={`year-${showMonthYearPicker}`}
@@ -1280,14 +1280,14 @@ const ReportsScreen: React.FC = () => {
             
             {/* Month Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Month</Text>
+              <Text style={styles.pickerColumnLabel}>{t('reportsActions.month')}</Text>
               <FlatList
                 ref={monthListRef}
                 key={`month-${showMonthYearPicker}-${selectedYear}`}
                 data={Array.from({ length: 12 }, (_, i) => i + 1)}
                 keyExtractor={(item) => item.toString()}
                 renderItem={({ item }) => {
-                  const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString(i18n.language, { month: 'long' });
+                  const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString('en-IN', { month: 'short' });
                   const isSelected = selectedMonth === item;
                   
                   return (

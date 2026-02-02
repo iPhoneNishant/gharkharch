@@ -7,7 +7,12 @@
     "loading": "Loading...",
     "success": "Success",
     "error": "Error",
-    "back": "Back"
+    "back": "Back",
+    "ok": "OK",
+    "done": "Done",
+    "from": "from",
+    "to": "to",
+    "unknown": "Unknown"
   },
   "settings": {
     "title": "Settings",
@@ -72,21 +77,6 @@
     "addRepeatTransaction": "Add Repeat Transaction",
     "testNotificationTitle": "Test Notification Scheduled",
     "testNotificationMessage": "A test notification will appear in 5 seconds. If you see it, local notifications are working!"
-  },
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "loading": "Loading...",
-    "success": "Success",
-    "error": "Error",
-    "back": "Back",
-    "ok": "OK",
-    "done": "Done",
-    "from": "from",
-    "to": "to",
-    "unknown": "Unknown"
   },
   "transactions": {
     "searchPlaceholder": "Search transactions...",
@@ -247,5 +237,54 @@
     "monthToMonthDescription": "View income and expenses breakdown by month",
     "dayToDayTitle": "Day-to-Day Report",
     "dayToDayDescription": "View income and expenses breakdown by day (max 90 days)"
+  },
+  "reports": {
+    "totalIncome": "Total Income",
+    "totalExpenses": "Total Expenses",
+    "selectMonth": "Select month",
+    "allCategories": "All categories",
+    "allSubCategories": "All sub-categories",
+    "allAccounts": "All accounts",
+    "totalTransactions": "Total Transactions"
+  },
+  "reportsActions": {
+    "monthWise": "Month-wise",
+    "customRange": "Custom range",
+    "month": "Month",
+    "category": "Category",
+    "categoryBreakdown": "Category Breakdown",
+    "from": "From",
+    "to": "To",
+    "year": "Year",
+    "account": "Account",
+    "filterBy": "Filter by:",
+    "selectAccount": "Select Account",
+    "selectCategory": "Select Category",
+    "selectSubCategory": "Select Sub-Category",
+    "selectFromDate": "Select From Date",
+    "selectToDate": "Select To Date",
+    "selectFromMonth": "Select From Month",
+    "selectToMonth": "Select To Month",
+    "dayToDayBreakdown": "Day to Day Breakdown",
+    "monthToMonthBreakdown": "Month to Month Breakdown",
+    "dateRangeExceeds": "Date range exceeds {{days}} days. Please select a smaller range.",
+    "selectDateRangeWithin": "Please select a date range within {{days}} days",
+    "noDataForDateRange": "No data available for selected date range",
+    "date": "Date",
+    "in": "In",
+    "out": "Out",
+    "invalidDateRange": "Invalid Date Range",
+    "maxDaysDifference": "Maximum {{days}} days difference allowed between from and to dates."
+  },
+  "reportsSummary": {
+    "title": "Period Summary",
+    "netWorth": "Net Worth",
+    "assets": "Assets",
+    "liabilities": "Liabilities",
+    "opening": "Opening",
+    "closing": "Closing",
+    "net": "Net",
+    "subCategory": "Sub-Category",
+    "clearFilters": "Clear Filters"
   }
 }

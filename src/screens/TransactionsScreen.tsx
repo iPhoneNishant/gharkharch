@@ -95,7 +95,7 @@ const TransactionsScreen: React.FC = () => {
       months.push({
         year: selectedYear,
         month,
-        displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+        displayName: new Date(selectedYear, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
       });
     }
     
@@ -284,7 +284,7 @@ const TransactionsScreen: React.FC = () => {
 
 
   const getMonthDisplayName = () => {
-    return new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
   };
 
   return (
@@ -439,7 +439,7 @@ const TransactionsScreen: React.FC = () => {
                 data={monthsForSelectedYear.map(m => m.month)}
                 keyExtractor={(item) => item.toString()}
                 renderItem={({ item }) => {
-                  const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString('en-US', { month: 'long' });
+                  const monthName = new Date(selectedYear, item - 1, 1).toLocaleDateString('en-IN', { month: 'short' });
                   const isSelected = selectedMonth === item;
                   const now = new Date();
                   const isFutureMonth = selectedYear > now.getFullYear() || 

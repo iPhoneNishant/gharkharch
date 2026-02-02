@@ -14,6 +14,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
 import { AccountType } from '../types';
@@ -34,6 +35,7 @@ import {
 
 const MonthToMonthReportScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { accounts } = useAccountStore();
   const { transactions } = useTransactionStore();
@@ -71,7 +73,7 @@ const MonthToMonthReportScreen: React.FC = () => {
         return [{
           year: now.getFullYear(),
           month: now.getMonth() + 1,
-          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-IN', { month: 'short' }),
         }];
       }
       return [];
@@ -94,7 +96,7 @@ const MonthToMonthReportScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (year === startYear) {
@@ -103,7 +105,7 @@ const MonthToMonthReportScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (year === endYear) {
@@ -112,7 +114,7 @@ const MonthToMonthReportScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     } else if (year > startYear && year < endYear) {
@@ -121,7 +123,7 @@ const MonthToMonthReportScreen: React.FC = () => {
         months.push({
           year,
           month,
-          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }),
+          displayName: new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' }),
         });
       }
     }
@@ -298,10 +300,10 @@ const MonthToMonthReportScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <View style={styles.labelRow}>
-              <Text style={styles.summaryLabel}>From</Text>
+              <Text style={styles.summaryLabel}>{t('reportsActions.from')}</Text>
             </View>
             <Text style={styles.selectedDateText}>
-              {new Date(fromYear, fromMonth - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              {new Date(fromYear, fromMonth - 1, 1).toLocaleDateString('en-IN', { day: 1, month: 'short', year: 'numeric' })}
             </Text>
             <View style={styles.chevronContainer}>
               <Text style={styles.dateSelectionChevron}>›</Text>
@@ -313,10 +315,10 @@ const MonthToMonthReportScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <View style={styles.labelRow}>
-              <Text style={styles.summaryLabel}>To</Text>
+              <Text style={styles.summaryLabel}>{t('reportsActions.to')}</Text>
             </View>
             <Text style={styles.selectedDateText}>
-              {new Date(toYear, toMonth - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              {new Date(toYear, toMonth - 1, 1).toLocaleDateString('en-IN', { day: 1, month: 'short', year: 'numeric' })}
             </Text>
             <View style={styles.chevronContainer}>
               <Text style={styles.dateSelectionChevron}>›</Text>
@@ -329,7 +331,7 @@ const MonthToMonthReportScreen: React.FC = () => {
 
           {/* Radio Buttons for Filter Type */}
           <View style={styles.radioButtonContainer}>
-            <Text style={styles.radioButtonLabel}>Filter by:</Text>
+            <Text style={styles.radioButtonLabel}>{t('reportsActions.filterBy')}</Text>
             <View style={styles.radioButtonRow}>
               <TouchableOpacity
                 style={styles.radioButton}
@@ -342,7 +344,7 @@ const MonthToMonthReportScreen: React.FC = () => {
                 <View style={styles.radioButtonCircle}>
                   {filterType === 'category' && <View style={styles.radioButtonInner} />}
                 </View>
-                <Text style={styles.radioButtonText}>Category </Text>
+                <Text style={styles.radioButtonText}>{t('reportsActions.category')} </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.radioButton}
@@ -356,7 +358,7 @@ const MonthToMonthReportScreen: React.FC = () => {
                 <View style={styles.radioButtonCircle}>
                   {filterType === 'account' && <View style={styles.radioButtonInner} />}
                 </View>
-                <Text style={styles.radioButtonText}>Account </Text>
+                <Text style={styles.radioButtonText}>{t('reportsActions.account')} </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -368,9 +370,9 @@ const MonthToMonthReportScreen: React.FC = () => {
                 style={styles.filterButton}
                 onPress={() => setShowCategoryPicker(true)}
               >
-                <Text style={styles.filterLabel}>Category</Text>
+                <Text style={styles.filterLabel}>{t('reportsActions.category')}</Text>
                 <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                  {selectedCategory || 'All Categories'}
+                  {selectedCategory || t('reports.allCategories')}
                 </Text>
                 <Text style={styles.chevron}>›</Text>
               </TouchableOpacity>
@@ -380,9 +382,9 @@ const MonthToMonthReportScreen: React.FC = () => {
                   style={styles.filterButton}
                   onPress={() => setShowSubCategoryPicker(true)}
                 >
-                  <Text style={styles.filterLabel}>Sub-Category</Text>
+                  <Text style={styles.filterLabel}>{t('reportsSummary.subCategory')}</Text>
                   <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
-                    {selectedSubCategory || 'All Sub-Categories'}
+                    {selectedSubCategory || t('reports.allSubCategories')}
                   </Text>
                   <Text style={styles.chevron}>›</Text>
                 </TouchableOpacity>
@@ -396,11 +398,11 @@ const MonthToMonthReportScreen: React.FC = () => {
               style={styles.filterButton}
               onPress={() => setShowAccountPicker(true)}
             >
-              <Text style={styles.filterLabel}>Account</Text>
+              <Text style={styles.filterLabel}>{t('reportsActions.account')}</Text>
               <Text style={styles.filterValue} numberOfLines={1} ellipsizeMode="tail">
                 {selectedAccountId
-                  ? accounts.find(acc => acc.id === selectedAccountId)?.name || 'Select Account'
-                  : 'All Accounts'}
+                  ? accounts.find(acc => acc.id === selectedAccountId)?.name || t('reportsActions.selectAccount')
+                  : t('reports.allAccounts')}
               </Text>
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
@@ -410,18 +412,18 @@ const MonthToMonthReportScreen: React.FC = () => {
 
         {/* Month-to-Month Breakdown - Table Format */}
         <View style={styles.monthToMonthContainer}>
-          <Text style={styles.sectionTitle}>Month to Month Breakdown</Text>
+          <Text style={styles.sectionTitle}>{t('reportsActions.monthToMonthBreakdown')}</Text>
           {monthToMonthData.length === 0 ? (
             <View style={styles.emptyTransactions}>
-              <Text style={styles.emptyTransactionsText}>No data available for selected date range</Text>
+              <Text style={styles.emptyTransactionsText}>{t('reportsActions.noDataForDateRange')}</Text>
             </View>
           ) : (
             <View style={styles.tableContainer}>
               {/* Table Header */}
               <View style={styles.tableHeader}>
-                <Text style={styles.tableHeaderText}>Month</Text>
-                <Text style={styles.tableHeaderText}>In</Text>
-                <Text style={styles.tableHeaderText}>Out</Text>
+                <Text style={styles.tableHeaderText}>{t('reportsActions.month')}</Text>
+                <Text style={styles.tableHeaderText}>{t('reportsActions.in')}</Text>
+                <Text style={styles.tableHeaderText}>{t('reportsActions.out')}</Text>
               </View>
               {/* Table Rows */}
               {monthToMonthData.map((monthData) => (
@@ -449,15 +451,15 @@ const MonthToMonthReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select From Month</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('reportsActions.selectFromMonth')}</Text>
             <TouchableOpacity onPress={() => setShowFromMonthPicker(false)}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.monthYearPickerContainer}>
             {/* Year Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Year</Text>
+              <Text style={styles.pickerColumnLabel}>{t('reportsActions.year')}</Text>
               <FlatList
                 ref={fromYearListRef}
                 key={`from-year-${showFromMonthPicker}`}
@@ -502,7 +504,7 @@ const MonthToMonthReportScreen: React.FC = () => {
             </View>
             {/* Month Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Month</Text>
+              <Text style={styles.pickerColumnLabel}>{t('reportsActions.month')}</Text>
               <FlatList
                 ref={fromMonthListRef}
                 key={`from-month-${showFromMonthPicker}-${fromYear}`}
@@ -564,15 +566,15 @@ const MonthToMonthReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select To Month</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('reportsActions.selectToMonth')}</Text>
             <TouchableOpacity onPress={() => setShowToMonthPicker(false)}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.monthYearPickerContainer}>
             {/* Year Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Year</Text>
+              <Text style={styles.pickerColumnLabel}>{t('reportsActions.year')}</Text>
               <FlatList
                 ref={toYearListRef}
                 key={`to-year-${showToMonthPicker}`}
@@ -617,7 +619,7 @@ const MonthToMonthReportScreen: React.FC = () => {
             </View>
             {/* Month Picker */}
             <View style={styles.pickerColumn}>
-              <Text style={styles.pickerColumnLabel}>Month</Text>
+              <Text style={styles.pickerColumnLabel}>{t('reportsActions.month')}</Text>
               <FlatList
                 ref={toMonthListRef}
                 key={`to-month-${showToMonthPicker}-${toYear}`}
@@ -679,14 +681,14 @@ const MonthToMonthReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select Category</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('reportsActions.selectCategory')}</Text>
             <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <FlatList
             data={[
-              { category: null, displayName: 'All Categories' },
+              { category: null, displayName: t('reports.allCategories') },
               ...availableCategoriesForMonthToMonth.map(c => ({ category: c, displayName: c }))
             ]}
             keyExtractor={(item) => item.category || 'all'}
@@ -723,14 +725,14 @@ const MonthToMonthReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select Sub-Category</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('reportsActions.selectSubCategory')}</Text>
             <TouchableOpacity onPress={() => setShowSubCategoryPicker(false)}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <FlatList
             data={[
-              { subCategory: null, displayName: 'All Sub-Categories' },
+              { subCategory: null, displayName: t('reports.allSubCategories') },
               ...availableSubCategoriesForMonthToMonth.map(sc => ({ subCategory: sc, displayName: sc }))
             ]}
             keyExtractor={(item) => item.subCategory || 'all'}
@@ -764,14 +766,14 @@ const MonthToMonthReportScreen: React.FC = () => {
       >
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select Account</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('reportsActions.selectAccount')}</Text>
             <TouchableOpacity onPress={() => setShowAccountPicker(false)}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <FlatList
             data={[
-              { accountId: null, displayName: 'All Accounts' },
+              { accountId: null, displayName: t('reports.allAccounts') },
               ...availableAccounts.map(acc => ({ accountId: acc.id, displayName: acc.name }))
             ]}
             keyExtractor={(item) => item.accountId || 'all'}

@@ -660,7 +660,7 @@ const AccountDetailScreen: React.FC = () => {
             {displayInfo.otherAccountName}
           </Text>
           <Text style={styles.transactionDate}>
-            {transaction.date.toLocaleDateString()}
+            {transaction.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           </Text>
         </View>
         <Text style={[

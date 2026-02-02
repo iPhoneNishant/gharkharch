@@ -1192,7 +1192,6 @@ const AddTransactionScreen: React.FC = () => {
             <View style={styles.dateValueContainer}>
               <Text style={styles.dateValue}>
                 {date.toLocaleDateString('en-IN', {
-                  weekday: 'short',
                   day: 'numeric',
                   month: 'short',
                   year: 'numeric',
