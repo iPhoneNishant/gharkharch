@@ -83,6 +83,7 @@ export interface UserProfile {
   id: string;
   email: string;
   displayName?: string;
+  phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;
   /** User's preferred currency code (ISO 4217) */
@@ -221,6 +222,7 @@ export interface UpdateRecurringTransactionRequest {
  * Navigation param types
  */
 export type RootStackParamList = {
+  LanguageSelection: undefined;
   Auth: undefined;
   PinSetup: { onComplete?: () => void; allowBack?: boolean } | undefined;
   PinChange: { onComplete?: () => void; allowBack?: boolean } | undefined;
@@ -251,7 +253,7 @@ export type RootStackParamList = {
   DayToDayReport: undefined;
   AddRecurringTransaction: { editRecurringTransactionId?: string } | undefined;
   RecurringTransactions: undefined;
-  SmsImport: undefined;
+  SmsImport: { returnTo?: string } | undefined;
   UserGuide: undefined;
   PrivacyPolicy: undefined;
   SubCategoryTransactions: { 
@@ -265,8 +267,8 @@ export type RootStackParamList = {
 
 export type MainTabParamList = {
   Dashboard: undefined;
-  Transactions: undefined;
   Accounts: undefined;
+  AddTransaction: undefined;
   Reports: undefined;
   More: undefined;
 };

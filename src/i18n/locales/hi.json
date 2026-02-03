@@ -1,15 +1,15 @@
 {
   "common": {
   "save": "सेव करें",
-  "cancel": "रद्द करें",
-  "delete": "हटा दें",
+  "cancel": "Cancel",
+  "delete": "Delete",
   "edit": "एडिट करें",
   "loading": "लोड हो रहा है…",
   "success": "हो गया",
   "error": "कुछ गड़बड़ हुई",
-  "back": "वापस",
+  "back": "Back",
   "ok": "ठीक है",
-  "done": "हो गया",
+  "done": "Done",
   "from": "से",
   "to": "तक",
   "unknown": "पता नहीं"
@@ -28,8 +28,9 @@
   "theme": "थीम",
   "signOut": "लॉग आउट",
   "deleteAccount": "अकाउंट हटाएं",
-  "enableBiometric": "फिंगरप्रिंट/फेस लॉक चालू करें",
-  "changePin": "पिन बदलें",
+    "enableBiometric": "फिंगरप्रिंट/फेस लॉक चालू करें",
+    "biometricAuthentication": "{{type}} प्रमाणीकरण",
+    "changePin": "पिन बदलें",
   "setupPin": "पिन सेट करें",
   "notifications": "नोटिफिकेशन",
   "currency": "करंसी",
@@ -142,9 +143,10 @@
   "accountsMustBeDifferent": "दोनों अकाउंट अलग होने चाहिए",
   "updateError": "अपडेट नहीं हो पाया, फिर कोशिश करें",
   "createError": "लेनदेन जोड़ नहीं पाए, फिर कोशिश करें",
-  "invalidCalc": "गलत गणना",
-  "invalidAmountTitle": "गलत रकम",
-  "add": "जोड़ें"
+    "invalidCalc": "गलत गणना",
+    "invalidAmountTitle": "गलत रकम",
+    "add": "जोड़ें",
+    "importFromSms": "SMS से भरें"
 },
   "languages": {
     "en": "English",
@@ -278,13 +280,222 @@
 },
 "reportsSummary": {
   "title": "इस अवधि का सार",
-  "netWorth": "कुल संपत्ति",
-  "assets": "संपत्ति",
-  "liabilities": "उधार",
-  "opening": "शुरुआती बैलेंस",
-  "closing": "अंत का बैलेंस",
-  "net": "कुल संपत्ति",
-  "subCategory": "सब-कैटेगरी",
-  "clearFilters": "फिल्टर हटाएं"
-}
+    "netWorth": "कुल संपत्ति",
+    "assets": "संपत्ति",
+    "liabilities": "उधार",
+    "opening": "शुरुआती बैलेंस",
+    "closing": "अंत का बैलेंस",
+    "net": "कुल संपत्ति",
+    "subCategory": "सब-कैटेगरी",
+    "clearFilters": "फिल्टर हटाएं"
+  },
+  "auth": {
+    "signIn": "साइन इन करें",
+    "signUp": "खाता बनाएं",
+    "welcomeBack": "वापसी पर स्वागत है!",
+    "createAccount": "अपना खाता बनाएं",
+    "resetPassword": "अपना पासवर्ड रीसेट करें",
+    "email": "ईमेल",
+    "phoneNumber": "फोन नंबर",
+    "password": "पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "name": "नाम",
+    "enterEmail": "अपना ईमेल दर्ज करें",
+    "enterPhoneNumber": "अपना फोन नंबर दर्ज करें",
+    "enterPassword": "अपना पासवर्ड दर्ज करें",
+    "enterConfirmPassword": "अपने पासवर्ड की पुष्टि करें",
+    "enterName": "अपना नाम दर्ज करें",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "backToSignIn": "साइन इन पर वापस जाएं",
+    "dontHaveAccount": "खाता नहीं है?  ",
+    "alreadyHaveAccount": "पहले से खाता है?  ",
+    "signingIn": "साइन इन हो रहा है...",
+    "creatingAccount": "खाता बनाया जा रहा है...",
+    "sendingResetEmail": "रीसेट ईमेल भेजा जा रहा है...",
+    "sendResetEmail": "रीसेट ईमेल भेजें",
+    "passwordResetEmailSent": "पासवर्ड रीसेट ईमेल भेजा गया",
+    "passwordResetEmailMessage": "कृपया अपना पासवर्ड रीसेट करने के लिए अपने ईमेल में निर्देश देखें।",
+    "usePhone": "फोन नंबर का उपयोग करें",
+    "useEmail": "ईमेल का उपयोग करें",
+    "sendVerificationCode": "सत्यापन कोड भेजें",
+    "verificationCode": "सत्यापन कोड",
+    "enterVerificationCode": "सत्यापन कोड दर्ज करें",
+    "verifyCode": "कोड सत्यापित करें",
+    "sendingCode": "कोड भेजा जा रहा है...",
+    "verifyingCode": "कोड सत्यापित किया जा रहा है...",
+    "codeSent": "सत्यापन कोड भेजा गया!",
+    "codeSentMessage": "कृपया अपने फोन नंबर पर भेजा गया 6-अंकीय कोड दर्ज करें।",
+    "resendCode": "कोड पुनः भेजें",
+    "changePhoneNumber": "फोन नंबर बदलें"
+  },
+  "pin": {
+    "setup": {
+      "title": "MPIN सेटअप करें",
+      "subtitle": "अपने ऐप को सुरक्षित करने के लिए 4 अंकों का PIN दर्ज करें",
+      "enterPin": "PIN दर्ज करें",
+      "confirmPin": "PIN की पुष्टि करें",
+      "pinsDoNotMatch": "PIN मेल नहीं खाते",
+      "setupPin": "PIN सेटअप करें",
+      "invalidPin": "अमान्य PIN",
+      "pinMustBe4Digits": "PIN बिल्कुल 4 अंकों का होना चाहिए",
+      "pinMismatch": "PIN मेल नहीं खाता",
+      "pinMismatchMessage": "PIN मेल नहीं खाते। कृपया पुनः प्रयास करें।",
+      "setupFailed": "सेटअप विफल",
+      "setupFailedMessage": "PIN सेटअप करने में विफल। कृपया पुनः प्रयास करें।",
+      "enableBiometric": "{{type}} प्रमाणीकरण सक्षम करें",
+      "setupRequired": "सेटअप आवश्यक",
+      "setupRequiredMessage": "आपको अपने ऐप को सुरक्षित करने के लिए PIN सेटअप करना होगा। इसे छोड़ा नहीं जा सकता।"
+    },
+    "verification": {
+      "title": "Daily Munim",
+      "subtitle": "जारी रखने के लिए अपना PIN दर्ज करें",
+      "authenticateWithBiometric": "जारी रखने के लिए {{type}} के साथ प्रमाणित करें",
+      "enterPin": "PIN दर्ज करें",
+      "continue": "जारी रखें",
+      "forgotPin": "PIN भूल गए?",
+      "forgotPinTitle": "PIN भूल गए?",
+      "forgotPinMessage": "यदि आप अपना PIN भूल गए हैं, तो आप लॉग आउट करके फिर से लॉग इन कर सकते हैं और एक नया PIN सेटअप कर सकते हैं। यह आपका वर्तमान PIN साफ कर देगा।",
+      "logOut": "लॉग आउट",
+      "pinRequired": "PIN आवश्यक",
+      "pinRequiredMessage": "ऐप तक पहुंचने के लिए आपको अपना PIN सत्यापित करना होगा।",
+      "incorrectPin": "गलत PIN",
+      "incorrectPinMessage": "कृपया पुनः प्रयास करें। {{remaining}} प्रयास शेष।",
+      "tooManyAttempts": "बहुत अधिक प्रयास",
+      "tooManyAttemptsMessage": "आपने गलत PIN बहुत बार दर्ज किया है। सुरक्षा कारणों से, आपको लॉग आउट कर दिया जाएगा।",
+      "verificationFailed": "सत्यापन विफल",
+      "verificationFailedMessage": "PIN सत्यापित करने में विफल। कृपया पुनः प्रयास करें।",
+      "authenticatingWithBiometric": "{{type}} के साथ प्रमाणित किया जा रहा है...",
+      "useBiometricInstead": "इसके बजाय {{type}} का उपयोग करें",
+      "incorrectPinRemaining": "गलत PIN। {{remaining}} प्रयास शेष।"
+    },
+    "change": {
+      "title": "PIN बदलें",
+      "subtitle": "अपना वर्तमान PIN दर्ज करें और एक नया सेटअप करें",
+      "currentPin": "वर्तमान PIN",
+      "newPin": "नया PIN",
+      "confirmNewPin": "नए PIN की पुष्टि करें",
+      "changePin": "PIN बदलें",
+      "pinMustBe4Digits": "आपका PIN बिल्कुल 4 अंकों का होना चाहिए",
+      "error": "त्रुटि",
+      "enterCurrentPin": "कृपया अपना वर्तमान 4-अंकीय PIN दर्ज करें",
+      "enterNewPin": "कृपया एक नया 4-अंकीय PIN दर्ज करें",
+      "confirmNewPinMessage": "कृपया अपने नए 4-अंकीय PIN की पुष्टि करें",
+      "pinsDoNotMatch": "नया PIN और पुष्टिकरण PIN मेल नहीं खाते",
+      "pinMustBeDifferent": "नया PIN आपके वर्तमान PIN से अलग होना चाहिए",
+      "currentPinIncorrect": "वर्तमान PIN गलत है",
+      "changePinFailed": "PIN बदलने में विफल। कृपया पुनः प्रयास करें।"
+    }
+  },
+  "languageSelection": {
+    "title": "अपनी भाषा चुनें",
+    "subtitle": "ऐप के लिए अपनी पसंदीदा भाषा चुनें",
+    "continue": "जारी रखें"
+  },
+  "userGuide": {
+    "title": "उपयोगकर्ता गाइड",
+    "sections": {
+      "overview": {
+        "title": "अवलोकन",
+        "content": "डेली मुनीम (घर का दैनिक हिसाब किताब) भारतीय उपयोगकर्ताओं के लिए डिज़ाइन किया गया एक व्यापक व्यक्तिगत वित्त और खर्च ट्रैकिंग एप्लिकेशन है। अपने दैनिक खर्चों को ट्रैक करें, कई खातों का प्रबंधन करें, आवर्ती लेनदेन सेट करें, और विस्तृत वित्तीय रिपोर्ट तैयार करें।"
+      },
+      "gettingStarted": {
+        "title": "शुरुआत करना",
+        "content": "पहली बार सेटअप में एक खाता बनाना, एक सुरक्षित PIN सेट करना, और ट्रैकिंग शुरू करने के लिए अपना पहला बैंक या नकद खाता जोड़ना शामिल है।",
+        "subsections": {
+          "installation": {
+            "title": "इंस्टॉलेशन",
+            "content": "1. ऐप डाउनलोड करें\n2. इंस्टॉल करें और खोलें\n3. ईमेल से साइन अप करें\n4. सुरक्षा के लिए PIN सेट करें"
+          },
+          "firstTimeSetup": {
+            "title": "पहली बार सेटअप",
+            "content": "1. प्रमाणीकरण: खाता बनाएं\n2. PIN सेटअप: 4-6 अंकों का PIN\n3. खाता जोड़ें: अपना पहला खाता बनाएं\n4. ट्रैकिंग शुरू करें: लेनदेन जोड़ें"
+          }
+        }
+      },
+      "accountManagement": {
+        "title": "खाता प्रबंधन",
+        "content": "अपने बैंक खातों, नकद वॉलेट और क्रेडिट कार्ड को एक जगह प्रबंधित करें।",
+        "subsections": {
+          "addingAccounts": {
+            "title": "खाते जोड़ना",
+            "content": "खाते टैब पर जाएं -> + खाता जोड़ें पर टैप करें -> खाता प्रकार चुनें -> विवरण दर्ज करें।"
+          },
+          "accountTypes": {
+            "title": "खाता प्रकार",
+            "content": "• बैंक खाता: बचत, चालू\n• नकद खाता: वॉलेट, छोटी नकदी\n• क्रेडिट कार्ड: खर्च की निगरानी करें"
+          }
+        }
+      },
+      "transactionManagement": {
+        "title": "लेनदेन प्रबंधन",
+        "content": "आय और व्यय को मैन्युअल रूप से रिकॉर्ड करें या SMS से आयात करें।",
+        "subsections": {
+          "addingTransactions": {
+            "title": "लेनदेन जोड़ना",
+            "content": "लेनदेन टैब पर जाएं -> + लेनदेन जोड़ें पर टैप करें -> आय/व्यय चुनें -> विवरण दर्ज करें -> सहेजें।"
+          },
+          "smsImport": {
+            "title": "SMS आयात",
+            "content": "अधिक पर जाएं -> SMS आयात -> अनुमति दें -> बैंक SMS चुनें -> ऐप स्वचालित रूप से विवरण निकालता है।"
+          }
+        }
+      },
+      "recurringTransactions": {
+        "title": "आवर्ती लेनदेन",
+        "content": "नियमित बिल, वेतन या सदस्यता के लिए स्वचालित लेनदेन सेट करें।",
+        "subsections": {
+          "settingUp": {
+            "title": "सेटअप करना",
+            "content": "अधिक पर जाएं -> दोहराएं लेनदेन -> + आवर्ती जोड़ें पर टैप करें -> राशि, आवृत्ति और तारीखें सेट करें।"
+          },
+          "types": {
+            "title": "प्रकार",
+            "content": "आय (वेतन) या व्यय (बिल) के लिए निश्चित/चर राशि।"
+          }
+        }
+      },
+      "reportsAnalytics": {
+        "title": "रिपोर्ट और विश्लेषण",
+        "content": "विस्तृत रिपोर्ट के साथ अपनी खर्च की आदतों में अंतर्दृष्टि प्राप्त करें।",
+        "subsections": {
+          "dashboard": {
+            "title": "डैशबोर्ड",
+            "content": "कुल बैलेंस, मासिक आय/व्यय और हाल के लेनदेन का अवलोकन।"
+          },
+          "detailedReports": {
+            "title": "विस्तृत रिपोर्ट",
+            "content": "दिन-प्रतिदिन सारांश, महीने-दर-महीने तुलना, और श्रेणी-वार विवरण।"
+          }
+        }
+      },
+      "settingsSecurity": {
+        "title": "सेटिंग्स और सुरक्षा",
+        "content": "अपने ऐप अनुभव को अनुकूलित करें और अपने डेटा को सुरक्षित रखें।",
+        "subsections": {
+          "general": {
+            "title": "सामान्य",
+            "content": "थीम (लाइट/डार्क), भाषा, मुद्रा, दिनांक प्रारूप।"
+          },
+          "security": {
+            "title": "सुरक्षा",
+            "content": "PIN बदलें, बायोमेट्रिक (फिंगरप्रिंट/फेस आईडी) सक्षम करें, ऑटो-लॉक सेटिंग्स।"
+          }
+        }
+      },
+      "troubleshooting": {
+        "title": "समस्या निवारण",
+        "content": "समस्याओं के लिए सामान्य समाधान।",
+        "subsections": {
+          "appNotSyncing": {
+            "title": "ऐप सिंक नहीं हो रहा",
+            "content": "इंटरनेट कनेक्शन जांचें, फोर्स रिफ्रेश करें, या ऐप को पुनः आरंभ करें।"
+          },
+          "pinIssues": {
+            "title": "PIN समस्याएं",
+            "content": "यदि भूल गए हैं तो खाता पुनर्प्राप्ति का उपयोग करें, या ईमेल के माध्यम से रीसेट करें।"
+          }
+        }
+      }
+    }
+  }
 }

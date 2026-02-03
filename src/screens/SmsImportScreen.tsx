@@ -7,19 +7,22 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../types';
 import { colors, spacing, typography, borderRadius, shadows } from '../config/theme';
 import { parseBankSms } from '../utils/smsParser';
+import { setSmsImportData } from '../stores/smsImportStore';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SmsImport'>;
+type RouteType = RouteProp<RootStackParamList, 'SmsImport'>;
 
 const SmsImportScreen: React.FC = () => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteType>();
   const [smsText, setSmsText] = useState('');
 
   const parsed = useMemo(() => parseBankSms(smsText), [smsText]);
@@ -36,14 +39,25 @@ const SmsImportScreen: React.FC = () => {
       return;
     }
 
-    navigation.navigate('AddTransaction', {
-      prefill: {
-        amount: parsed.amount,
-        note: parsed.note,
-        date: (parsed.date ?? new Date()).toISOString(),
-      },
-      postSaveNavigationTarget: 'Transactions',
-    });
+    const returnTo = route.params?.returnTo;
+    const prefillData = {
+      amount: parsed.amount,
+      note: parsed.note,
+      date: (parsed.date ?? new Date()).toISOString(),
+    };
+
+    if (returnTo === 'AddTransaction') {
+      // Store the prefill data in the store
+      setSmsImportData(prefillData);
+      // Go back to the existing AddTransaction screen
+      navigation.goBack();
+    } else {
+      // Default behavior: navigate to AddTransaction and then to Transactions
+      navigation.navigate('AddTransaction', {
+        prefill: prefillData,
+        postSaveNavigationTarget: 'Transactions',
+      });
+    }
   };
 
   return (

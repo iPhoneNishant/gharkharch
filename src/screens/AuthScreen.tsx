@@ -18,6 +18,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { useAuthStore } from '../stores';
 import { colors, typography, spacing, borderRadius, shadows } from '../config/theme';
@@ -26,7 +27,15 @@ type AuthMode = 'signIn' | 'signUp' | 'forgotPassword';
 
 const AuthScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { signIn, signUp, resetPassword, isLoading, error, clearError } = useAuthStore();
+  const { t } = useTranslation();
+  const { 
+    signIn, 
+    signUp, 
+    resetPassword, 
+    isLoading, 
+    error, 
+    clearError 
+  } = useAuthStore();
 
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
@@ -42,7 +51,7 @@ const AuthScreen: React.FC = () => {
     setIsAuthenticating(true);
     if (mode === 'forgotPassword') {
       if (!email.trim()) {
-        Alert.alert('Error', 'Please enter your email address');
+        Alert.alert(t('common.error'), t('auth.enterEmail'));
         setIsAuthenticating(false);
         return;
       }
@@ -51,11 +60,11 @@ const AuthScreen: React.FC = () => {
         await resetPassword(email.trim());
         setResetEmailSent(true);
         Alert.alert(
-          'Password Reset Email Sent',
-          'Please check your email for instructions to reset your password.',
+          t('auth.passwordResetEmailSent'),
+          t('auth.passwordResetEmailMessage'),
           [
             {
-              text: 'OK',
+              text: t('common.ok'),
               onPress: () => {
                 setMode('signIn');
                 setResetEmailSent(false);
@@ -73,19 +82,19 @@ const AuthScreen: React.FC = () => {
     }
 
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter email and password');
+      Alert.alert(t('common.error'), 'Please enter email and password');
       setIsAuthenticating(false);
       return;
     }
 
     if (mode === 'signUp') {
       if (password.length < 6) {
-        Alert.alert('Error', 'Password must be at least 6 characters');
+        Alert.alert(t('common.error'), 'Password must be at least 6 characters');
         setIsAuthenticating(false);
         return;
       }
       if (password !== confirmPassword) {
-        Alert.alert('Error', 'Passwords do not match. Please try again.');
+        Alert.alert(t('common.error'), 'Passwords do not match. Please try again.');
         setIsAuthenticating(false);
         return;
       }
@@ -159,10 +168,10 @@ const AuthScreen: React.FC = () => {
             ellipsizeMode="tail"
           >
             {mode === 'signIn' 
-              ? 'Welcome back!' 
+              ? t('auth.welcomeBack')
               : mode === 'signUp' 
-              ? 'Create your account' 
-              : 'Reset your password'}
+              ? t('auth.createAccount')
+              : t('auth.resetPassword')}
           </Text>
         </View>
 
@@ -170,10 +179,10 @@ const AuthScreen: React.FC = () => {
         <View style={styles.form}>
           {mode === 'signUp' && (
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Name</Text>
+              <Text style={styles.label}>{t('auth.name')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your name"
+                placeholder={t('auth.enterName')}
                 placeholderTextColor={colors.neutral[400]}
                 value={displayName}
                 onChangeText={setDisplayName}
@@ -184,13 +193,16 @@ const AuthScreen: React.FC = () => {
           )}
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('auth.email')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your email"
+              placeholder={t('auth.enterEmail')}
               placeholderTextColor={colors.neutral[400]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (error) clearError();
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -201,14 +213,17 @@ const AuthScreen: React.FC = () => {
           {mode !== 'forgotPassword' && (
             <>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label}>{t('auth.password')}</Text>
                 <View style={styles.passwordInputWrapper}>
                   <TextInput
                     style={styles.passwordInput}
-                    placeholder="Enter your password"
+                    placeholder={t('auth.enterPassword')}
                     placeholderTextColor={colors.neutral[400]}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (error) clearError();
+                    }}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoComplete="password"
@@ -226,11 +241,11 @@ const AuthScreen: React.FC = () => {
               </View>
               {mode === 'signUp' && (
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Confirm Password</Text>
+                  <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
                   <View style={styles.passwordInputWrapper}>
                     <TextInput
                       style={styles.passwordInput}
-                      placeholder="Confirm your password"
+                      placeholder={t('auth.enterConfirmPassword')}
                       placeholderTextColor={colors.neutral[400]}
                       value={confirmPassword}
                       onChangeText={setConfirmPassword}
@@ -258,7 +273,7 @@ const AuthScreen: React.FC = () => {
               style={styles.forgotPasswordLink}
               onPress={handleForgotPassword}
             >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
             </TouchableOpacity>
           )}
 
@@ -278,10 +293,10 @@ const AuthScreen: React.FC = () => {
             ) : (
               <Text style={styles.submitButtonText}>
                 {mode === 'signIn'
-                  ? 'Sign In'
+                  ? t('auth.signIn')
                   : mode === 'signUp'
-                  ? 'Create Account'
-                  : 'Send Reset Email'}
+                  ? t('auth.signUp')
+                  : t('auth.sendResetEmail')}
               </Text>
             )}
           </TouchableOpacity>
@@ -291,17 +306,17 @@ const AuthScreen: React.FC = () => {
         {mode === 'forgotPassword' ? (
           <View style={styles.footer}>
             <TouchableOpacity onPress={handleBackToSignIn}>
-              <Text style={styles.footerLink}>Back to Sign In</Text>
+              <Text style={styles.footerLink}>{t('auth.backToSignIn')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              {mode === 'signIn' ? "Don't have an account?  " : 'Already have an account?  '}
+              {mode === 'signIn' ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
             </Text>
             <TouchableOpacity onPress={toggleMode}>
               <Text style={styles.footerLink}>
-                {mode === 'signIn' ? 'Sign Up' : 'Sign In'}
+                {mode === 'signIn' ? t('auth.signUp') : t('auth.signIn')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -314,9 +329,11 @@ const AuthScreen: React.FC = () => {
           <View style={styles.loadingContent}>
             <ActivityIndicator size="large" color={colors.primary[500]} />
             <Text style={styles.loadingText}>
-              {mode === 'signIn' ? 'Signing in...' :
-               mode === 'signUp' ? 'Creating account...' :
-               'Sending reset email...'}
+              {mode === 'signIn'
+                ? t('auth.signingIn')
+                : mode === 'signUp'
+                ? t('auth.creatingAccount')
+                : t('auth.sendingResetEmail')}
             </Text>
           </View>
         </View>

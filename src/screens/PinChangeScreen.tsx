@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { colors, typography, spacing, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 import { setupPin, verifyPin } from '../services/pinAuthService';
@@ -34,6 +35,7 @@ interface PinChangeScreenProps {
 }
 
 const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [oldPin, setOldPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -92,31 +94,31 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
   const handleVerifyAndChange = async () => {
     // Validate old PIN
     if (oldPin.length !== 4) {
-      Alert.alert('Error', 'Please enter your current 4-digit PIN');
+      Alert.alert(t('pin.change.error'), t('pin.change.enterCurrentPin'));
       return;
     }
 
     // Validate new PIN
     if (newPin.length !== 4) {
-      Alert.alert('Error', 'Please enter a new 4-digit PIN');
+      Alert.alert(t('pin.change.error'), t('pin.change.enterNewPin'));
       return;
     }
 
     // Validate confirm PIN
     if (confirmPin.length !== 4) {
-      Alert.alert('Error', 'Please confirm your new 4-digit PIN');
+      Alert.alert(t('pin.change.error'), t('pin.change.confirmNewPinMessage'));
       return;
     }
 
     // Check if new PIN matches confirm PIN
     if (newPin !== confirmPin) {
-      Alert.alert('Error', 'New PIN and confirmation PIN do not match');
+      Alert.alert(t('pin.change.error'), t('pin.change.pinsDoNotMatch'));
       return;
     }
 
     // Check if old PIN is different from new PIN
     if (oldPin === newPin) {
-      Alert.alert('Error', 'New PIN must be different from your current PIN');
+      Alert.alert(t('pin.change.error'), t('pin.change.pinMustBeDifferent'));
       return;
     }
 
@@ -127,7 +129,8 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
       // First verify the old PIN
       const isOldPinValid = await verifyPin(oldPin);
       if (!isOldPinValid) {
-        Alert.alert('Error', 'Current PIN is incorrect');
+        Alert.alert(t('pin.change.error'), t('pin.change.currentPinIncorrect'));
+        setIsChanging(false);
         return;
       }
 
@@ -139,7 +142,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
       navigation.goBack();
 
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to change PIN. Please try again.');
+      Alert.alert(t('pin.change.error'), error.message || t('pin.change.changePinFailed'));
     } finally {
       setIsChanging(false);
     }
@@ -164,9 +167,9 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Change PIN</Text>
+          <Text style={styles.title}>{t('pin.change.title')}</Text>
           <Text style={styles.subtitle}>
-            Enter your current PIN and set up a new one
+            {t('pin.change.subtitle')}
           </Text>
         </View>
 
@@ -174,7 +177,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
         <View style={styles.form}>
           {/* Old PIN */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Current PIN</Text>
+            <Text style={styles.inputLabel}>{t('pin.change.currentPin')}</Text>
             <TextInput
               ref={oldPinRef}
               style={styles.pinInput}
@@ -197,7 +200,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
 
           {/* New PIN */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>New PIN</Text>
+            <Text style={styles.inputLabel}>{t('pin.change.newPin')}</Text>
             <TextInput
               ref={newPinRef}
               style={styles.pinInput}
@@ -219,7 +222,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
 
           {/* Confirm PIN */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Confirm New PIN</Text>
+            <Text style={styles.inputLabel}>{t('pin.change.confirmNewPin')}</Text>
             <TextInput
               ref={confirmPinRef}
               style={styles.pinInput}
@@ -248,7 +251,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
               onPress={handleCancel}
               disabled={isChanging}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           )}
 
@@ -260,7 +263,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
             {isChanging ? (
               <ActivityIndicator color={colors.neutral[0]} size="small" />
             ) : (
-              <Text style={styles.changeButtonText}>Change PIN</Text>
+              <Text style={styles.changeButtonText}>{t('pin.change.changePin')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -268,7 +271,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
         {/* Footer */}
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.xl }]}>
           <Text style={styles.footerText}>
-            Your PIN must be exactly 4 digits
+            {t('pin.change.pinMustBe4Digits')}
           </Text>
         </View>
       </ScrollView>

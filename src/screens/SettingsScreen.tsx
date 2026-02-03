@@ -94,7 +94,7 @@ const SettingsScreen: React.FC = () => {
     try {
       const stored = await AsyncStorage.getItem('user-font-scale');
       const val = stored ? parseFloat(stored) : 1;
-      setFontScale(val);
+      await setFontScale(val, false); // Don't save to storage since we're loading from it
       setFontScaleState(val);
       setFontScaleLabel(String(val));
     } catch {}
@@ -219,7 +219,7 @@ const SettingsScreen: React.FC = () => {
               {biometricAvailable && (
                 <View style={styles.settingItem}>
                   <Text style={styles.settingLabel}>
-                    {biometricType || 'Biometric'} Authentication
+                    {t('settings.biometricAuthentication', { type: biometricType || 'Biometric' })}
                   </Text>
                   <Switch
                     value={biometricEnabled}
@@ -244,7 +244,7 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>{t('settings.appSettings')}</Text>
         <View style={styles.settingsList}>
           <TouchableOpacity style={styles.settingItem} onPress={handleLanguageChange}>
-            <Text style={styles.settingLabel}>{t('settings.language')}</Text>
+            <Text style={styles.settingLabel}>{t('settings.language')} </Text>
             <View style={styles.settingValue}>
               <Text style={styles.settingValueText}>
                 {i18n.language === 'hi' ? 'हिंदी' : 'English'}
@@ -253,7 +253,7 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem} onPress={handleFontSizeChange}>
-            <Text style={styles.settingLabel}>{t('settings.fontSize')}</Text>
+            <Text style={styles.settingLabel}>{t('settings.fontSize')} </Text>
             <View style={styles.settingValue}>
               <Text style={styles.settingValueText}>AAA</Text>
             </View>
@@ -262,7 +262,7 @@ const SettingsScreen: React.FC = () => {
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingLabel}>{t('settings.currency')}</Text>
             <View style={styles.settingValue}>
-              <Text style={styles.settingValueText}>{user?.currency ?? 'INR'}</Text>
+              <Text style={styles.settingValueText}>{user?.currency ?? 'INR'} </Text>
             </View>
           </TouchableOpacity>
 
@@ -292,7 +292,7 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
         <View style={styles.settingsList}>
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>{t('settings.version')}</Text>
+            <Text style={styles.settingLabel}>{t('settings.version')} </Text>
             <Text style={styles.settingValueText}>1.0.0</Text>
           </View>
 
@@ -417,10 +417,9 @@ const SettingsScreen: React.FC = () => {
             <Text style={styles.modalTitle}>{t('settings.fontSize')}</Text>
             <TouchableOpacity onPress={async () => {
               if (pendingFontScale !== null) {
-                setFontScale(pendingFontScale);
+                await setFontScale(pendingFontScale); // This will save to AsyncStorage automatically
                 setFontScaleState(pendingFontScale);
                 setFontScaleLabel(String(pendingFontScale));
-                await AsyncStorage.setItem('user-font-scale', String(pendingFontScale));
               }
               setPendingFontScale(null);
               setShowFontSheet(false);

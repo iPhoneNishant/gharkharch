@@ -34,6 +34,7 @@ import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
+import { getSmsImportData, clearSmsImportData } from '../stores/smsImportStore';
 import { RootStackParamList, Account, AccountType } from '../types';
 import { 
   colors, 
@@ -95,12 +96,23 @@ const AddTransactionScreen: React.FC = () => {
     }
   }, [existingTransaction]);
 
-  // Apply prefill only once (when not editing)
+  // Track previous prefill timestamp to detect changes
+  const previousPrefillTimestampRef = useRef<number>(0);
+
+  // Apply prefill from route params (when not editing)
   React.useEffect(() => {
     if (isEditing) return;
     if (!prefill) return;
-    if (hasAppliedPrefillRef.current) return;
-    hasAppliedPrefillRef.current = true;
+    
+    // Check if there's a timestamp indicating a new SMS import
+    const smsImportTimestamp = (route.params as any)?._smsImportTimestamp;
+    if (smsImportTimestamp && smsImportTimestamp <= previousPrefillTimestampRef.current) {
+      return; // Already applied this prefill
+    }
+    
+    if (smsImportTimestamp) {
+      previousPrefillTimestampRef.current = smsImportTimestamp;
+    }
 
     if (typeof prefill.amount === 'number' && Number.isFinite(prefill.amount)) {
       setAmount(String(prefill.amount));
@@ -118,7 +130,62 @@ const AddTransactionScreen: React.FC = () => {
     if (typeof prefill.creditAccountId === 'string') {
       setCreditAccountId(prefill.creditAccountId);
     }
-  }, [isEditing, prefill]);
+  }, [isEditing, prefill, route.params]);
+
+  // Apply prefill from SMS import store when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (isEditing) return;
+      
+      // Check for SMS import data from the store
+      const smsData = getSmsImportData();
+      if (smsData && smsData.timestamp > previousPrefillTimestampRef.current) {
+        previousPrefillTimestampRef.current = smsData.timestamp;
+        
+        // Apply the SMS import data
+        if (typeof smsData.amount === 'number' && Number.isFinite(smsData.amount)) {
+          setAmount(String(smsData.amount));
+        }
+        if (typeof smsData.note === 'string') {
+          setNote(smsData.note);
+        }
+        if (typeof smsData.date === 'string') {
+          const parsed = new Date(smsData.date);
+          if (Number.isFinite(parsed.getTime())) setDate(parsed);
+        }
+        
+        // Clear the data after applying
+        clearSmsImportData();
+      } else if (prefill) {
+        // Fallback to route params prefill
+        const smsImportTimestamp = (route.params as any)?._smsImportTimestamp;
+        if (smsImportTimestamp && smsImportTimestamp <= previousPrefillTimestampRef.current) {
+          return; // Already applied this prefill
+        }
+        
+        if (smsImportTimestamp) {
+          previousPrefillTimestampRef.current = smsImportTimestamp;
+        }
+
+        if (typeof prefill.amount === 'number' && Number.isFinite(prefill.amount)) {
+          setAmount(String(prefill.amount));
+        }
+        if (typeof prefill.note === 'string') {
+          setNote(prefill.note);
+        }
+        if (typeof prefill.date === 'string') {
+          const parsed = new Date(prefill.date);
+          if (Number.isFinite(parsed.getTime())) setDate(parsed);
+        }
+        if (typeof prefill.debitAccountId === 'string') {
+          setDebitAccountId(prefill.debitAccountId);
+        }
+        if (typeof prefill.creditAccountId === 'string') {
+          setCreditAccountId(prefill.creditAccountId);
+        }
+      }
+    }, [isEditing, prefill, route.params])
+  );
 
   // Modal state
   const [showAccountPicker, setShowAccountPicker] = useState(false);

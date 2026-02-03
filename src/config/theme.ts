@@ -7,6 +7,7 @@
  */
 
 import i18n from '../i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ============================================================================
 // COLOR CUSTOMIZATION - Change these values to customize the app's appearance
@@ -214,14 +215,43 @@ const recalcTypography = () => {
   typography.fontSize['5xl'] = Math.round(BASE_FONT_SIZES['5xl'] * FONT_SCALE);
 };
 
-export const setFontScale = (scale: number) => {
+export const setFontScale = async (scale: number, saveToStorage: boolean = true) => {
   const clamped = Math.max(0.8, Math.min(scale, 1.5));
   USER_FONT_SCALE = clamped;
   recalcTypography();
   fontScaleListeners.forEach(fn => fn());
+  
+  // Save to AsyncStorage if requested (default: true)
+  if (saveToStorage) {
+    try {
+      await AsyncStorage.setItem('user-font-scale', String(clamped));
+    } catch (error) {
+      console.error('Error saving font scale to AsyncStorage:', error);
+    }
+  }
 };
 
 export const getFontScale = () => USER_FONT_SCALE;
+
+/**
+ * Initialize font scale from AsyncStorage
+ * Should be called at app startup to load saved font scale
+ */
+export const initializeFontScale = async (): Promise<void> => {
+  try {
+    const stored = await AsyncStorage.getItem('user-font-scale');
+    if (stored) {
+      const val = parseFloat(stored);
+      if (!isNaN(val) && val >= 0.8 && val <= 1.5) {
+        // Don't save to storage since we're loading from it
+        await setFontScale(val, false);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading font scale from AsyncStorage:', error);
+  }
+};
+
 export const addFontScaleListener = (fn: () => void) => {
   fontScaleListeners.add(fn);
   return () => fontScaleListeners.delete(fn);

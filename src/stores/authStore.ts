@@ -42,6 +42,7 @@ const docToUserProfile = (docData: Record<string, unknown>, id: string): UserPro
   id,
   email: docData.email as string,
   displayName: docData.displayName as string | undefined,
+  phoneNumber: docData.phoneNumber as string | undefined,
   createdAt: (docData.createdAt as { toDate: () => Date })?.toDate() ?? new Date(),
   updatedAt: (docData.updatedAt as { toDate: () => Date })?.toDate() ?? new Date(),
   currency: (docData.currency as string) ?? DEFAULT_CURRENCY,

@@ -6,7 +6,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, AppState, AppStateStatus, TouchableOpacity, Text } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useAuthStore, usePinAuthStore, useRecurringTransactionStore, useNetworkStore } from '../stores';
 import { RootStackParamList } from '../types';
@@ -17,6 +18,7 @@ import { startSmsAutoDetect, stopSmsAutoDetect } from '../services/smsAutoDetect
 
 // Screens
 import NoNetworkScreen from '../screens/NoNetworkScreen';
+import LanguageSelectionScreen from '../screens/LanguageSelectionScreen';
 import AuthScreen from '../screens/AuthScreen';
 import PinSetupScreen from '../screens/PinSetupScreen';
 import PinChangeScreen from '../screens/PinChangeScreen';
@@ -57,6 +59,48 @@ const RootNavigator: React.FC = () => {
   const initializeNetwork = useNetworkStore(state => state.initialize);
   const { isConnected, isInternetReachable } = useNetworkStore();
   const [fontScaleVersion, setFontScaleVersion] = useState(0);
+  const [isCheckingLanguage, setIsCheckingLanguage] = useState(true);
+  const [isLanguageSelected, setIsLanguageSelected] = useState(false);
+
+  // Check if language has been selected
+  const checkLanguageSelection = useCallback(async () => {
+    try {
+      const languageSelected = await AsyncStorage.getItem('language-selected');
+      setIsLanguageSelected(languageSelected === 'true');
+    } catch (error) {
+      console.error('Error checking language selection:', error);
+      setIsLanguageSelected(false);
+    } finally {
+      setIsCheckingLanguage(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkLanguageSelection();
+  }, [checkLanguageSelection]);
+
+  // Re-check language selection when app comes to foreground
+  useEffect(() => {
+    if (isLanguageSelected) return;
+
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        checkLanguageSelection();
+      }
+    });
+
+    // Also check periodically while on LanguageSelection screen
+    const interval = setInterval(() => {
+      if (!isLanguageSelected) {
+        checkLanguageSelection();
+      }
+    }, 500);
+
+    return () => {
+      subscription.remove();
+      clearInterval(interval);
+    };
+  }, [isLanguageSelected, checkLanguageSelection]);
 
   useEffect(() => {
     const unsubscribe = initializeNetwork();
@@ -142,13 +186,14 @@ const RootNavigator: React.FC = () => {
     };
   }, [isAuthenticated, user?.id, subscribeToRecurringTransactions]);
 
-  // Determine initial route based on auth and PIN state
+  // Determine initial route based on language, auth and PIN state
   const currentRoute = useMemo((): keyof RootStackParamList => {
+    if (!isLanguageSelected) return 'LanguageSelection';
     if (!isAuthenticated) return 'Auth';
     if (isPinSetup === false) return 'PinSetup';
     if (!isPinVerified) return 'PinVerification';
     return 'Main';
-  }, [isAuthenticated, isPinSetup, isPinVerified]);
+  }, [isLanguageSelected, isAuthenticated, isPinSetup, isPinVerified]);
 
   // Memoize callbacks to prevent re-renders
   const handlePinSetupComplete = useCallback(() => {
@@ -170,7 +215,7 @@ const RootNavigator: React.FC = () => {
     return <NoNetworkScreen />;
   }
 
-  if (isLoading || (isAuthenticated && isCheckingPin)) {
+  if (isCheckingLanguage || isLoading || (isAuthenticated && isCheckingPin)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
@@ -196,7 +241,17 @@ const RootNavigator: React.FC = () => {
           contentStyle: { backgroundColor: colors.background.primary },
         }}
       >
-        {!isAuthenticated ? (
+        {!isLanguageSelected ? (
+          <Stack.Screen 
+            name="LanguageSelection" 
+            component={LanguageSelectionScreen}
+            options={{ 
+              animationTypeForReplace: 'pop',
+              gestureEnabled: false, // Disable swipe back gesture
+              headerBackVisible: false, // Hide back button
+            }}
+          />
+        ) : !isAuthenticated ? (
           <Stack.Screen 
             name="Auth" 
             component={AuthScreen}
@@ -231,11 +286,22 @@ const RootNavigator: React.FC = () => {
             <Stack.Screen 
               name="AddTransaction" 
               component={AddTransactionScreen}
-              options={({ route }) => ({
+              options={({ route, navigation }) => ({
                 presentation: 'modal',
                 headerShown: true,
                 headerTitle: (route.params as any)?.editTransactionId ? 'Edit Transaction' : 'Add Transaction',
                 headerTintColor: colors.primary[500],
+                headerRight: () => (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('SmsImport', { returnTo: 'AddTransaction' })}
+                    style={{ marginRight: 16, padding: 4 }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: typography.fontWeight.semiBold, color: colors.primary[500] }}>
+                      {t('addTransaction.importFromSms')}
+                    </Text>
+                  </TouchableOpacity>
+                ),
               })}
             />
             <Stack.Screen 

@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { colors, typography, spacing, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 import { 
@@ -40,6 +41,7 @@ interface PinVerificationScreenProps {
 }
 
 const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const setPinVerified = usePinAuthStore(state => state.setPinVerified); // Get setPinVerified from store using selector
   const signOut = useAuthStore(state => state.signOut); // Get signOut function from auth store
@@ -85,9 +87,9 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       // Prevent going back - user must verify PIN
       Alert.alert(
-        'PIN Required',
-        'You must verify your PIN to access the app.',
-        [{ text: 'OK' }]
+        t('pin.verification.pinRequired'),
+        t('pin.verification.pinRequiredMessage'),
+        [{ text: t('common.ok') }]
       );
       return true; // Prevent default back behavior
     });
@@ -104,9 +106,9 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
         // which updates the store and causes RootNavigator to re-render
         e.preventDefault();
         Alert.alert(
-          'PIN Required',
-          'You must verify your PIN to access the app.',
-          [{ text: 'OK' }]
+          t('pin.verification.pinRequired'),
+          t('pin.verification.pinRequiredMessage'),
+          [{ text: t('common.ok') }]
         );
       };
 
@@ -181,11 +183,11 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
         setIsVerifying(false);
         if (newErrorCount >= 5) {
           Alert.alert(
-            'Too Many Attempts',
-            'You have entered an incorrect PIN too many times. For security reasons, you will be logged out.',
+            t('pin.verification.tooManyAttempts'),
+            t('pin.verification.tooManyAttemptsMessage'),
             [
               {
-                text: 'OK',
+                text: t('common.ok'),
                 onPress: async () => {
                   try {
                     // Log out the user after 5 failed attempts
@@ -203,20 +205,27 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
             ]
           );
         } else {
-          Alert.alert('Incorrect PIN', `Please try again. ${5 - newErrorCount} attempts remaining.`, [
-            {
-              text: 'OK',
-              onPress: () => {
-                setPin('');
-                setTimeout(() => pinInputRef.current?.focus(), 100);
+          Alert.alert(
+            t('pin.verification.incorrectPin'),
+            t('pin.verification.incorrectPinMessage', { remaining: 5 - newErrorCount }),
+            [
+              {
+                text: t('common.ok'),
+                onPress: () => {
+                  setPin('');
+                  setTimeout(() => pinInputRef.current?.focus(), 100);
+                },
               },
-            },
-          ]);
+            ]
+          );
         }
       }
     } catch (error: any) {
       console.error('PIN verification error:', error);
-      Alert.alert('Verification Failed', error.message || 'Failed to verify PIN. Please try again.');
+      Alert.alert(
+        t('pin.verification.verificationFailed'),
+        error.message || t('pin.verification.verificationFailedMessage')
+      );
       setIsVerifying(false);
       setPin('');
       setTimeout(() => pinInputRef.current?.focus(), 100);
@@ -233,22 +242,22 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
       setPinVerified(true);
     } catch (error) {
       console.error('Error in handleVerificationSuccess:', error);
-      Alert.alert('Error', 'Failed to complete verification. Please try again.');
+      Alert.alert(t('common.error'), t('pin.verification.verificationFailedMessage'));
       setIsVerifying(false);
     }
   };
 
   const handleForgotPin = () => {
     Alert.alert(
-      'Forgot PIN?',
-      'If you have forgotten your PIN, you can log out and log back in to set up a new PIN. This will clear your current PIN.',
+      t('pin.verification.forgotPinTitle'),
+      t('pin.verification.forgotPinMessage'),
       [
         {
-          text: 'Cancel',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Log Out',
+          text: t('pin.verification.logOut'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -257,7 +266,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
               // They can log in again and set up a new PIN
             } catch (error) {
               console.error('Error signing out:', error);
-              Alert.alert('Error', 'Failed to log out. Please try again.');
+              Alert.alert(t('common.error'), t('pin.verification.verificationFailedMessage'));
             }
           },
         },
@@ -280,11 +289,11 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.logo}>₹</Text>
-            <Text style={styles.title}>Daily Munim</Text>
+            <Text style={styles.title}>{t('pin.verification.title')}</Text>
             <Text style={styles.subtitle}>
               {biometricEnabled && !biometricAttempted
-                ? `Authenticate with ${biometricType || 'Biometric'} to continue`
-                : 'Enter your PIN to continue'}
+                ? t('pin.verification.authenticateWithBiometric', { type: biometricType || 'Biometric' })
+                : t('pin.verification.subtitle')}
             </Text>
           </View>
 
@@ -293,7 +302,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
             <View style={styles.biometricLoadingContainer}>
               <ActivityIndicator size="large" color={colors.primary[500]} />
               <Text style={styles.biometricLoadingText}>
-                Authenticating with {biometricType || 'Biometric'}...
+                {t('pin.verification.authenticatingWithBiometric', { type: biometricType || 'Biometric' })}
               </Text>
             </View>
           )}
@@ -317,7 +326,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
                 />
                 {displayErrorCount > 0 && (
                   <Text style={styles.errorText}>
-                    Incorrect PIN. {5 - displayErrorCount} attempts remaining.
+                    {t('pin.verification.incorrectPinRemaining', { remaining: 5 - displayErrorCount })}
                   </Text>
                 )}
               </View>
@@ -334,7 +343,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
                 {isVerifying ? (
                   <ActivityIndicator color={colors.neutral[0]} />
                 ) : (
-                  <Text style={styles.continueButtonText}>Continue</Text>
+                  <Text style={styles.continueButtonText}>{t('pin.verification.continue')}</Text>
                 )}
               </TouchableOpacity>
 
@@ -344,7 +353,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
                 onPress={handleForgotPin}
                 disabled={isVerifying}
               >
-                <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+                <Text style={styles.forgotPinText}>{t('pin.verification.forgotPin')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -357,7 +366,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
               disabled={isVerifying}
             >
               <Text style={styles.biometricButtonText}>
-                Use {biometricType || 'Biometric'} instead
+                {t('pin.verification.useBiometricInstead', { type: biometricType || 'Biometric' })}
               </Text>
             </TouchableOpacity>
           )}

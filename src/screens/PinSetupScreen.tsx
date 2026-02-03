@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { colors, typography, spacing, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 import { setupPin, isBiometricAvailable, enableBiometric, getBiometricType } from '../services/pinAuthService';
@@ -34,6 +35,7 @@ interface PinSetupScreenProps {
 }
 
 const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets(); 
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -70,9 +72,9 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
     if (!allowBack) {
       const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
         Alert.alert(
-          'Setup Required',
-          'You must set up a PIN to secure your app. This cannot be skipped.',
-          [{ text: 'OK' }]
+          t('pin.setup.setupRequired'),
+          t('pin.setup.setupRequiredMessage'),
+          [{ text: t('common.ok') }]
         );
         return true; // Prevent default back behavior
       });
@@ -95,9 +97,9 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
           // Prevent navigation away if PIN setup is required
           e.preventDefault();
           Alert.alert(
-            'Setup Required',
-            'You must set up a PIN to secure your app. This cannot be skipped.',
-            [{ text: 'OK' }]
+            t('pin.setup.setupRequired'),
+            t('pin.setup.setupRequiredMessage'),
+            [{ text: t('common.ok') }]
           );
         }
       };
@@ -139,12 +141,12 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
 
   const handleSetup = async () => {
     if (pin.length !== 4) {
-      Alert.alert('Invalid PIN', 'PIN must be exactly 4 digits');
+      Alert.alert(t('pin.setup.invalidPin'), t('pin.setup.pinMustBe4Digits'));
       return;
     }
 
     if (pin !== confirmPin) {
-      Alert.alert('PIN Mismatch', 'PINs do not match. Please try again.');
+      Alert.alert(t('pin.setup.pinMismatch'), t('pin.setup.pinMismatchMessage'));
       setConfirmPin('');
       return;
     }
@@ -168,7 +170,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
       route.params?.onComplete?.();
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Setup Failed', error.message || 'Failed to setup PIN. Please try again.');
+      Alert.alert(t('pin.setup.setupFailed'), error.message || t('pin.setup.setupFailedMessage'));
       setIsSettingUp(false);
     }
   };
@@ -189,15 +191,15 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Setup MPIN</Text>
+            <Text style={styles.title}>{t('pin.setup.title')}</Text>
             <Text style={styles.subtitle}>
-              Enter a 4 digit PIN to secure your app
+              {t('pin.setup.subtitle')}
             </Text>
           </View>
 
           {/* PIN Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Enter PIN</Text>
+            <Text style={styles.label}>{t('pin.setup.enterPin')}</Text>
             <TextInput
               style={styles.pinInput}
               value={pin}
@@ -214,7 +216,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
 
           {/* Confirm PIN Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm PIN</Text>
+            <Text style={styles.label}>{t('pin.setup.confirmPin')}</Text>
             <TextInput
               ref={confirmPinRef}
               style={styles.pinInput}
@@ -228,7 +230,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
               editable={!isSettingUp}
             />
             {confirmPin.length > 0 && pin !== confirmPin && (
-              <Text style={styles.errorText}>PINs do not match</Text>
+              <Text style={styles.errorText}>{t('pin.setup.pinsDoNotMatch')}</Text>
             )}
           </View>
 
@@ -243,7 +245,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
                 {enableBiometricOption && <View style={styles.checkboxChecked} />}
               </View>
               <Text style={styles.biometricText}>
-                Enable {biometricType || 'Biometric'} authentication
+                {t('pin.setup.enableBiometric', { type: biometricType || 'Biometric' })}
               </Text>
             </TouchableOpacity>
           )}
@@ -257,7 +259,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
             {isSettingUp ? (
               <ActivityIndicator color={colors.neutral[0]} />
             ) : (
-              <Text style={styles.buttonText}>Setup PIN</Text>
+              <Text style={styles.buttonText}>{t('pin.setup.setupPin')}</Text>
             )}
           </TouchableOpacity>
         </View>

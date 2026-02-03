@@ -9,14 +9,17 @@
  * - Asset and Liability accounts ALWAYS store balances
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { RootNavigator } from './src/navigation';
 import './src/i18n'; // Initialize i18n
 import { setupNotificationChannels, rescheduleAllRecurringTransactionNotifications, cancelAllScheduledNotifications } from './src/services/recurringTransactionService';
 import { useAuthStore } from './src/stores';
 import { useRecurringTransactionStore } from './src/stores/recurringTransactionStore';
+import { initializeFontScale } from './src/config/theme';
+import { colors } from './src/config/theme';
 
 export default function App() {
   console.log('🚀 App: Component rendered');
@@ -24,7 +27,22 @@ export default function App() {
   const { recurringTransactions, isLoading } = useRecurringTransactionStore();
   const hasInitializedNotificationsRef = useRef(false);
   const hasCheckedRecurringTransactionsRef = useRef(false);
+  const [isFontScaleInitialized, setIsFontScaleInitialized] = useState(false);
 
+
+  // Initialize font scale at app startup
+  useEffect(() => {
+    const initFontScale = async () => {
+      try {
+        await initializeFontScale();
+        setIsFontScaleInitialized(true);
+      } catch (error) {
+        console.error('Error initializing font scale:', error);
+        setIsFontScaleInitialized(true); // Continue even if initialization fails
+      }
+    };
+    initFontScale();
+  }, []);
 
   useEffect(() => {
     // Initialize notifications for recurring transactions (one-time setup)
@@ -97,6 +115,17 @@ export default function App() {
     scheduleNotificationsWhenDataReady();
   }, [isAuthenticated, isLoading, recurringTransactions]);
 
+  // Show loading screen until font scale is initialized
+  if (!isFontScaleInitialized) {
+    return (
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
@@ -104,3 +133,12 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background.primary,
+  },
+});

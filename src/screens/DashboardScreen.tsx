@@ -196,31 +196,12 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.quickActions}>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => setShowAddMenu(!showAddMenu)}
+          onPress={handleAddTransaction}
         >
           <Text style={styles.addButtonIcon}>+</Text>
           <Text style={styles.addButtonText}>{t('dashboard.addTransaction')}</Text>
         </TouchableOpacity>
-        
-        {/* Add Menu */}
-        {showAddMenu && (
-          <View style={styles.addMenu}>
-            <TouchableOpacity
-              style={styles.addMenuItem}
-              onPress={handleAddTransaction}
-            >
-              <Text style={styles.addMenuItemIcon}>📝</Text>
-              <Text style={styles.addMenuItemText}>{t('dashboard.addTransaction')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addMenuItem}
-              onPress={handleAddRecurringTransaction}
-            >
-              <Text style={styles.addMenuItemIcon}>🔄</Text>
-              <Text style={styles.addMenuItemText}>{t('dashboard.addRecurring')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+
       </View>
 
       {/* Assets */}

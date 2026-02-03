@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../types';
 import { colors, spacing, typography, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 
@@ -32,116 +33,118 @@ interface GuideSection {
   subsections?: { title: string; content: string }[];
 }
 
-const guideData: GuideSection[] = [
-  {
-    title: 'Overview',
-    content: 'DailyMunim (Ghar Ka Daily Hisab Kitab) is a comprehensive personal finance and expense tracking application designed for Indian users. Track your daily expenses, manage multiple accounts, set up recurring transactions, and generate detailed financial reports.',
-  },
-  {
-    title: 'Getting Started',
-    content: 'First time setup involves creating an account, setting up a secure PIN, and adding your first bank or cash account to start tracking.',
-    subsections: [
-      {
-        title: 'Installation',
-        content: '1. Download the app\n2. Install and open\n3. Sign up with email\n4. Set up PIN for security'
-      },
-      {
-        title: 'First Time Setup',
-        content: '1. Authentication: Create account\n2. PIN Setup: 4-6 digit PIN\n3. Add Account: Create your first account\n4. Start Tracking: Add transactions'
-      }
-    ]
-  },
-  {
-    title: 'Account Management',
-    content: 'Manage your bank accounts, cash wallets, and credit cards in one place.',
-    subsections: [
-      {
-        title: 'Adding Accounts',
-        content: 'Go to Accounts tab -> Tap + Add Account -> Choose account type -> Enter details.'
-      },
-      {
-        title: 'Account Types',
-        content: '• Bank Account: Savings, Current\n• Cash Account: Wallet, Petty Cash\n• Credit Card: Monitor spending'
-      }
-    ]
-  },
-  {
-    title: 'Transaction Management',
-    content: 'Record income and expenses manually or import from SMS.',
-    subsections: [
-      {
-        title: 'Adding Transactions',
-        content: 'Go to Transactions tab -> Tap + Add Transaction -> Select Income/Expense -> Enter details -> Save.'
-      },
-      {
-        title: 'SMS Import',
-        content: 'Go to More -> SMS Import -> Grant permissions -> Select bank SMS -> App automatically extracts details.'
-      }
-    ]
-  },
-  {
-    title: 'Recurring Transactions',
-    content: 'Set up automatic transactions for regular bills, salaries, or subscriptions.',
-    subsections: [
-      {
-        title: 'Setting Up',
-        content: 'Go to More -> Repeat Transactions -> Tap + Add Recurring -> Set amount, frequency, and dates.'
-      },
-      {
-        title: 'Types',
-        content: 'Fixed/Variable amounts for Income (Salary) or Expense (Bills).'
-      }
-    ]
-  },
-  {
-    title: 'Reports & Analytics',
-    content: 'Gain insights into your spending habits with detailed reports.',
-    subsections: [
-      {
-        title: 'Dashboard',
-        content: 'Overview of total balance, monthly income/expense, and recent transactions.'
-      },
-      {
-        title: 'Detailed Reports',
-        content: 'Day-to-Day summaries, Month-to-Month comparisons, and Category-wise breakdowns.'
-      }
-    ]
-  },
-  {
-    title: 'Settings & Security',
-    content: 'Customize your app experience and keep your data safe.',
-    subsections: [
-      {
-        title: 'General',
-        content: 'Theme (Light/Dark), Language, Currency, Date Format.'
-      },
-      {
-        title: 'Security',
-        content: 'Change PIN, Enable Biometric (Fingerprint/Face ID), Auto-lock settings.'
-      }
-    ]
-  },
-  {
-    title: 'Troubleshooting',
-    content: 'Common solutions for issues.',
-    subsections: [
-      {
-        title: 'App Not Syncing',
-        content: 'Check internet connection, force refresh, or restart app.'
-      },
-      {
-        title: 'PIN Issues',
-        content: 'Use account recovery if forgotten, or reset through email.'
-      }
-    ]
-  }
-];
-
 const UserGuideScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const [expandedSection, setExpandedSection] = useState<number | null>(0);
   const [fontScaleVersion, setFontScaleVersion] = useState(0);
+
+  // Get guide data from translations
+  const guideData: GuideSection[] = [
+    {
+      title: t('userGuide.sections.overview.title'),
+      content: t('userGuide.sections.overview.content'),
+    },
+    {
+      title: t('userGuide.sections.gettingStarted.title'),
+      content: t('userGuide.sections.gettingStarted.content'),
+      subsections: [
+        {
+          title: t('userGuide.sections.gettingStarted.subsections.installation.title'),
+          content: t('userGuide.sections.gettingStarted.subsections.installation.content')
+        },
+        {
+          title: t('userGuide.sections.gettingStarted.subsections.firstTimeSetup.title'),
+          content: t('userGuide.sections.gettingStarted.subsections.firstTimeSetup.content')
+        }
+      ]
+    },
+    {
+      title: t('userGuide.sections.accountManagement.title'),
+      content: t('userGuide.sections.accountManagement.content'),
+      subsections: [
+        {
+          title: t('userGuide.sections.accountManagement.subsections.addingAccounts.title'),
+          content: t('userGuide.sections.accountManagement.subsections.addingAccounts.content')
+        },
+        {
+          title: t('userGuide.sections.accountManagement.subsections.accountTypes.title'),
+          content: t('userGuide.sections.accountManagement.subsections.accountTypes.content')
+        }
+      ]
+    },
+    {
+      title: t('userGuide.sections.transactionManagement.title'),
+      content: t('userGuide.sections.transactionManagement.content'),
+      subsections: [
+        {
+          title: t('userGuide.sections.transactionManagement.subsections.addingTransactions.title'),
+          content: t('userGuide.sections.transactionManagement.subsections.addingTransactions.content')
+        },
+        {
+          title: t('userGuide.sections.transactionManagement.subsections.smsImport.title'),
+          content: t('userGuide.sections.transactionManagement.subsections.smsImport.content')
+        }
+      ]
+    },
+    {
+      title: t('userGuide.sections.recurringTransactions.title'),
+      content: t('userGuide.sections.recurringTransactions.content'),
+      subsections: [
+        {
+          title: t('userGuide.sections.recurringTransactions.subsections.settingUp.title'),
+          content: t('userGuide.sections.recurringTransactions.subsections.settingUp.content')
+        },
+        {
+          title: t('userGuide.sections.recurringTransactions.subsections.types.title'),
+          content: t('userGuide.sections.recurringTransactions.subsections.types.content')
+        }
+      ]
+    },
+    {
+      title: t('userGuide.sections.reportsAnalytics.title'),
+      content: t('userGuide.sections.reportsAnalytics.content'),
+      subsections: [
+        {
+          title: t('userGuide.sections.reportsAnalytics.subsections.dashboard.title'),
+          content: t('userGuide.sections.reportsAnalytics.subsections.dashboard.content')
+        },
+        {
+          title: t('userGuide.sections.reportsAnalytics.subsections.detailedReports.title'),
+          content: t('userGuide.sections.reportsAnalytics.subsections.detailedReports.content')
+        }
+      ]
+    },
+    {
+      title: t('userGuide.sections.settingsSecurity.title'),
+      content: t('userGuide.sections.settingsSecurity.content'),
+      subsections: [
+        {
+          title: t('userGuide.sections.settingsSecurity.subsections.general.title'),
+          content: t('userGuide.sections.settingsSecurity.subsections.general.content')
+        },
+        {
+          title: t('userGuide.sections.settingsSecurity.subsections.security.title'),
+          content: t('userGuide.sections.settingsSecurity.subsections.security.content')
+        }
+      ]
+    },
+    {
+      title: t('userGuide.sections.troubleshooting.title'),
+      content: t('userGuide.sections.troubleshooting.content'),
+      subsections: [
+        {
+          title: t('userGuide.sections.troubleshooting.subsections.appNotSyncing.title'),
+          content: t('userGuide.sections.troubleshooting.subsections.appNotSyncing.content')
+        },
+        {
+          title: t('userGuide.sections.troubleshooting.subsections.pinIssues.title'),
+          content: t('userGuide.sections.troubleshooting.subsections.pinIssues.content')
+        }
+      ]
+    }
+  ];
   React.useEffect(() => {
     const unsub = addFontScaleListener(() => {
       setFontScaleVersion(v => v + 1);
@@ -253,7 +256,7 @@ const UserGuideScreen: React.FC = () => {
         >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>User Guide</Text>
+        <Text style={styles.headerTitle}>{t('userGuide.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
