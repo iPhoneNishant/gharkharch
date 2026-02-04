@@ -151,8 +151,23 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         set({ accounts, isLoading: false, error: null });
       },
       (error) => {
-        console.error('Error subscribing to accounts:', error);
-        set({ isLoading: false, error: 'Failed to load accounts' });
+        // Import error helper
+        import('../config/firebase').then(({ isTransientFirestoreError }) => {
+          if (isTransientFirestoreError(error)) {
+            // Transient errors are auto-retried by Firestore, just log for debugging
+            console.warn('Transient Firestore connection error (will retry):', error.message || error);
+            // Don't update error state for transient errors
+            return;
+          }
+          
+          // For non-transient errors, update the error state
+          console.error('Error subscribing to accounts:', error);
+          set({ isLoading: false, error: 'Failed to load accounts' });
+        }).catch(() => {
+          // Fallback if import fails
+          console.error('Error subscribing to accounts:', error);
+          set({ isLoading: false, error: 'Failed to load accounts' });
+        });
       }
     );
 

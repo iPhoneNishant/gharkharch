@@ -24,7 +24,7 @@ import {
   // @ts-expect-error - getReactNativePersistence is exported but not in types
   getReactNativePersistence,
 } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, connectFirestoreEmulator, enableNetwork, disableNetwork } from 'firebase/firestore';
 import { getFunctions, Functions } from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -88,6 +88,13 @@ export const initializeFirebase = (): {
     }
     
     db = getFirestore(app);
+    
+    // Enable network connection for better reliability
+    enableNetwork(db).catch((error) => {
+      // Non-critical error, log but don't fail initialization
+      console.warn('Firestore network enable warning (non-critical):', error);
+    });
+    
     // Cloud Functions v2 default region is us-central1
     // If you deployed to a different region, specify it here:
     // functions = getFunctions(app, 'asia-south1');
@@ -114,6 +121,13 @@ export const initializeFirebase = (): {
       }
     }
     db = getFirestore(app);
+    
+    // Enable network connection for better reliability
+    enableNetwork(db).catch((error) => {
+      // Non-critical error, log but don't fail initialization
+      console.warn('Firestore network enable warning (non-critical):', error);
+    });
+    
     // Cloud Functions v2 default region is us-central1
     // If you deployed to a different region, specify it here:
     // functions = getFunctions(app, 'asia-south1');
@@ -139,3 +153,25 @@ export { firebase };
 export const firebaseAuth = firebase.auth;
 export const firestore = firebase.db;
 export const cloudFunctions = firebase.functions;
+
+/**
+ * Helper function to check if a Firestore error is a transient transport error
+ * These errors are typically auto-retried by Firestore and don't need user action
+ */
+export const isTransientFirestoreError = (error: any): boolean => {
+  if (!error) return false;
+  
+  const errorMessage = error.message || String(error);
+  const errorCode = error.code || '';
+  
+  // Check for WebChannelConnection transport errors (these are transient)
+  if (errorMessage.includes('WebChannelConnection') || 
+      errorMessage.includes('transport errored') ||
+      errorMessage.includes('RPC') ||
+      errorCode === 'unavailable' ||
+      errorCode === 'deadline-exceeded') {
+    return true;
+  }
+  
+  return false;
+};

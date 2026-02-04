@@ -116,22 +116,36 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         set({ transactions, isLoading: false, error: null });
       },
       (error) => {
-        console.error('Error subscribing to transactions:', error);
-        
-        // Provide more specific error messages
-        let errorMessage = 'Failed to load transactions';
-        
-        if (error.code === 'failed-precondition') {
-          errorMessage = 'Database index missing. Please deploy Firestore indexes.';
-        } else if (error.code === 'permission-denied') {
-          errorMessage = 'Permission denied. Please check Firestore security rules.';
-        } else if (error.code === 'unavailable') {
-          errorMessage = 'Firestore is unavailable. Please check your connection.';
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-        
-        set({ isLoading: false, error: errorMessage });
+        // Import error helper
+        import('../config/firebase').then(({ isTransientFirestoreError }) => {
+          if (isTransientFirestoreError(error)) {
+            // Transient errors are auto-retried by Firestore, just log for debugging
+            console.warn('Transient Firestore connection error (will retry):', error.message || error);
+            // Don't update error state for transient errors
+            return;
+          }
+          
+          // For non-transient errors, provide specific error messages
+          console.error('Error subscribing to transactions:', error);
+          
+          let errorMessage = 'Failed to load transactions';
+          
+          if (error.code === 'failed-precondition') {
+            errorMessage = 'Database index missing. Please deploy Firestore indexes.';
+          } else if (error.code === 'permission-denied') {
+            errorMessage = 'Permission denied. Please check Firestore security rules.';
+          } else if (error.code === 'unavailable') {
+            errorMessage = 'Firestore is unavailable. Please check your connection.';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          set({ isLoading: false, error: errorMessage });
+        }).catch(() => {
+          // Fallback if import fails
+          console.error('Error subscribing to transactions:', error);
+          set({ isLoading: false, error: 'Failed to load transactions' });
+        });
       }
     );
 
