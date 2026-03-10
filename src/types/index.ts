@@ -239,6 +239,16 @@ export type RootStackParamList = {
           creditAccountId?: string;
         };
         postSaveNavigationTarget?: string;
+        smsBankInfo?: {
+          senderId: string;
+          transactionType: 'debit' | 'credit';
+          merchant?: string; // Merchant name from parsed SMS
+          bankName?: string; // Bank name from parsed SMS
+          smsTimestamp?: number; // SMS receiving timestamp (milliseconds) for duplicate detection
+          amount?: number; // Parsed amount for duplicate detection
+          accountLast4?: string; // Account last 4 digits for duplicate detection
+          parsedDate?: Date; // Original parsed date from SMS (for duplicate detection)
+        };
       }
     | undefined;
   AddAccount: { editAccountId?: string } | undefined;
@@ -253,7 +263,9 @@ export type RootStackParamList = {
   DayToDayReport: undefined;
   AddRecurringTransaction: { editRecurringTransactionId?: string } | undefined;
   RecurringTransactions: undefined;
-  SmsImport: { returnTo?: string } | undefined;
+  BankSms: undefined;
+  Accounts: undefined;
+  SmsAccountMapping: undefined;
   UserGuide: undefined;
   PrivacyPolicy: undefined;
   SubCategoryTransactions: { 
@@ -267,8 +279,27 @@ export type RootStackParamList = {
 
 export type MainTabParamList = {
   Dashboard: undefined;
-  Accounts: undefined;
-  AddTransaction: undefined;
+  BankSms: undefined;
+  AddTransaction: {
+    prefill?: {
+      amount?: number;
+      note?: string;
+      date?: string;
+      debitAccountId?: string;
+      creditAccountId?: string;
+    };
+    postSaveNavigationTarget?: string;
+    smsBankInfo?: {
+      senderId: string;
+      transactionType: 'debit' | 'credit';
+      merchant?: string;
+      bankName?: string;
+      smsTimestamp?: number;
+      amount?: number;
+      accountLast4?: string;
+      parsedDate?: Date;
+    };
+  } | undefined;
   Reports: undefined;
   More: undefined;
 };

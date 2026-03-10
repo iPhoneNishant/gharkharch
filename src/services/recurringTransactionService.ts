@@ -226,7 +226,6 @@ export const processRecurringTransactions = async (
 
         // Update the recurring transaction's lastCreatedDate and nextOccurrence
         // This should be done via Cloud Function, but for now we'll note it
-        console.log(`Created transaction for recurring transaction ${recurringTransaction.id}`);
       } catch (error) {
         console.error(`Failed to create transaction for recurring transaction ${recurringTransaction.id}:`, error);
       }
@@ -339,7 +338,6 @@ export const testNotification = async (): Promise<boolean> => {
           } as any,
     });
 
-    console.log(`✓ Test notification scheduled for ${testDate.toISOString()}, ID: ${notificationId}`);
     return true;
   } catch (error) {
     console.error('Error testing notification:', error);

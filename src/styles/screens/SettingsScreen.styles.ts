@@ -82,18 +82,21 @@ export const getSettingsScreenStyles = () => StyleSheet.create({
     color: colors.text.primary,
     marginRight: spacing.sm,
     flexShrink: 1,
+    minWidth: 0,
   },
   settingValue: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 0,
+    flexShrink: 1,
     marginLeft: spacing.xs,
+    minWidth: 0,
   },
   settingValueText: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     marginRight: spacing.xs,
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
   },
   chevron: {
     fontSize: typography.fontSize.lg,

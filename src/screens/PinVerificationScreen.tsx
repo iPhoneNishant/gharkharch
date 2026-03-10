@@ -32,6 +32,7 @@ import {
   getBiometricType,
 } from '../services/pinAuthService';
 import { usePinAuthStore, useAuthStore } from '../stores';
+import { navigationRef } from '../navigation/navigationRef';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'PinVerification'>;
 
@@ -98,12 +99,18 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
   }, []);
 
   // Prevent navigation back gesture on iOS/Android
+  // But allow navigation if PIN is verified
   useFocusEffect(
     useCallback(() => {
       const onBeforeRemove = (e: any) => {
-        // Always prevent navigation away from this screen
-        // The only way to leave is through successful PIN verification
-        // which updates the store and causes RootNavigator to re-render
+        // Check if PIN is verified - if so, allow navigation
+        const currentIsPinVerified = usePinAuthStore.getState().isPinVerified;
+        if (currentIsPinVerified) {
+          // PIN is verified, allow navigation
+          return;
+        }
+        
+        // PIN not verified - prevent navigation
         e.preventDefault();
         Alert.alert(
           t('pin.verification.pinRequired'),
@@ -115,7 +122,7 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
       const unsubscribe = navigation.addListener('beforeRemove', onBeforeRemove);
 
       return unsubscribe;
-    }, [navigation])
+    }, [navigation, t])
   );
 
   const checkBiometricStatus = async (): Promise<boolean> => {
@@ -238,8 +245,19 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
       setErrorCount(0);
       setDisplayErrorCount(0);
       // Update the store directly to ensure state change triggers re-render
-      // The RootNavigator will automatically navigate when isPinVerified becomes true
       setPinVerified(true);
+      
+      // Force navigation by using navigationRef directly
+      // This ensures navigation happens even if beforeRemove listener is still active
+      // Small delay to ensure state is updated and beforeRemove listener can check the new state
+      setTimeout(() => {
+        if (navigationRef.isReady()) {
+          navigationRef.current?.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        }
+      }, 150);
     } catch (error) {
       console.error('Error in handleVerificationSuccess:', error);
       Alert.alert(t('common.error'), t('pin.verification.verificationFailedMessage'));

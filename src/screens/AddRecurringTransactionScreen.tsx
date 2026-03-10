@@ -52,7 +52,6 @@ const FREQUENCY_OPTIONS: { label: string; value: RecurrenceFrequency }[] = [
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const AddRecurringTransactionScreen: React.FC = () => {
-  console.log('AddRecurringTransactionScreen rendered');
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
@@ -582,7 +581,6 @@ const AddRecurringTransactionScreen: React.FC = () => {
           if (transaction) {
             try {
               await scheduleRecurringTransactionNotification(transaction);
-              console.log(`Successfully scheduled notification for transaction ${transactionId}`);
               break;
             } catch (error) {
               console.error('Error scheduling notification:', error);
@@ -598,7 +596,6 @@ const AddRecurringTransactionScreen: React.FC = () => {
             const fetched = await fetchRecurringTransactionById(transactionId);
             if (fetched) {
               await scheduleRecurringTransactionNotification(fetched);
-              console.log(`Successfully scheduled notification (fetched) for transaction ${transactionId}`);
             } else {
               console.warn(`Could not fetch transaction ${transactionId} to schedule notification`);
             }

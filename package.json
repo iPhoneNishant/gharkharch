@@ -9,7 +9,9 @@
     "web": "expo start --web",
     "build:android:dev": "npx eas-cli build --local --platform android --profile development",
     "build:android:apk": "npx eas-cli build --local --platform android --profile preview",
+    "build:android:apk:gradle": "cd android && ./gradlew clean assembleRelease && echo 'APK location: android/app/build/outputs/apk/release/app-release.apk'",
     "build:android:aab": "npx eas-cli build --local --platform android --profile production",
+    "build:android:aab:gradle": "cd android && ./gradlew clean bundleRelease && echo 'AAB location: android/app/build/outputs/bundle/release/app-release.aab'",
     "firebase": "firebase",
     "firestore:deploy": "firebase deploy --only firestore",
     "firestore:setup": "firebase login && firebase use --add && firebase deploy --only firestore"
@@ -25,6 +27,7 @@
     "expo": "~54.0.32",
     "expo-build-properties": "~1.0.10",
     "expo-crypto": "^15.0.8",
+    "expo-dev-client": "~6.0.20",
     "expo-local-authentication": "^17.0.8",
     "expo-localization": "^17.0.8",
     "expo-notifications": "^0.32.16",

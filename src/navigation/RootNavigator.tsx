@@ -6,7 +6,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View, StyleSheet, AppState, AppStateStatus, TouchableOpacity, Text } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, AppState, AppStateStatus, TouchableOpacity, Text, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useAuthStore, usePinAuthStore, useRecurringTransactionStore, useNetworkStore } from '../stores';
@@ -35,7 +36,9 @@ import AddRecurringTransactionScreen from '../screens/AddRecurringTransactionScr
 import RecurringTransactionsScreen from '../screens/RecurringTransactionsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SubCategoryTransactionsScreen from '../screens/SubCategoryTransactionsScreen';
-import SmsImportScreen from '../screens/SmsImportScreen';
+import BankSmsScreen from '../screens/BankSmsScreen';
+import AccountsScreen from '../screens/AccountsScreen';
+import SmsAccountMappingScreen from '../screens/SmsAccountMappingScreen';
 import UserGuideScreen from '../screens/UserGuideScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
@@ -43,7 +46,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, isLoading, initialize, signOut, user } = useAuthStore();
+  const { isAuthenticated, isLoading, initialize, signOut, user, isAuthenticatedInThisSession } = useAuthStore();
   // Use individual selectors for values that trigger re-renders
   const isPinVerified = usePinAuthStore(state => state.isPinVerified);
   const isPinSetup = usePinAuthStore(state => state.isPinSetup);
@@ -52,7 +55,7 @@ const RootNavigator: React.FC = () => {
   const { subscribeToRecurringTransactions } = useRecurringTransactionStore();
   const [isCheckingPin, setIsCheckingPin] = useState(false);
   const hasCheckedPinRef = useRef(false);
-  const previousAuthRef = useRef(false);
+  const previousAuthRef = useRef<boolean | null>(null); // null = initial state, true/false = previous auth state
   const hasSubscribedToRecurringTransactionsRef = useRef(false);
 
   // Network state
@@ -129,13 +132,20 @@ const RootNavigator: React.FC = () => {
     stopSmsAutoDetect();
   }, [isAuthenticated, isPinVerified]);
 
-  // Reset PIN check ref when authentication state changes from false to true
+  // Track if user authenticated in this session
   useEffect(() => {
-    if (isAuthenticated && !previousAuthRef.current) {
-      // User just logged in - reset PIN check ref to allow new PIN setup
+    if (previousAuthRef.current === null) {
+      previousAuthRef.current = isAuthenticated;
+    } else if (isAuthenticated && !previousAuthRef.current) {
       hasCheckedPinRef.current = false;
+      previousAuthRef.current = isAuthenticated;
+    } else if (!isAuthenticated) {
+      // User logged out - reset flag
+      previousAuthRef.current = isAuthenticated;
+    } else {
+      // Auth state unchanged
+      previousAuthRef.current = isAuthenticated;
     }
-    previousAuthRef.current = isAuthenticated;
   }, [isAuthenticated]);
 
   // Check PIN setup when authenticated (only once per session)
@@ -149,17 +159,22 @@ const RootNavigator: React.FC = () => {
     }
   }, [isAuthenticated, isPinSetup, checkPinSetup]);
 
-  // Force logout if PIN is not set up on app launch (not during fresh login)
+  // Force logout if PIN is not set up and user was NOT authenticated in this session
   useEffect(() => {
-    // Only force logout if user was already authenticated (app launch)
-    // Don't force logout during fresh login (let them go to PIN setup)
-    if (isAuthenticated && !previousAuthRef.current && isPinSetup === false) {
-      // User was already authenticated on app launch but PIN is not set up
+    // If PIN setup screen would show but user was NOT authenticated in this session, sign out
+    // This ensures PIN setup only appears after login/signup, not on app launch
+    if (
+      isAuthenticated && 
+      !isAuthenticatedInThisSession && 
+      isPinSetup === false && 
+      !isCheckingPin
+    ) {
+      // User was already authenticated on app launch but PIN is not set up - log them out
       signOut().catch(error => {
         console.error('Error during forced logout on app launch:', error);
       });
     }
-  }, [isAuthenticated, isPinSetup, signOut]);
+  }, [isAuthenticated, isAuthenticatedInThisSession, isPinSetup, isCheckingPin, signOut]);
 
   // Subscribe to recurring transactions when user is authenticated
   useEffect(() => {
@@ -167,7 +182,6 @@ const RootNavigator: React.FC = () => {
 
     if (isAuthenticated && user?.id && !hasSubscribedToRecurringTransactionsRef.current) {
       hasSubscribedToRecurringTransactionsRef.current = true;
-      console.log('Subscribing to recurring transactions for user:', user.id);
       unsubscribeRecurringTransactions = subscribeToRecurringTransactions(user.id);
     }
 
@@ -190,15 +204,35 @@ const RootNavigator: React.FC = () => {
   const currentRoute = useMemo((): keyof RootStackParamList => {
     if (!isLanguageSelected) return 'LanguageSelection';
     if (!isAuthenticated) return 'Auth';
-    if (isPinSetup === false) return 'PinSetup';
+    
+    // If PIN setup is still being checked, show loading (handled above)
+    if (isPinSetup === null) {
+      // Only show PinSetup if authenticated in this session, otherwise show Auth
+      return isAuthenticatedInThisSession ? 'PinSetup' : 'Auth';
+    }
+    
+    // If PIN not setup:
+    // - If authenticated in this session: show PIN setup screen (from login/signup)
+    // - If NOT authenticated in this session (app launch): show Auth (will logout)
+    if (isPinSetup === false) {
+      return isAuthenticatedInThisSession ? 'PinSetup' : 'Auth';
+    }
+    
+    // PIN is setup - check if verified
     if (!isPinVerified) return 'PinVerification';
     return 'Main';
-  }, [isLanguageSelected, isAuthenticated, isPinSetup, isPinVerified]);
+  }, [isLanguageSelected, isAuthenticated, isPinSetup, isPinVerified, isAuthenticatedInThisSession]);
 
   // Memoize callbacks to prevent re-renders
+  // Handle PIN setup completion - automatically verify PIN so user goes directly to app
   const handlePinSetupComplete = useCallback(() => {
-    checkPinSetup();
+    // After PIN setup, automatically verify PIN so user goes directly to app
+    // This keeps authentication and PIN setup in one session
     setPinVerified(true);
+    // Check PIN setup state after a brief delay to ensure it's updated
+    setTimeout(() => {
+      checkPinSetup();
+    }, 100);
   }, [checkPinSetup, setPinVerified]);
 
   // Memoize initial params
@@ -206,6 +240,16 @@ const RootNavigator: React.FC = () => {
     () => ({ onComplete: handlePinSetupComplete }),
     [handlePinSetupComplete]
   );
+
+  // Navigate to the correct route when it changes
+  useEffect(() => {
+    if (navigationRef.isReady() && navigationRef.current?.getCurrentRoute()?.name !== currentRoute) {
+      navigationRef.current?.reset({
+        index: 0,
+        routes: [{ name: currentRoute }],
+      });
+    }
+  }, [currentRoute]);
 
   // Check for network connectivity
   // Only show offline screen if we definitely know we are offline (not null)
@@ -226,7 +270,6 @@ const RootNavigator: React.FC = () => {
   return (
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
-        key={currentRoute}
         initialRouteName={currentRoute}
         screenOptions={{
           headerShown: false,
@@ -241,43 +284,41 @@ const RootNavigator: React.FC = () => {
           contentStyle: { backgroundColor: colors.background.primary },
         }}
       >
-        {!isLanguageSelected ? (
+        {currentRoute === 'LanguageSelection' ? (
           <Stack.Screen 
             name="LanguageSelection" 
             component={LanguageSelectionScreen}
             options={{ 
               animationTypeForReplace: 'pop',
-              gestureEnabled: false, // Disable swipe back gesture
-              headerBackVisible: false, // Hide back button
+              gestureEnabled: false,
+              headerBackVisible: false,
             }}
           />
-        ) : !isAuthenticated ? (
+        ) : currentRoute === 'Auth' ? (
           <Stack.Screen 
             name="Auth" 
             component={AuthScreen}
             options={{ animationTypeForReplace: 'pop' }}
           />
-        ) : isPinSetup === false ? (
-          // PIN not setup - show PIN setup screen
+        ) : currentRoute === 'PinSetup' ? (
           <Stack.Screen 
             name="PinSetup" 
             component={PinSetupScreen}
             options={{ 
               animationTypeForReplace: 'pop',
-              gestureEnabled: false, // Disable swipe back gesture
-              headerBackVisible: false, // Hide back button
+              gestureEnabled: false,
+              headerBackVisible: false,
             }}
             initialParams={pinSetupParams}
           />
-        ) : !isPinVerified ? (
-          // PIN setup but not verified - show PIN verification screen
+        ) : currentRoute === 'PinVerification' ? (
           <Stack.Screen 
             name="PinVerification" 
             component={PinVerificationScreen}
             options={{ 
               animationTypeForReplace: 'pop', 
-              gestureEnabled: false, // Disable swipe back gesture
-              headerBackVisible: false, // Hide back button
+              gestureEnabled: false,
+              headerBackVisible: false,
             }}
           />
         ) : (
@@ -287,21 +328,11 @@ const RootNavigator: React.FC = () => {
               name="AddTransaction" 
               component={AddTransactionScreen}
               options={({ route, navigation }) => ({
-                presentation: 'modal',
                 headerShown: true,
+                headerBackVisible: false,
                 headerTitle: (route.params as any)?.editTransactionId ? 'Edit Transaction' : 'Add Transaction',
+                headerTitleAlign: 'center',
                 headerTintColor: colors.primary[500],
-                headerRight: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('SmsImport', { returnTo: 'AddTransaction' })}
-                    style={{ marginRight: 16, padding: 4 }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Text style={{ fontSize: 12, fontWeight: typography.fontWeight.semiBold, color: colors.primary[500] }}>
-                      {t('addTransaction.importFromSms')}
-                    </Text>
-                  </TouchableOpacity>
-                ),
               })}
             />
             <Stack.Screen 
@@ -455,13 +486,33 @@ const RootNavigator: React.FC = () => {
               }}
             />
             <Stack.Screen
-              name="SmsImport"
-              component={SmsImportScreen}
+              name="BankSms"
+              component={BankSmsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Import from SMS',
+                headerTitle: 'Bank SMS',
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen
+              name="Accounts"
+              component={AccountsScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Accounts',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: t('common.back'),
+              }}
+            />
+            <Stack.Screen
+              name="SmsAccountMapping"
+              component={SmsAccountMappingScreen}
+              options={{
+                headerShown: true,
+                headerTitle: t('more.smsAccountMapping'),
+                headerTintColor: colors.primary[500],
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 

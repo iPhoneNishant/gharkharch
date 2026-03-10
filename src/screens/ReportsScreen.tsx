@@ -1021,7 +1021,12 @@ const ReportsScreen: React.FC = () => {
                   const isIncome = creditAccount?.accountType === 'income';
                   
                   return (
-                    <View key={txn.id} style={styles.transactionItem}>
+                    <TouchableOpacity
+                      key={txn.id}
+                      style={styles.transactionItem}
+                      onPress={() => navigation.navigate('TransactionDetail', { transactionId: txn.id })}
+                      activeOpacity={0.7}
+                    >
                       <View style={styles.transactionLeft}>
                         <View style={[
                           styles.transactionIcon,
@@ -1061,7 +1066,7 @@ const ReportsScreen: React.FC = () => {
                           </Text>
                         )}
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>

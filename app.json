@@ -18,7 +18,7 @@
       "bundleIdentifier": "com.anonymous.dailymunim"
     },
     "android": {
-      "versionCode": 4,
+      "versionCode": 6,
       "version": "1.0.0",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -30,7 +30,8 @@
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
-        "com.google.android.gms.permission.AD_ID"
+        "com.google.android.gms.permission.AD_ID",
+        "android.permission.READ_SMS"
       ]
     },
     "web": {
@@ -48,7 +49,8 @@
         "expo-build-properties",
         {
           "android": {
-            "enableProguardInReleaseBuilds": true
+            "enableProguardInReleaseBuilds": true,
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ]

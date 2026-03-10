@@ -14,14 +14,15 @@ import {
   Alert,
   Switch,
   Modal,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 import { useAuthStore } from '../stores';
 import { RootStackParamList } from '../types';
-import { colors, spacing, setFontScale, getFontScale, typography } from '../config/theme';
+import { colors, spacing, setFontScale, getFontScale, typography, borderRadius } from '../config/theme';
 import { getSettingsScreenStyles } from '../styles/screens/SettingsScreen.styles';
 import {
   isPinSetup,
@@ -31,8 +32,11 @@ import {
   enableBiometric,
   disableBiometric,
 } from '../services/pinAuthService';
+import { checkSmsPermission, requestSmsPermission, openPermissionSettings } from '../services/smsService';
+import { loadSmsSettings, saveSmsSettings, SmsSettings } from '../services/smsSettingsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FONT_SCALE_OPTIONS } from '../config/constants';
+import { Platform, TextInput } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -54,12 +58,76 @@ const SettingsScreen: React.FC = () => {
   const [showFontSheet, setShowFontSheet] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<string | null>(null);
   const [pendingFontScale, setPendingFontScale] = useState<number | null>(null);
+  const [smsPermissionGranted, setSmsPermissionGranted] = useState<boolean | null>(null);
+  const [isCheckingSmsPermission, setIsCheckingSmsPermission] = useState(false);
+  const [smsSettings, setSmsSettings] = useState<SmsSettings>({ readCount: 100, dateGapDays: 30 });
+  const [showSmsReadCountModal, setShowSmsReadCountModal] = useState(false);
+  const [showSmsDateGapModal, setShowSmsDateGapModal] = useState(false);
+  const [tempReadCount, setTempReadCount] = useState<string>('100');
+  const [tempDateGap, setTempDateGap] = useState<string>('30');
 
 
   useEffect(() => {
     checkPinStatus();
     loadFontScale();
+    loadSmsSettingsData();
+    // Always check SMS permission on Android
+    if (Platform.OS === 'android') {
+      checkSmsPermissionStatus();
+    } else {
+    }
   }, []);
+
+  const loadSmsSettingsData = async () => {
+    try {
+      const settings = await loadSmsSettings();
+      setSmsSettings(settings);
+      setTempReadCount(settings.readCount.toString());
+      setTempDateGap(settings.dateGapDays.toString());
+    } catch (error) {
+      console.error('Error loading SMS settings:', error);
+    }
+  };
+
+  const handleSaveSmsReadCount = async () => {
+    const count = parseInt(tempReadCount, 10);
+    if (isNaN(count) || count < 1 || count > 1000) {
+      Alert.alert(t('settings.invalidValue'), t('settings.smsReadCountInvalid'));
+      return;
+    }
+    try {
+      await saveSmsSettings({ readCount: count });
+      setSmsSettings(prev => ({ ...prev, readCount: count }));
+      setShowSmsReadCountModal(false);
+    } catch (error) {
+      Alert.alert(t('common.error'), t('settings.smsReadCountSaveError'));
+    }
+  };
+
+  const handleSaveSmsDateGap = async () => {
+    const days = parseInt(tempDateGap, 10);
+    if (isNaN(days) || days < 1 || days > 365) {
+      Alert.alert(t('settings.invalidValue'), t('settings.smsDateGapInvalid'));
+      return;
+    }
+    try {
+      await saveSmsSettings({ dateGapDays: days });
+      setSmsSettings(prev => ({ ...prev, dateGapDays: days }));
+      setShowSmsDateGapModal(false);
+    } catch (error) {
+      Alert.alert(t('common.error'), t('settings.smsDateGapSaveError'));
+    }
+  };
+
+  // Refresh SMS permission status when screen comes into focus
+  // (e.g., when user returns from app settings)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (Platform.OS === 'android') {
+        checkSmsPermissionStatus();
+      }
+    }, [])
+  );
 
   const checkPinStatus = async () => {
     setIsLoadingPin(true);
@@ -100,6 +168,77 @@ const SettingsScreen: React.FC = () => {
     } catch {}
   };
 
+  const checkSmsPermissionStatus = async () => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+    setIsCheckingSmsPermission(true);
+    try {
+      const granted = await checkSmsPermission();
+      setSmsPermissionGranted(granted);
+    } catch (error) {
+      console.error('Error checking SMS permission:', error);
+      setSmsPermissionGranted(false);
+    } finally {
+      setIsCheckingSmsPermission(false);
+    }
+  };
+
+  const openAppPermissionSettings = () => {
+    openPermissionSettings();
+  };
+
+  const handleRequestSmsPermission = async () => {
+    if (Platform.OS !== 'android') {
+      Alert.alert(t('settings.smsPermissionNotAvailable'));
+      return;
+    }
+
+    try {
+      setIsCheckingSmsPermission(true);
+      const granted = await requestSmsPermission();
+      
+      // Refresh permission status after request
+      await checkSmsPermissionStatus();
+      
+      if (granted) {
+        Alert.alert(
+          t('settings.smsPermissionGranted'),
+          t('settings.smsPermissionGrantedMessage')
+        );
+      } else {
+        Alert.alert(
+          t('settings.smsPermissionDenied'),
+          t('settings.smsPermissionDeniedMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('settings.openSettings'),
+              onPress: openAppPermissionSettings,
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error requesting SMS permission:', error);
+      Alert.alert(
+        t('settings.error'),
+        error instanceof Error ? error.message : t('settings.smsPermissionError'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('settings.openSettings'),
+            onPress: openAppPermissionSettings,
+          },
+        ]
+      );
+      // Refresh status even on error
+      await checkSmsPermissionStatus();
+    } finally {
+      setIsCheckingSmsPermission(false);
+    }
+  };
+
   const handleFontSizeChange = () => {
     setPendingFontScale(fontScale);
     setShowFontSheet(true);
@@ -107,18 +246,18 @@ const SettingsScreen: React.FC = () => {
 
   const handleSignOut = () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('settings.signOut'),
+      t('settings.signOutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: t('settings.signOut'),
           style: 'destructive',
           onPress: async () => {
             try {
               await signOut();
             } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
+              Alert.alert(t('common.error'), t('settings.signOutError'));
             }
           },
         },
@@ -128,19 +267,19 @@ const SettingsScreen: React.FC = () => {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. All your accounts, transactions, and data will be permanently deleted.\n\nAre you sure you want to delete your account?',
+      t('settings.deleteAccount'),
+      t('settings.deleteAccountConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete Account',
+          text: t('settings.deleteAccount'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteAccount();
               // Navigation will be handled by auth state change
             } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete account');
+              Alert.alert(t('common.error'), error.message || t('settings.deleteAccountError'));
             }
           },
         },
@@ -152,7 +291,7 @@ const SettingsScreen: React.FC = () => {
     navigation.navigate('PinChange', {
       onComplete: () => {
         checkPinStatus();
-        Alert.alert('Success', 'PIN has been updated successfully.');
+        Alert.alert(t('common.success'), t('settings.pinUpdatedSuccess'));
       },
       allowBack: true, // Allow back when accessed from Settings
     });
@@ -178,7 +317,7 @@ const SettingsScreen: React.FC = () => {
       }
       setBiometricEnabled(value);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update biometric settings.');
+      Alert.alert(t('common.error'), error.message || t('settings.biometricUpdateError'));
       // Revert state
       setBiometricEnabled(!value);
     }
@@ -188,7 +327,8 @@ const SettingsScreen: React.FC = () => {
     <>
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + spacing.lg }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+      showsVerticalScrollIndicator={true}
     >
       {/* User Profile Card */}
       <View style={styles.profileCard}>
@@ -200,7 +340,7 @@ const SettingsScreen: React.FC = () => {
           </Text>
         </View>
         <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{user?.displayName ?? 'User'}</Text>
+          <Text style={styles.profileName}>{user?.displayName ?? t('settings.user')}</Text>
           <Text style={styles.profileEmail}>{user?.email ?? ''}</Text>
         </View>
       </View>
@@ -247,7 +387,7 @@ const SettingsScreen: React.FC = () => {
             <Text style={styles.settingLabel}>{t('settings.language')} </Text>
             <View style={styles.settingValue}>
               <Text style={styles.settingValueText}>
-                {i18n.language === 'hi' ? 'हिंदी' : 'English'}
+                {i18n.language === 'hi' ? 'हिंदी ' : 'English '}
               </Text>
             </View>
           </TouchableOpacity>
@@ -255,7 +395,7 @@ const SettingsScreen: React.FC = () => {
           <TouchableOpacity style={styles.settingItem} onPress={handleFontSizeChange}>
             <Text style={styles.settingLabel}>{t('settings.fontSize')} </Text>
             <View style={styles.settingValue}>
-              <Text style={styles.settingValueText}>AAA</Text>
+              <Text style={styles.settingValueText}>AAA </Text>
             </View>
           </TouchableOpacity>
 
@@ -265,6 +405,82 @@ const SettingsScreen: React.FC = () => {
               <Text style={styles.settingValueText}>{user?.currency ?? 'INR'} </Text>
             </View>
           </TouchableOpacity>
+
+          {/* SMS Permission - Android only */}
+          {Platform.OS === 'android' && (
+            <>
+              <View style={styles.settingItem}>
+                <View style={{ flex: 1, marginRight: spacing.sm }}>
+                  <Text style={styles.settingLabel}>{t('settings.smsPermission')}</Text>
+                  <Text style={[styles.settingValueText, { fontSize: typography.fontSize.xs, color: colors.text.secondary, marginTop: spacing.xs }]}>
+                    {isCheckingSmsPermission
+                      ? t('settings.checking')
+                      : smsPermissionGranted === null
+                      ? t('settings.smsPermissionNotGranted')
+                      : smsPermissionGranted
+                      ? t('settings.smsPermissionGranted')
+                      : t('settings.smsPermissionNotGranted')}
+                  </Text>
+                </View>
+                {(smsPermissionGranted === false || smsPermissionGranted === null) && (
+                  <TouchableOpacity
+                    onPress={handleRequestSmsPermission}
+                    disabled={isCheckingSmsPermission}
+                    style={{
+                      backgroundColor: isCheckingSmsPermission ? colors.neutral[300] : colors.primary[500],
+                      paddingHorizontal: spacing.md,
+                      paddingVertical: spacing.xs,
+                      borderRadius: 8,
+                      minWidth: 80,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: colors.neutral[0], fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semiBold }}>
+                      {t('settings.requestPermission')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* SMS Read Count */}
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() => {
+                  setTempReadCount(smsSettings.readCount.toString());
+                  setShowSmsReadCountModal(true);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.settingLabel}>{t('settings.smsReadCount')}</Text>
+                  <Text style={[styles.settingValueText, { fontSize: typography.fontSize.xs, color: colors.text.secondary, marginTop: spacing.xs }]}>
+                    {t('settings.smsReadCountDescription')}
+                  </Text>
+                </View>
+                <View style={styles.settingValue}>
+                  <Text style={styles.settingValueText}>{smsSettings.readCount}</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* SMS Date Gap */}
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() => {
+                  setTempDateGap(smsSettings.dateGapDays.toString());
+                  setShowSmsDateGapModal(true);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.settingLabel}>{t('settings.smsDateGap')}</Text>
+                  <Text style={[styles.settingValueText, { fontSize: typography.fontSize.xs, color: colors.text.secondary, marginTop: spacing.xs }]}>
+                    {t('settings.smsDateGapDescription')}
+                  </Text>
+                </View>
+                <View style={styles.settingValue}>
+                  <Text style={styles.settingValueText}>{smsSettings.dateGapDays} {t('settings.days')} </Text>
+                </View>
+              </TouchableOpacity>
+            </>
+          )}
 
           {/* TODO: Implement currency selection */}
           {/* TODO: Implement theme selection (dark/light mode) */}
@@ -293,7 +509,7 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.settingsList}>
           <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>{t('settings.version')} </Text>
-            <Text style={styles.settingValueText}>1.0.0</Text>
+            <Text style={styles.settingValueText}>1.0.0 </Text>
           </View>
 
           <TouchableOpacity
@@ -371,7 +587,7 @@ const SettingsScreen: React.FC = () => {
               setPendingLanguage('en');
             }}
           >
-            <Text style={styles.sheetOptionText}>English</Text>
+            <Text style={styles.sheetOptionText}>{t('languages.en')}</Text>
             {pendingLanguage === 'en' && <Text style={styles.checkmark}>✓</Text>}
           </TouchableOpacity>
           <TouchableOpacity
@@ -442,6 +658,104 @@ const SettingsScreen: React.FC = () => {
               {Math.abs(((pendingFontScale ?? fontScale)) - val) < 0.001 && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
+        </View>
+      </View>
+    </Modal>
+
+    {/* SMS Read Count Modal */}
+    <Modal
+      visible={showSmsReadCountModal}
+      animationType="fade"
+      transparent
+      onRequestClose={() => setShowSmsReadCountModal(false)}
+    >
+      <View style={styles.bottomSheetBackdrop}>
+        <TouchableOpacity
+          style={styles.bottomSheetBackdropTouchable}
+          activeOpacity={1}
+          onPress={() => setShowSmsReadCountModal(false)}
+        />
+        <View style={[styles.bottomSheet, { paddingBottom: insets.bottom }]}>
+          <View style={styles.bottomSheetHandle} />
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowSmsReadCountModal(false)}>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{t('settings.smsReadCount')}</Text>
+            <TouchableOpacity onPress={handleSaveSmsReadCount}>
+              <Text style={styles.modalDone}>{t('common.save')}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ padding: spacing.base }}>
+            <Text style={[styles.settingValueText, { marginBottom: spacing.sm }]}>
+              {t('settings.smsReadCountDescription')}
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border.light,
+                borderRadius: borderRadius.md,
+                padding: spacing.sm,
+                fontSize: typography.fontSize.base,
+                color: colors.text.primary,
+                backgroundColor: colors.background.elevated,
+              }}
+              value={tempReadCount}
+              onChangeText={setTempReadCount}
+              keyboardType="numeric"
+              placeholder={t('settings.smsReadCountPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+
+    {/* SMS Date Gap Modal */}
+    <Modal
+      visible={showSmsDateGapModal}
+      animationType="fade"
+      transparent
+      onRequestClose={() => setShowSmsDateGapModal(false)}
+    >
+      <View style={styles.bottomSheetBackdrop}>
+        <TouchableOpacity
+          style={styles.bottomSheetBackdropTouchable}
+          activeOpacity={1}
+          onPress={() => setShowSmsDateGapModal(false)}
+        />
+        <View style={[styles.bottomSheet, { paddingBottom: insets.bottom }]}>
+          <View style={styles.bottomSheetHandle} />
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowSmsDateGapModal(false)}>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{t('settings.smsDateGap')}</Text>
+            <TouchableOpacity onPress={handleSaveSmsDateGap}>
+              <Text style={styles.modalDone}>{t('common.save')}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ padding: spacing.base }}>
+            <Text style={[styles.settingValueText, { marginBottom: spacing.sm }]}>
+              {t('settings.smsDateGapModalDescription')}
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border.light,
+                borderRadius: borderRadius.md,
+                padding: spacing.sm,
+                fontSize: typography.fontSize.base,
+                color: colors.text.primary,
+                backgroundColor: colors.background.elevated,
+              }}
+              value={tempDateGap}
+              onChangeText={setTempDateGap}
+              keyboardType="numeric"
+              placeholder={t('settings.smsDateGapPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+            />
+          </View>
         </View>
       </View>
     </Modal>

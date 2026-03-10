@@ -94,10 +94,10 @@ const MoreScreen: React.FC = () => {
       onPress: () => navigation.navigate('RecurringTransactions'),
     },
     {
-      id: 'sms-import',
-      title: t('more.smsImport'),
-      icon: 'chatbox-ellipses-outline' as const,
-      onPress: () => navigation.navigate('SmsImport'),
+      id: 'sms-account-mapping',
+      title: t('more.smsAccountMapping'),
+      icon: 'link-outline' as const,
+      onPress: () => navigation.navigate('SmsAccountMapping'),
     },
     {
       id: 'user-guide',

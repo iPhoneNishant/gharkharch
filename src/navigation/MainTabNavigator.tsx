@@ -17,10 +17,11 @@ import { useTranslation } from 'react-i18next';
 // Screens
 import DashboardScreen from '../screens/DashboardScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
-import AccountsScreen from '../screens/AccountsScreen';
+import BankSmsScreen from '../screens/BankSmsScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import ReportsListScreen from '../screens/ReportsListScreen';
 import MoreScreen from '../screens/MoreScreen';
+
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -32,7 +33,7 @@ const TabIcon: React.FC<{ name: string; focused: boolean }> = ({ name, focused }
   const icons: Record<string, string> = {
     Dashboard: '◉',
     Transactions: '⇄',
-    Accounts: '☰',
+    BankSms: '💬',
     AddTransaction: '+',
     Reports: '📊',
     More: '⋯',
@@ -94,6 +95,13 @@ const MainTabNavigator: React.FC = () => {
             if (route.name === 'AddTransaction') {
               return null;
             }
+            // Use localized labels
+            const labels: Record<string, string> = {
+              Dashboard: 'Dashboard',
+              BankSms: t('more.bankSms'),
+              Reports: 'Reports',
+              More: t('more.title'),
+            };
             return (
               <Text
                 allowFontScaling={false}
@@ -103,7 +111,7 @@ const MainTabNavigator: React.FC = () => {
                   color,
                 }}
               >
-                {route.name}
+                {labels[route.name] || route.name}
               </Text>
             );
           },
@@ -139,12 +147,11 @@ const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen 
-        name="Accounts" 
-        component={AccountsScreen}
+        name="BankSms" 
+        component={BankSmsScreen}
         options={{
-          headerTitle: 'Accounts',
+          headerTitle: t('more.bankSms'),
           headerTitleAlign: 'center',
-
         }}
       />
       <Tab.Screen 
@@ -153,25 +160,7 @@ const MainTabNavigator: React.FC = () => {
         options={{
           headerTitle: 'Add Transaction',
           tabBarLabel: '',
-          headerTitleAlign: 'center',
-          headerRight: () => {
-            const handleSmsImport = () => {
-              if (navigationRef.isReady()) {
-                (navigationRef as any).navigate('SmsImport', { returnTo: 'AddTransaction' });
-              }
-            };
-            return (
-              <TouchableOpacity
-                onPress={handleSmsImport}
-                style={{ marginRight: 16, padding: 4 }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={{ fontSize: 12, fontWeight: typography.fontWeight.semiBold, color: colors.primary[500] }}>
-                  {t('addTransaction.importFromSms')}
-                </Text>
-              </TouchableOpacity>
-            );
-          },
+          headerTitleAlign: 'center'
         }}
       />
       <Tab.Screen 

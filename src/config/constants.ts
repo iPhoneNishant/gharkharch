@@ -231,6 +231,7 @@ export const COLLECTIONS = {
   USERS: 'users',
   ACCOUNTS: 'accounts',
   TRANSACTIONS: 'transactions',
+  SMS_ACCOUNT_MAPPINGS: 'sms_account_mappings',
 } as const;
 
 /**

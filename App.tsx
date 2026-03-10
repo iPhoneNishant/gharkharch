@@ -20,9 +20,9 @@ import { useAuthStore } from './src/stores';
 import { useRecurringTransactionStore } from './src/stores/recurringTransactionStore';
 import { initializeFontScale } from './src/config/theme';
 import { colors } from './src/config/theme';
+import { cleanupProcessedSms } from './src/services/smsProcessedStorage';
 
 export default function App() {
-  console.log('🚀 App: Component rendered');
   const { isAuthenticated } = useAuthStore();
   const { recurringTransactions, isLoading } = useRecurringTransactionStore();
   const hasInitializedNotificationsRef = useRef(false);
@@ -44,6 +44,19 @@ export default function App() {
     initFontScale();
   }, []);
 
+  // Clean up old processed SMS entries on app startup
+  useEffect(() => {
+    const cleanup = async () => {
+      try {
+        await cleanupProcessedSms();
+      } catch (error) {
+        console.error('Error cleaning up processed SMS on app startup:', error);
+        // Non-critical, don't block app startup
+      }
+    };
+    cleanup();
+  }, []);
+
   useEffect(() => {
     // Initialize notifications for recurring transactions (one-time setup)
     if (!hasInitializedNotificationsRef.current) {
@@ -53,7 +66,6 @@ export default function App() {
       setupNotificationChannels();
 
       // NUCLEAR OPTION: Immediately cancel ALL existing notifications to start completely fresh
-      console.log('🚨 App starting - nuclear cleanup of all notifications');
       cancelAllScheduledNotifications();
     }
   }, []);
@@ -71,9 +83,7 @@ export default function App() {
             const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
 
             if (activeTransactions.length > 0) {
-              console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions on app launch`);
               await rescheduleAllRecurringTransactionNotifications(activeTransactions, true);
-              console.log('Successfully scheduled recurring transaction notifications on app launch');
             }
           } catch (error) {
             console.error('Error scheduling recurring transaction notifications on app launch:', error);
@@ -101,9 +111,7 @@ export default function App() {
           try {
             const activeTransactions = recurringTransactions.filter(rt => rt.isActive);
             if (activeTransactions.length > 0) {
-              console.log(`Scheduling notifications for ${activeTransactions.length} active recurring transactions (data ready)`);
               await rescheduleAllRecurringTransactionNotifications(activeTransactions, true);
-              console.log('Successfully scheduled recurring transaction notifications');
             }
           } catch (error) {
             console.error('Error scheduling recurring transaction notifications when data became ready:', error);

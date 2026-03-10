@@ -138,7 +138,6 @@ const DashboardScreen: React.FC = () => {
 
   const handleAddRecurringTransaction = () => {
     setShowAddMenu(false);
-    console.log('Attempting to navigate to AddRecurringTransaction');
     navigation.navigate('AddRecurringTransaction');
   };
 

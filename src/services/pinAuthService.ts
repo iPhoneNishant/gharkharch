@@ -17,11 +17,25 @@ const PIN_SETUP_KEY = 'pin_setup_complete';
  * In production, consider using a more secure hashing method
  */
 const hashPin = async (pin: string): Promise<string> => {
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    pin,
-    { encoding: Crypto.CryptoEncoding.HEX }
-  );
+  try {
+    return await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      pin,
+      { encoding: Crypto.CryptoEncoding.HEX }
+    );
+  } catch (error) {
+    // Fallback: if digestStringAsync fails, use digestAsync with Uint8Array
+    console.warn('digestStringAsync failed, using digestAsync fallback:', error);
+    const data = new TextEncoder().encode(pin);
+    const hash = await Crypto.digestAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      data
+    );
+    // Convert Uint8Array to hex string
+    return Array.from(hash)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
 };
 
 /**
@@ -234,14 +248,22 @@ export const authenticateWithBiometric = async (): Promise<boolean> => {
  */
 export const clearPinAuth = async (): Promise<void> => {
   try {
-    await Promise.all([
-      SecureStore.deleteItemAsync(PIN_KEY),
-      SecureStore.deleteItemAsync(BIOMETRIC_ENABLED_KEY),
-      SecureStore.deleteItemAsync(PIN_SETUP_KEY),
-    ]);
+    // Delete items individually to handle errors gracefully
+    const deletePromises = [
+      SecureStore.deleteItemAsync(PIN_KEY).catch(err => {
+        console.warn('Error deleting PIN_KEY:', err);
+      }),
+      SecureStore.deleteItemAsync(BIOMETRIC_ENABLED_KEY).catch(err => {
+        console.warn('Error deleting BIOMETRIC_ENABLED_KEY:', err);
+      }),
+      SecureStore.deleteItemAsync(PIN_SETUP_KEY).catch(err => {
+        console.warn('Error deleting PIN_SETUP_KEY:', err);
+      }),
+    ];
+    await Promise.all(deletePromises);
   } catch (error) {
     console.error('Error clearing PIN auth:', error);
-    throw error;
+    // Don't throw - allow logout to continue even if clearing fails
   }
 };
 
@@ -251,12 +273,18 @@ export const clearPinAuth = async (): Promise<void> => {
  */
 export const resetPin = async (): Promise<void> => {
   try {
-    await Promise.all([
-      SecureStore.deleteItemAsync(PIN_KEY),
-      SecureStore.deleteItemAsync(PIN_SETUP_KEY),
-    ]);
+    // Delete items individually to handle errors gracefully
+    const deletePromises = [
+      SecureStore.deleteItemAsync(PIN_KEY).catch(err => {
+        console.warn('Error deleting PIN_KEY:', err);
+      }),
+      SecureStore.deleteItemAsync(PIN_SETUP_KEY).catch(err => {
+        console.warn('Error deleting PIN_SETUP_KEY:', err);
+      }),
+    ];
+    await Promise.all(deletePromises);
   } catch (error) {
     console.error('Error resetting PIN:', error);
-    throw error;
+    // Don't throw - allow reset to continue even if clearing fails
   }
 };

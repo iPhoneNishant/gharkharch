@@ -323,6 +323,6 @@
 
 **Version**: 1.0.0
 **Last Updated**: January 2026
-**Support**: [support@dailymunim.com](mailto:support@dailymunim.com)
+**Support**: [dailymunimforhome@gmail.com](mailto:dailymunimforhome@gmail.com)
 
 *Thank you for choosing DailyMunim for your personal finance management!*

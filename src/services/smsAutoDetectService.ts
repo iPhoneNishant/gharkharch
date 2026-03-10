@@ -5,6 +5,12 @@ import { navigationRef } from '../navigation/navigationRef';
 type SmsEventPayload = { message: string };
 
 const NativeSmsUserConsent = NativeModules.SmsUserConsent;
+
+// Check module availability
+if (Platform.OS === 'android' && !NativeSmsUserConsent) {
+  console.error('SmsUserConsent module NOT available in release build!');
+}
+
 const emitter = NativeSmsUserConsent ? new NativeEventEmitter(NativeSmsUserConsent) : null;
 
 let started = false;

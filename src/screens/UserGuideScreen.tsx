@@ -81,10 +81,6 @@ const UserGuideScreen: React.FC = () => {
         {
           title: t('userGuide.sections.transactionManagement.subsections.addingTransactions.title'),
           content: t('userGuide.sections.transactionManagement.subsections.addingTransactions.content')
-        },
-        {
-          title: t('userGuide.sections.transactionManagement.subsections.smsImport.title'),
-          content: t('userGuide.sections.transactionManagement.subsections.smsImport.content')
         }
       ]
     },

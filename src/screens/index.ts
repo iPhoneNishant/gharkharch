@@ -15,3 +15,4 @@ export { default as AddTransactionScreen } from './AddTransactionScreen';
 export { default as AddAccountScreen } from './AddAccountScreen';
 export { default as AccountDetailScreen } from './AccountDetailScreen';
 export { default as TransactionDetailScreen } from './TransactionDetailScreen';
+export { default as BankSmsScreen } from './BankSmsScreen';

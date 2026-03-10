@@ -34,7 +34,8 @@ type ReportScreen =
   | 'TransactionsMonthReport'
   | 'TransactionsCustomReport'
   | 'MonthToMonthReport'
-  | 'DayToDayReport';
+  | 'DayToDayReport'
+  | 'Accounts';
 
 const ReportsListScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -137,6 +138,14 @@ const ReportsListScreen: React.FC = () => {
       description: t('reportsList.transactionsDescription'),
       icon: '📋',
       variant: 'transactions',
+    },
+    {
+      id: 'accounts',
+      title: t('reportsList.accountsTitle'),
+      description: t('reportsList.accountsDescription'),
+      icon: '☰',
+      screen: 'Accounts',
+      variant: 'single',
     },
     {
       id: 'month-to-month',

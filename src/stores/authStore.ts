@@ -24,7 +24,8 @@ interface AuthState {
   isAuthenticated: boolean;
   error: string | null;
   isFreshLogin: boolean; // Track if this is a fresh login (not auto re-auth)
-  
+  isAuthenticatedInThisSession: boolean; // Track if user authenticated in this session
+
   // Actions
   initialize: () => () => void;
   signIn: (email: string, password: string) => Promise<void>;
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   error: null,
   isFreshLogin: false,
+  isAuthenticatedInThisSession: false,
 
   /**
    * Initialize auth state listener
@@ -83,6 +85,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
             // Reset the flag after processing
             set({ isFreshLogin: false });
+            set({ isAuthenticatedInThisSession: true });
+
+          } else {
+           set({ isAuthenticatedInThisSession: false });
           }
           
           // Fetch user profile from Firestore
@@ -247,7 +253,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         errorMessage = error.message;
       }
       
-      set({ isLoading: false, error: errorMessage, isFreshLogin: false });
+      set({ isLoading: false, error: errorMessage, isFreshLogin: false, isAuthenticatedInThisSession: false });
       throw new Error(errorMessage);
     }
   },

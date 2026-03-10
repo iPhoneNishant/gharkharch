@@ -10,7 +10,7 @@
  * - Returns: Items returned, money refunded to any account
  */
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View,
@@ -29,12 +29,16 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { navigationRef } from '../navigation/navigationRef';
 
 import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
-import { getSmsImportData, clearSmsImportData } from '../stores/smsImportStore';
+import { useSmsAccountMappingStore } from '../stores/smsAccountMappingStore';
+import { isSmsProcessed, markSmsAsProcessed, hashSmsTransaction } from '../services/firebaseService';
+import { firebaseAuth } from '../config/firebase';
 import { RootStackParamList, Account, AccountType } from '../types';
 import { 
   colors, 
@@ -58,14 +62,21 @@ const AddTransactionScreen: React.FC = () => {
   const route = useRoute<RouteType>();
   
   const { user } = useAuthStore();
-  const { accounts } = useAccountStore();
+  const { accounts, getAccountById } = useAccountStore();
   const { createTransaction, updateTransaction, getTransactionById } = useTransactionStore();
+  const { 
+    getMapping, 
+    createMapping, 
+    updateMapping,
+    subscribeToMappings 
+  } = useSmsAccountMappingStore();
 
   const editTransactionId = route.params?.editTransactionId;
   const isEditing = !!editTransactionId;
   const existingTransaction = editTransactionId ? getTransactionById(editTransactionId) : null;
   const prefill = route.params?.prefill;
   const postSaveNavigationTarget = route.params?.postSaveNavigationTarget;
+  const smsBankInfo = route.params?.smsBankInfo;
   const hasAppliedPrefillRef = useRef(false);
   const [fontScaleVersion, setFontScaleVersion] = useState(0);
   React.useEffect(() => {
@@ -76,6 +87,42 @@ const AddTransactionScreen: React.FC = () => {
       unsub();
     };
   }, []);
+
+  // Set header back button when opened from BankSms
+  useLayoutEffect(() => {
+    if (postSaveNavigationTarget === 'BankSms') {
+      navigation.setOptions({
+        headerLeft: () => (
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ 
+              marginLeft: Platform.OS === 'ios' ? 0 : 16, 
+              padding: 8, 
+              minWidth: 44, 
+              minHeight: 44, 
+              justifyContent: 'center', 
+              alignItems: 'flex-start' 
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.primary[500]} />
+          </TouchableOpacity>
+        ),
+      });
+    }
+  }, [navigation, postSaveNavigationTarget]);
+
+  // Subscribe to SMS account mappings when user is available
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!user?.id) return;
+      
+      const unsubscribe = subscribeToMappings(user.id);
+      return () => {
+        unsubscribe();
+      };
+    }, [user?.id, subscribeToMappings])
+  );
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -104,15 +151,6 @@ const AddTransactionScreen: React.FC = () => {
     if (isEditing) return;
     if (!prefill) return;
     
-    // Check if there's a timestamp indicating a new SMS import
-    const smsImportTimestamp = (route.params as any)?._smsImportTimestamp;
-    if (smsImportTimestamp && smsImportTimestamp <= previousPrefillTimestampRef.current) {
-      return; // Already applied this prefill
-    }
-    
-    if (smsImportTimestamp) {
-      previousPrefillTimestampRef.current = smsImportTimestamp;
-    }
 
     if (typeof prefill.amount === 'number' && Number.isFinite(prefill.amount)) {
       setAmount(String(prefill.amount));
@@ -132,60 +170,53 @@ const AddTransactionScreen: React.FC = () => {
     }
   }, [isEditing, prefill, route.params]);
 
-  // Apply prefill from SMS import store when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      if (isEditing) return;
-      
-      // Check for SMS import data from the store
-      const smsData = getSmsImportData();
-      if (smsData && smsData.timestamp > previousPrefillTimestampRef.current) {
-        previousPrefillTimestampRef.current = smsData.timestamp;
-        
-        // Apply the SMS import data
-        if (typeof smsData.amount === 'number' && Number.isFinite(smsData.amount)) {
-          setAmount(String(smsData.amount));
-        }
-        if (typeof smsData.note === 'string') {
-          setNote(smsData.note);
-        }
-        if (typeof smsData.date === 'string') {
-          const parsed = new Date(smsData.date);
-          if (Number.isFinite(parsed.getTime())) setDate(parsed);
-        }
-        
-        // Clear the data after applying
-        clearSmsImportData();
-      } else if (prefill) {
-        // Fallback to route params prefill
-        const smsImportTimestamp = (route.params as any)?._smsImportTimestamp;
-        if (smsImportTimestamp && smsImportTimestamp <= previousPrefillTimestampRef.current) {
-          return; // Already applied this prefill
-        }
-        
-        if (smsImportTimestamp) {
-          previousPrefillTimestampRef.current = smsImportTimestamp;
-        }
 
-        if (typeof prefill.amount === 'number' && Number.isFinite(prefill.amount)) {
-          setAmount(String(prefill.amount));
-        }
-        if (typeof prefill.note === 'string') {
-          setNote(prefill.note);
-        }
-        if (typeof prefill.date === 'string') {
-          const parsed = new Date(prefill.date);
-          if (Number.isFinite(parsed.getTime())) setDate(parsed);
-        }
-        if (typeof prefill.debitAccountId === 'string') {
-          setDebitAccountId(prefill.debitAccountId);
-        }
-        if (typeof prefill.creditAccountId === 'string') {
-          setCreditAccountId(prefill.creditAccountId);
-        }
+  // Auto-fill accounts using merchant and bank mappings when SMS info is present
+  React.useEffect(() => {
+    if (isEditing) return;
+    if (!smsBankInfo) return;
+    if (debitAccountId && creditAccountId) return; // Already filled
+    
+    const { getMapping } = useSmsAccountMappingStore.getState();
+    
+    let merchantAccountId: string | null = null;
+    let bankAccountId: string | null = null;
+    
+    // Get merchant mapping
+    if (smsBankInfo.merchant && smsBankInfo.merchant.trim()) {
+      const merchantMapping = getMapping(smsBankInfo.merchant);
+      if (merchantMapping) {
+        merchantAccountId = merchantMapping.accountId;
       }
-    }, [isEditing, prefill, route.params])
-  );
+    }
+    
+    // Get bank mapping
+    if (smsBankInfo.bankName && smsBankInfo.bankName.trim()) {
+      const bankMapping = getMapping(smsBankInfo.bankName);
+      if (bankMapping) {
+        bankAccountId = bankMapping.accountId;
+      }
+    }
+    
+    // Apply mappings based on transaction type
+    if (smsBankInfo.transactionType === 'debit') {
+      // Debit: From Account = Bank, To Account = Merchant
+      if (bankAccountId && !creditAccountId) {
+        setCreditAccountId(bankAccountId);
+      }
+      if (merchantAccountId && !debitAccountId) {
+        setDebitAccountId(merchantAccountId);
+      }
+    } else {
+      // Credit: From Account = Merchant, To Account = Bank
+      if (merchantAccountId && !creditAccountId) {
+        setCreditAccountId(merchantAccountId);
+      }
+      if (bankAccountId && !debitAccountId) {
+        setDebitAccountId(bankAccountId);
+      }
+    }
+  }, [smsBankInfo, accounts, isEditing, debitAccountId, creditAccountId]);
 
   // Modal state
   const [showAccountPicker, setShowAccountPicker] = useState(false);
@@ -400,6 +431,39 @@ const AddTransactionScreen: React.FC = () => {
 
     setIsSaving(true);
     try {
+      // Check if SMS is already processed (for new transactions from SMS)
+      // Use timestamp and parsed data for duplicate detection
+      // IMPORTANT: Use original parsed date from SMS, not the form date (user might have changed it)
+      if (!isEditing && smsBankInfo?.smsTimestamp && smsBankInfo?.amount && smsBankInfo?.parsedDate) {
+        const currentUser = firebaseAuth.currentUser;
+        if (currentUser) {
+          // Ensure parsedDate is a Date object (might be serialized as string through navigation)
+          const parsedDate = smsBankInfo.parsedDate instanceof Date 
+            ? smsBankInfo.parsedDate 
+            : new Date(smsBankInfo.parsedDate);
+          
+          const smsHash = hashSmsTransaction(smsBankInfo.smsTimestamp, {
+            amount: smsBankInfo.amount,
+            date: parsedDate, // Use original parsed date, not form date
+            merchant: smsBankInfo.merchant,
+            accountLast4: smsBankInfo.accountLast4,
+            type: smsBankInfo.transactionType,
+          });
+          // Check for duplicate SMS hash
+          const alreadyProcessed = await isSmsProcessed(smsHash, currentUser.uid);
+          
+          if (alreadyProcessed) {
+            setIsSaving(false);
+            Alert.alert(
+              'Transaction Already Exists',
+              'This SMS has already been processed and a transaction was created from it. Please check your transactions list.',
+              [{ text: 'OK' }]
+            );
+            return;
+          }
+        }
+      }
+
       if (isEditing && editTransactionId) {
         await updateTransaction({
           transactionId: editTransactionId,
@@ -410,20 +474,108 @@ const AddTransactionScreen: React.FC = () => {
           note: note.trim() || undefined,
         });
       } else {
-      await createTransaction({
+      const transactionId = await createTransaction({
         date: date.toISOString(),
         amount: amountNum,
         debitAccountId,
         creditAccountId,
         note: note.trim() || undefined,
       });
+
+      // Save merchant and bank mappings if this is from SMS
+      if (smsBankInfo && debitAccountId && creditAccountId && !isEditing) {
+        try {
+          // 1. Save merchant mapping (merchant → accountId)
+          if (smsBankInfo.merchant && smsBankInfo.merchant.trim()) {
+            // For debit: merchant maps to debit account
+            // For credit: merchant maps to credit account
+            const merchantAccountId = smsBankInfo.transactionType === 'debit' 
+              ? debitAccountId 
+              : creditAccountId;
+            
+            const existingMerchantMapping = getMapping(smsBankInfo.merchant);
+            
+            if (!existingMerchantMapping) {
+              // Create new merchant mapping
+              await createMapping({
+                name: smsBankInfo.merchant,
+                accountId: merchantAccountId,
+              });
+            } else if (existingMerchantMapping.accountId !== merchantAccountId) {
+              // Update existing merchant mapping if account changed
+              await updateMapping(existingMerchantMapping.id, {
+                accountId: merchantAccountId,
+              });
+            }
+          }
+
+          // 2. Save bank mapping (bankName → accountId)
+          if (smsBankInfo.bankName && smsBankInfo.bankName.trim()) {
+            // For debit: bank maps to credit account (From Account)
+            // For credit: bank maps to debit account (To Account)
+            const bankAccountId = smsBankInfo.transactionType === 'debit' 
+              ? creditAccountId 
+              : debitAccountId;
+            
+            const existingBankMapping = getMapping(smsBankInfo.bankName);
+            
+            if (!existingBankMapping) {
+              // Create new bank mapping
+              await createMapping({
+                name: smsBankInfo.bankName,
+                accountId: bankAccountId,
+              });
+            } else if (existingBankMapping.accountId !== bankAccountId) {
+              // Update existing bank mapping if account changed
+              await updateMapping(existingBankMapping.id, {
+                accountId: bankAccountId,
+              });
+            }
+          }
+
+          // 3. Mark SMS as processed to prevent duplicate transactions
+          // Use timestamp and parsed data for duplicate detection
+          // IMPORTANT: Use original parsed date from SMS, not the form date (user might have changed it)
+          if (smsBankInfo.smsTimestamp && smsBankInfo.amount && smsBankInfo.parsedDate) {
+            const currentUser = firebaseAuth.currentUser;
+            if (currentUser) {
+              // Ensure parsedDate is a Date object (might be serialized as string through navigation)
+              const parsedDate = smsBankInfo.parsedDate instanceof Date 
+                ? smsBankInfo.parsedDate 
+                : new Date(smsBankInfo.parsedDate);
+              
+              const smsHash = hashSmsTransaction(smsBankInfo.smsTimestamp, {
+                amount: smsBankInfo.amount,
+                date: parsedDate, // Use original parsed date, not form date
+                merchant: smsBankInfo.merchant,
+                accountLast4: smsBankInfo.accountLast4,
+                type: smsBankInfo.transactionType,
+              });
+              await markSmsAsProcessed(smsHash, currentUser.uid, transactionId);
+            }
+          }
+        } catch (error) {
+          // Don't fail transaction creation if mapping save fails
+          console.error('Failed to save/update SMS mappings:', error);
+        }
+      }
       }
 
+      // Reset loading state before navigation
+      setIsSaving(false);
+
       if (postSaveNavigationTarget) {
-        // Navigate to the target screen (e.g. Transactions)
-        // We cast to any because the target might be in a nested navigator (MainTab)
-        // and TS might not infer it directly from RootStackParamList
-        navigation.navigate(postSaveNavigationTarget as any);
+        // Navigate to the target screen
+        // If target is 'BankSms', just pop back (since AddTransaction is a modal pushed from BankSms)
+        if (postSaveNavigationTarget === 'BankSms') {
+          // Pop back to BankSms screen (modal will close and return to previous screen)
+          navigation.goBack();
+        } else {
+          // Navigate to the target screen (e.g. Transactions)
+          // We cast to any because the target might be in a nested navigator (MainTab)
+          // and TS might not infer it directly from RootStackParamList
+          navigation.navigate(postSaveNavigationTarget as any);
+        }
       } else {
         navigation.goBack();
       }
@@ -762,6 +914,41 @@ const AddTransactionScreen: React.FC = () => {
     arrow: {
       fontSize: typography.fontSize.lg,
       color: colors.neutral[400],
+    },
+    smsBankInfoContainer: {
+      marginTop: spacing.base,
+      padding: spacing.base,
+      backgroundColor: colors.background.elevated,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border.light,
+    },
+    smsInfoContainer: {
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.xs,
+      marginTop: spacing.xs,
+    },
+    smsInfoText: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.secondary,
+      fontStyle: 'italic',
+    },
+    smsInfoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.xs,
+    },
+    smsInfoLabel: {
+      fontSize: typography.fontSize.sm,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+      marginRight: spacing.sm,
+      minWidth: 70,
+    },
+    smsInfoValue: {
+      fontSize: typography.fontSize.sm,
+      color: colors.text.primary,
+      flex: 1,
     },
     dateSelector: {
       padding: spacing.base,
@@ -1179,7 +1366,6 @@ const AddTransactionScreen: React.FC = () => {
             value={amount}
             onChangeText={setAmount}
             keyboardType="decimal-pad"
-            autoFocus
           />
           <TouchableOpacity style={styles.calcButton} onPress={openCalculator} activeOpacity={0.8}>
             <Image
@@ -1215,6 +1401,18 @@ const AddTransactionScreen: React.FC = () => {
             <Text style={styles.chevron}>›</Text>
             </View>
           </TouchableOpacity>
+          
+          {/* Show bank name under From Account for debit, merchant for credit */}
+          {smsBankInfo && smsBankInfo.transactionType === 'debit' && smsBankInfo.bankName && smsBankInfo.bankName.trim() && (
+            <View style={styles.smsInfoContainer}>
+              <Text style={styles.smsInfoText}>SMS From: {smsBankInfo.bankName}</Text>
+            </View>
+          )}
+          {smsBankInfo && smsBankInfo.transactionType === 'credit' && smsBankInfo.merchant && smsBankInfo.merchant.trim() && (
+            <View style={styles.smsInfoContainer}>
+              <Text style={styles.smsInfoText}>SMS From: {smsBankInfo.merchant}</Text>
+            </View>
+          )}
 
           {/* Arrow indicator */}
           <View style={styles.arrowContainer}>
@@ -1244,6 +1442,18 @@ const AddTransactionScreen: React.FC = () => {
             <Text style={styles.chevron}>›</Text>
             </View>
           </TouchableOpacity>
+          
+          {/* Show merchant name under To Account for debit, bank for credit */}
+          {smsBankInfo && smsBankInfo.transactionType === 'debit' && smsBankInfo.merchant && smsBankInfo.merchant.trim() && (
+            <View style={styles.smsInfoContainer}>
+              <Text style={styles.smsInfoText}>SMS To: {smsBankInfo.merchant}</Text>
+            </View>
+          )}
+          {smsBankInfo && smsBankInfo.transactionType === 'credit' && smsBankInfo.bankName && smsBankInfo.bankName.trim() && (
+            <View style={styles.smsInfoContainer}>
+              <Text style={styles.smsInfoText}>SMS To: {smsBankInfo.bankName}</Text>
+            </View>
+          )}
         </View>
 
         {/* Date Input */}
