@@ -203,6 +203,7 @@ const AMOUNT_PATTERNS: RegExp[] = [
   /\bRs\.([0-9][0-9,]*(?:\.[0-9]{1,2})?)\b/i, // "Rs.2.00" (period after Rs, no space)
   /\bRs\.?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)\b/i, // "Rs. 2.00" or "Rs 2.00" (with space)
   /\bRs\s+([0-9][0-9,]*(?:\.[0-9]{1,2})?)\b/i, // "Rs 8,596.00" (without period)
+  /\bRs:([0-9][0-9,]*(?:\.[0-9]{1,2})?)\b/i, // "Rs:103.00" (colon after Rs, no space) - Union Bank format
   /₹\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i,
   /\b([0-9][0-9,]*(?:\.[0-9]{1,2})?)\s*INR\b/i,
   
@@ -215,8 +216,8 @@ const AMOUNT_PATTERNS: RegExp[] = [
   // Amount with "credited to" or "debited from" (e.g., "Rs.2.00 credited to HDFC Bank")
   /Rs\.?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)\s+(?:credited\s+to|debited\s+from)/i,
   
-  // Amount with "for" (e.g., "debited for Rs 10000.00", "credited for Rs 5000.00")
-  /(?:credited|debited|paid|received)\s+for\s+Rs\.?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i,
+  // Amount with "for" (e.g., "debited for Rs 10000.00", "credited for Rs 5000.00", "Debited for Rs:103.00")
+  /(?:credited|debited|paid|received)\s+for\s+Rs:?\.?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i,
   
   // ICICI format: "Account XX868 credited:Rs. 560.00" or "ICICI Bank Account XX868 credited:Rs. 560.00"
   /(?:icici\s+bank\s+)?(?:account|acct|a\/c)\s+[x*]+\d+\s+(?:credited|debited):\s*Rs\.?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i,
@@ -248,6 +249,9 @@ const AMOUNT_PATTERNS: RegExp[] = [
  * - Today, Yesterday (relative dates)
  */
 const DATE_PATTERNS: RegExp[] = [
+  // DD-MM-YYYY HH:MM:SS (e.g., "10-03-2026 11:07:19") - Union Bank format with time
+  /\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\s+(\d{1,2}):(\d{2}):(\d{2})\b/,
+  
   // DD-MM-YYYY, DD/MM/YYYY, DD.MM.YYYY
   /\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/,
   
@@ -348,6 +352,9 @@ const MERCHANT_PATTERNS: RegExp[] = [
   
   // Pattern: "for NAME" (when not followed by amount)
   /\bfor\s+([A-Z][A-Za-z0-9\s&.,-]{2,50}?)(?:\s+on|\s+dated|$)/i,
+  
+  // Union Bank format: "by Mob Bk" or "by MERCHANT NAME"
+  /\bby\s+([A-Z][A-Za-z0-9\s&.,-]{2,50}?)(?:\s+ref|\s+on|\s+dated|$)/i,
 ];
 
 /**
@@ -400,6 +407,8 @@ const ACCOUNT_PATTERNS: RegExp[] = [
  */
 const BALANCE_PATTERNS: RegExp[] = [
   /\b(?:bal|balance|avail|available)\s*(?:is|:)?\s*(?:INR|Rs\.?|₹)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)\b/i,
+  // Union Bank format: "Avl Bal Rs:600.09" (colon after Rs)
+  /\b(?:avl\s+bal|available\s+bal|avail\s+bal)\s+Rs:([0-9][0-9,]*(?:\.[0-9]{1,2})?)\b/i,
   /\b(?:bal|balance)\s*[x*]*(\d{4,})\b/i,
   // ICICI format: "Avl Limit: INR 7,42,814.94" or "Available Limit: INR 7,42,814.94"
   /\b(?:avl\s+limit|available\s+limit|limit)\s*:?\s*(?:INR|Rs\.?|₹)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)\b/i,
@@ -535,6 +544,23 @@ function parseDate(text: string): Date {
     
     try {
       let day: number, month: number, year: number;
+      
+      // Numeric date format with time (DD-MM-YYYY HH:MM:SS) - Union Bank format
+      if (match.length >= 7 && /^\d+$/.test(match[1]) && /^\d+$/.test(match[2]) && match[4] && match[5] && match[6]) {
+        day = Number(match[1]);
+        month = Number(match[2]) - 1; // JavaScript months are 0-indexed
+        year = Number(match[3]);
+        if (year < 100) year = 2000 + year;
+        
+        const hour = Number(match[4]);
+        const minute = Number(match[5]);
+        const second = Number(match[6]);
+        
+        const date = new Date(year, month, day, hour, minute, second);
+        if (isValidDate(date)) {
+          return date;
+        }
+      }
       
       // Numeric date format (DD-MM-YYYY)
       if (match.length >= 4 && /^\d+$/.test(match[1]) && /^\d+$/.test(match[2])) {
@@ -946,6 +972,75 @@ export function parseTransaction(
   // Check if message matches any password-related pattern
   if (passwordPatterns.some(pattern => pattern.test(text))) {
     return null;
+  }
+  
+  // Skip balance inquiry messages - these are not transaction messages
+  const balanceInquiryPatterns = [
+    /\bavailable\s+bal(?:ance)?\s+in\b/i, // "Available Bal in" or "Available Balance in"
+    /\bavailable\s+bal(?:ance)?\s+as\s+on\b/i, // "Available Bal as on"
+    /\bas\s+on\s+(?:yesterday|today|tomorrow|\d{1,2}[\/\-]\w+[\/\-]\d{2,4}):\s*is\s+INR\b/i, // "as on yesterday:10-MAR-26 is INR"
+    /\b(?:cheques?|checks?)\s+(?:are\s+)?subject\s+to\s+clearing\b/i, // "Cheques are subject to clearing"
+    /\bfor\s+real\s+time\s+(?:a\/c|account)\s+bal(?:ance)?\b/i, // "For real time A/C Bal"
+    /\b(?:balance|bal)\s+inquiry\b/i,
+    /\b(?:balance|bal)\s+enquiry\b/i,
+    /\b(?:check|checking)\s+balance\b/i,
+    /\b(?:view|see)\s+balance\b/i,
+    /\bcurrent\s+balance\b/i,
+    /\baccount\s+balance\b/i,
+    /\b(?:balance|bal)\s+as\s+on\b/i, // "Balance as on"
+    /\b(?:balance|bal)\s+on\s+(?:date|\d{1,2}[\/\-]\w+[\/\-]\d{2,4})\s+is\b/i, // "Balance on date is" or "Balance on 10-MAR-26 is"
+  ];
+  
+  // Skip payment due/reminder messages - these are not transaction messages
+  const paymentDuePatterns = [
+    /\b(?:facility|rate)\s+of\s+interest\b/i, // "Facility rate of interest"
+    /\b(?:loan|emi)\s+no\.?\s*[A-Z0-9]+\s+is\s+due\b/i, // "Loan No. VWFN32741 is due"
+    /\b(?:is\s+)?due\s+(?:on|for|to)\b/i, // "is due on", "is due for", "is due to"
+    /\b(?:payment|amount|emi|installment)\s+is\s+due\b/i, // "Payment is due", "EMI is due"
+    /\b(?:to\s+)?make\s+payment\b/i, // "To make payment", "make payment"
+    /\b(?:please\s+)?use\s+(?:our\s+)?(?:online\s+)?payment\s+option\b/i, // "use our online payment option"
+    /\b(?:click|clicking|visit)\s+(?:http|https|www\.|payments\.)/i, // Payment links/URLs
+    /\b(?:payment|pay)\s+link\b/i,
+    /\b(?:payment|pay)\s+now\b/i,
+    /\b(?:payment|pay)\s+online\b/i,
+    /\b(?:dear\s+)?customer[,:]\s+(?:facility|rate|loan|emi|interest|payment)\b/i, // "Dear Customer, Facility rate..."
+    /\b(?:t&c|terms?\s+and\s+conditions?)\s+apply\b/i, // "T&C apply"
+    /\b(?:loan|emi)\s+no\.?\s*[A-Z0-9]+\b/i, // "Loan No. VWFN32741"
+    /\b(?:emi|installment)\s+(?:due|overdue|pending)\b/i, // "EMI due", "Installment overdue"
+    /\b(?:interest|principal)\s+(?:due|overdue|pending)\b/i, // "Interest due"
+    /\b(?:payment|pay)\s+reminder\b/i, // "Payment reminder"
+    /\b(?:reminder|alert)\s+for\s+(?:payment|emi|loan)\b/i, // "Reminder for payment"
+    /\boverdue\s+amount\b/i, // "overdue amount"
+    /\bdays?\s+past\s+due\b/i, // "Days Past Due"
+    /\breported\s+to\s+(?:credit\s+)?(?:information|bureau)\s+compan(?:y|ies)\b/i, // "reported to Credit Information Companies"
+    /\b(?:credit\s+)?(?:information|bureau)\s+compan(?:y|ies)\b/i, // "Credit Information Companies"
+    /\b(?:request|please)\s+(?:you\s+to\s+)?make\s+immediate\s+payment\b/i, // "Request you to make immediate payment"
+    /\b(?:to\s+)?avoid\s+(?:penal|penalty)\s+charges?\b/i, // "to avoid penal charges"
+    /\b(?:please\s+)?ignore\s+if\s+already\s+paid\b/i, // "Please ignore if already paid"
+    /\b(?:this\s+is\s+to\s+)?inform\s+you\s+that\b/i, // "This is to inform you that"
+    /\b(?:overdue|outstanding)\s+(?:amount|balance|payment)\b/i, // "overdue amount", "outstanding balance"
+    /\b(?:penal|penalty)\s+charges?\b/i, // "penal charges"
+    /\b(?:credit\s+)?bureau\s+report(?:ing|ed)?\b/i, // "credit bureau reporting"
+  ];
+  
+  // Check if message is a balance inquiry (has balance inquiry keywords but no transaction keywords)
+  const isBalanceInquiry = balanceInquiryPatterns.some(pattern => pattern.test(text));
+  if (isBalanceInquiry) {
+    // Additional check: if it has balance inquiry keywords but no transaction keywords (debited/credited/paid/etc), it's likely a balance inquiry
+    const hasTransactionKeywords = /\b(?:debited|credited|paid|received|spent|withdrawn|deposited|transferred|purchase|charge)\b/i.test(text);
+    if (!hasTransactionKeywords) {
+      return null;
+    }
+  }
+  
+  // Check if message is a payment due/reminder (has payment due keywords but no transaction keywords)
+  const isPaymentDue = paymentDuePatterns.some(pattern => pattern.test(text));
+  if (isPaymentDue) {
+    // Additional check: if it has payment due keywords but no transaction keywords, it's likely a payment reminder
+    const hasTransactionKeywords = /\b(?:debited|credited|paid|received|spent|withdrawn|deposited|transferred|purchase|charge|successfully|completed)\b/i.test(text);
+    if (!hasTransactionKeywords) {
+      return null;
+    }
   }
   
   // Filter by sender ID if provided
