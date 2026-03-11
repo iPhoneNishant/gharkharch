@@ -5,7 +5,6 @@
 
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
-import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
 const PIN_KEY = 'user_pin';
@@ -13,29 +12,26 @@ const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
 const PIN_SETUP_KEY = 'pin_setup_complete';
 
 /**
- * Hash PIN using simple SHA-256 (for basic security)
- * In production, consider using a more secure hashing method
+ * Hash PIN using a simple hash function
+ * This provides basic obfuscation of the PIN in storage
  */
-const hashPin = async (pin: string): Promise<string> => {
-  try {
-    return await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      pin,
-      { encoding: Crypto.CryptoEncoding.HEX }
-    );
-  } catch (error) {
-    // Fallback: if digestStringAsync fails, use digestAsync with Uint8Array
-    console.warn('digestStringAsync failed, using digestAsync fallback:', error);
-    const data = new TextEncoder().encode(pin);
-    const hash = await Crypto.digestAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      data
-    );
-    // Convert Uint8Array to hex string
-    return Array.from(hash)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+const hashPin = (pin: string): string => {
+  // Simple hash function for PIN obfuscation
+  // This is not cryptographically secure but provides basic protection
+  let hash = 0;
+  const salt = 'gharkharch_pin_salt_2024'; // Add salt for better security
+  
+  // Combine PIN with salt
+  const saltedPin = pin + salt;
+  
+  for (let i = 0; i < saltedPin.length; i++) {
+    const char = saltedPin.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
   }
+  
+  // Convert to positive hex string and pad to ensure consistent length
+  return Math.abs(hash).toString(16).padStart(8, '0');
 };
 
 /**
@@ -90,7 +86,7 @@ export const setupPin = async (pin: string): Promise<void> => {
       throw new Error('PIN must contain only digits');
     }
 
-    const hashedPin = await hashPin(pin);
+    const hashedPin = hashPin(pin);
     await SecureStore.setItemAsync(PIN_KEY, hashedPin);
     await SecureStore.setItemAsync(PIN_SETUP_KEY, 'true');
   } catch (error) {
@@ -109,7 +105,7 @@ export const verifyPin = async (pin: string): Promise<boolean> => {
       return false;
     }
 
-    const hashedPin = await hashPin(pin);
+    const hashedPin = hashPin(pin);
     // Backward compatibility: accept both hashed and plain PIN stored previously
     if (storedPin === hashedPin || storedPin === pin) {
       return true;

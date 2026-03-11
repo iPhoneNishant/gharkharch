@@ -15,6 +15,8 @@ import {
   Switch,
   Modal,
   Linking,
+  KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -44,6 +46,7 @@ const SettingsScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { user, signOut, deleteAccount, isLoading } = useAuthStore();
   const styles = getSettingsScreenStyles();
   
@@ -76,6 +79,25 @@ const SettingsScreen: React.FC = () => {
       checkSmsPermissionStatus();
     } else {
     }
+
+    // Keyboard listeners for bottom sheet
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height + 35);
+      }
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
   }, []);
 
   const loadSmsSettingsData = async () => {
@@ -561,7 +583,7 @@ const SettingsScreen: React.FC = () => {
             setShowLanguageSheet(false);
           }}
         />
-        <View style={[styles.bottomSheet, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.bottomSheet, { paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom }]}>
           <View style={styles.bottomSheetHandle} />
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => {
@@ -621,7 +643,7 @@ const SettingsScreen: React.FC = () => {
             setShowFontSheet(false);
           }}
         />
-        <View style={[styles.bottomSheet, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.bottomSheet, { paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom }]}>
           <View style={styles.bottomSheetHandle} />
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => {
@@ -675,7 +697,13 @@ const SettingsScreen: React.FC = () => {
           activeOpacity={1}
           onPress={() => setShowSmsReadCountModal(false)}
         />
-        <View style={[styles.bottomSheet, { paddingBottom: insets.bottom }]}>
+        <View style={[
+          styles.bottomSheet,
+          {
+            paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom,
+            transform: keyboardHeight > 0 ? [{ translateY: -keyboardHeight }] : [],
+          }
+        ]}>
           <View style={styles.bottomSheetHandle} />
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowSmsReadCountModal(false)}>
@@ -686,7 +714,11 @@ const SettingsScreen: React.FC = () => {
               <Text style={styles.modalDone}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ padding: spacing.base }}>
+          <ScrollView
+            contentContainerStyle={{ padding: spacing.base }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={[styles.settingValueText, { marginBottom: spacing.sm }]}>
               {t('settings.smsReadCountDescription')}
             </Text>
@@ -706,7 +738,7 @@ const SettingsScreen: React.FC = () => {
               placeholder={t('settings.smsReadCountPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
             />
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -724,7 +756,13 @@ const SettingsScreen: React.FC = () => {
           activeOpacity={1}
           onPress={() => setShowSmsDateGapModal(false)}
         />
-        <View style={[styles.bottomSheet, { paddingBottom: insets.bottom }]}>
+        <View style={[
+          styles.bottomSheet,
+          {
+            paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom,
+            transform: keyboardHeight > 0 ? [{ translateY: -keyboardHeight }] : [],
+          }
+        ]}>
           <View style={styles.bottomSheetHandle} />
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowSmsDateGapModal(false)}>
@@ -735,7 +773,11 @@ const SettingsScreen: React.FC = () => {
               <Text style={styles.modalDone}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ padding: spacing.base }}>
+          <ScrollView
+            contentContainerStyle={{ padding: spacing.base }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={[styles.settingValueText, { marginBottom: spacing.sm }]}>
               {t('settings.smsDateGapModalDescription')}
             </Text>
@@ -755,7 +797,7 @@ const SettingsScreen: React.FC = () => {
               placeholder={t('settings.smsDateGapPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
             />
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
