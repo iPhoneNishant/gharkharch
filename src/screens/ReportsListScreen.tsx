@@ -122,8 +122,8 @@ const ReportsListScreen: React.FC = () => {
     title: string;
     description: string;
     icon: string;
-    screen?: ReportScreen;
-    variant?: 'summary' | 'transactions' | 'single';
+    screen?: ReportScreen | 'HouseholdServicesLedger';
+    variant?: 'summary' | 'transactions' | 'single' | 'household';
   }> = [
     {
       id: 'summary',
@@ -163,9 +163,17 @@ const ReportsListScreen: React.FC = () => {
       screen: 'DayToDayReport',
       variant: 'single',
     },
+    {
+      id: 'household-services',
+      title: 'Household Services Ledger',
+      description: 'View monthly household expenses like milk, newspaper, maid, cook',
+      icon: '🏠',
+      screen: 'HouseholdServicesLedger',
+      variant: 'household',
+    },
   ];
 
-  const handleReportPress = (screen: ReportScreen) => {
+  const handleReportPress = (screen: ReportScreen | 'HouseholdServicesLedger') => {
     navigation.navigate(screen as never);
   };
 
@@ -185,6 +193,7 @@ const ReportsListScreen: React.FC = () => {
               onPress={() => {
                 if (option.variant === 'summary') return handleReportPress('SummaryMonthReport');
                 if (option.variant === 'transactions') return handleReportPress('TransactionsMonthReport');
+                if (option.variant === 'household' && option.screen) return handleReportPress(option.screen);
                 if (option.screen) return handleReportPress(option.screen);
               }}
               activeOpacity={0.7}

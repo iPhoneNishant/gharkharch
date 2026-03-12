@@ -36,6 +36,7 @@ import {
 } from '../services/pinAuthService';
 import { checkSmsPermission, requestSmsPermission, openPermissionSettings } from '../services/smsService';
 import { loadSmsSettings, saveSmsSettings, SmsSettings } from '../services/smsSettingsService';
+import { getTimezone, setTimezone, TIMEZONES, Timezone } from '../services/timezoneService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FONT_SCALE_OPTIONS } from '../config/constants';
 import { Platform, TextInput } from 'react-native';
@@ -68,12 +69,16 @@ const SettingsScreen: React.FC = () => {
   const [showSmsDateGapModal, setShowSmsDateGapModal] = useState(false);
   const [tempReadCount, setTempReadCount] = useState<string>('100');
   const [tempDateGap, setTempDateGap] = useState<string>('30');
+  const [timezone, setTimezoneState] = useState<string>('Asia/Kolkata');
+  const [showTimezoneSheet, setShowTimezoneSheet] = useState(false);
+  const [pendingTimezone, setPendingTimezone] = useState<string | null>(null);
 
 
   useEffect(() => {
     checkPinStatus();
     loadFontScale();
     loadSmsSettingsData();
+    loadTimezone();
     // Always check SMS permission on Android
     if (Platform.OS === 'android') {
       checkSmsPermissionStatus();
@@ -188,6 +193,20 @@ const SettingsScreen: React.FC = () => {
       setFontScaleState(val);
       setFontScaleLabel(String(val));
     } catch {}
+  };
+
+  const loadTimezone = async () => {
+    try {
+      const tz = await getTimezone();
+      setTimezoneState(tz);
+    } catch (error) {
+      console.error('Error loading timezone:', error);
+    }
+  };
+
+  const handleTimezoneChange = () => {
+    setPendingTimezone(timezone);
+    setShowTimezoneSheet(true);
   };
 
   const checkSmsPermissionStatus = async () => {
@@ -418,6 +437,15 @@ const SettingsScreen: React.FC = () => {
             <Text style={styles.settingLabel}>{t('settings.fontSize')} </Text>
             <View style={styles.settingValue}>
               <Text style={styles.settingValueText}>AAA </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingItem} onPress={handleTimezoneChange}>
+            <Text style={styles.settingLabel}>{t('settings.timezone')} </Text>
+            <View style={styles.settingValue}>
+              <Text style={styles.settingValueText}>
+                {TIMEZONES.find(tz => tz.value === timezone)?.label || timezone}
+              </Text>
             </View>
           </TouchableOpacity>
 
@@ -680,6 +708,69 @@ const SettingsScreen: React.FC = () => {
               {Math.abs(((pendingFontScale ?? fontScale)) - val) < 0.001 && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
+        </View>
+      </View>
+    </Modal>
+
+    {/* Timezone Modal */}
+    <Modal
+      visible={showTimezoneSheet}
+      animationType="fade"
+      transparent
+      onRequestClose={() => {
+        setPendingTimezone(null);
+        setShowTimezoneSheet(false);
+      }}
+    >
+      <View style={styles.bottomSheetBackdrop}>
+        <TouchableOpacity
+          style={styles.bottomSheetBackdropTouchable}
+          activeOpacity={1}
+          onPress={() => {
+            setPendingTimezone(null);
+            setShowTimezoneSheet(false);
+          }}
+        />
+        <View style={[styles.bottomSheet, { paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom }]}>
+          <View style={styles.bottomSheetHandle} />
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => {
+              setPendingTimezone(null);
+              setShowTimezoneSheet(false);
+            }}>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{t('settings.timezone')}</Text>
+            <TouchableOpacity onPress={async () => {
+              if (pendingTimezone) {
+                await setTimezone(pendingTimezone);
+                setTimezoneState(pendingTimezone);
+              }
+              setPendingTimezone(null);
+              setShowTimezoneSheet(false);
+            }}>
+              <Text style={styles.modalDone}>{t('common.done')}</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={{ maxHeight: 400 }}>
+            {TIMEZONES.map((tz) => (
+              <TouchableOpacity
+                key={tz.value}
+                style={styles.sheetOption}
+                onPress={() => {
+                  setPendingTimezone(tz.value);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sheetOptionText}>{tz.label}</Text>
+                  <Text style={[styles.settingValueText, { fontSize: typography.fontSize.xs, color: colors.text.secondary, marginTop: spacing.xs }]}>
+                    {tz.offset}
+                  </Text>
+                </View>
+                {pendingTimezone === tz.value && <Text style={styles.checkmark}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       </View>
     </Modal>

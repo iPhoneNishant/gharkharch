@@ -63,6 +63,54 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Household Services collection
+    match /householdServices/{serviceId} {
+      // Users can read their own services
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create/update/delete their own services
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Household Service Price History collection
+    match /householdServicePriceHistory/{entryId} {
+      // Users can read their own price history
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create their own price history entries
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can update their own price history entries (for updating price on same date)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if false; // Price history should not be deleted
+    }
+
+    // Household Service Quantity History collection
+    match /householdServiceQuantityHistory/{entryId} {
+      // Users can read their own quantity history
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create their own quantity history entries
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can update their own quantity history entries (for updating quantity on same date)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if false; // Quantity history should not be deleted
+    }
+
+    // Household Service Daily Overrides collection
+    match /householdServiceDailyOverrides/{overrideId} {
+      // Users can read their own daily overrides
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create/update/delete their own daily overrides
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Household Service Vacations collection
+    match /householdServiceVacations/{vacationId} {
+      // Users can read their own vacations
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create/delete their own vacations
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
     
     // Deny all other access
     match /{document=**} {

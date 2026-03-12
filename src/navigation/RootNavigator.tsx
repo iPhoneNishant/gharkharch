@@ -41,6 +41,10 @@ import AccountsScreen from '../screens/AccountsScreen';
 import SmsAccountMappingScreen from '../screens/SmsAccountMappingScreen';
 import UserGuideScreen from '../screens/UserGuideScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import HouseholdServicesLedgerScreen from '../screens/HouseholdServicesLedgerScreen';
+import HouseholdServicesManagementScreen from '../screens/HouseholdServicesManagementScreen';
+import HouseholdServicesTodayScreen from '../screens/HouseholdServicesTodayScreen';
+import HouseholdServicesHistoryScreen from '../screens/HouseholdServicesHistoryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -521,6 +525,46 @@ const RootNavigator: React.FC = () => {
               options={({ route }) => ({
                 headerShown: true,
                 headerTitle: (route.params as any)?.subCategory || 'Transactions',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              })}
+            />
+            <Stack.Screen
+              name="HouseholdServicesLedger"
+              component={HouseholdServicesLedgerScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Household Services',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen
+              name="HouseholdServicesManagement"
+              component={HouseholdServicesManagementScreen}
+              options={{
+                headerShown: true,
+                headerTitle: 'Manage Services',
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen
+              name="HouseholdServicesToday"
+              component={HouseholdServicesTodayScreen}
+              options={{
+                headerShown: true,
+                headerTitle: "Today's Services",
+                headerTintColor: colors.primary[500],
+                headerBackTitle: 'Back',
+              }}
+            />
+            <Stack.Screen
+              name="HouseholdServicesHistory"
+              component={HouseholdServicesHistoryScreen}
+              options={({ route }) => ({
+                headerShown: true,
+                headerTitle: `${route.params.historyType === 'price' ? 'Price' : 'Quantity'} History - ${route.params.service.name}`,
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
               })}

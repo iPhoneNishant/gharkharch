@@ -37,6 +37,7 @@ import { navigationRef } from '../navigation/navigationRef';
 
 import { useAuthStore, useAccountStore, useTransactionStore } from '../stores';
 import { useSmsAccountMappingStore } from '../stores/smsAccountMappingStore';
+import { useServiceAccountMappingStore } from '../stores/serviceAccountMappingStore';
 import { isSmsProcessed, markSmsAsProcessed, hashSmsTransaction } from '../services/firebaseService';
 import { firebaseAuth } from '../config/firebase';
 import { RootStackParamList, Account, AccountType } from '../types';
@@ -70,6 +71,12 @@ const AddTransactionScreen: React.FC = () => {
     updateMapping,
     subscribeToMappings 
   } = useSmsAccountMappingStore();
+  const {
+    getMapping: getServiceMapping,
+    createMapping: createServiceMapping,
+    updateMapping: updateServiceMapping,
+    subscribeToMappings: subscribeToServiceMappings,
+  } = useServiceAccountMappingStore();
 
   const editTransactionId = route.params?.editTransactionId;
   const isEditing = !!editTransactionId;
@@ -88,26 +95,17 @@ const AddTransactionScreen: React.FC = () => {
     };
   }, []);
 
-  // Set header back button when opened from BankSms
+  // Set header back button when opened from BankSms or HouseholdServicesLedger
   useLayoutEffect(() => {
-    if (postSaveNavigationTarget === 'BankSms') {
+    if (postSaveNavigationTarget === 'BankSms' || postSaveNavigationTarget === 'HouseholdServicesLedger') {
       navigation.setOptions({
-        headerLeft: () => (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{ 
-              marginLeft: Platform.OS === 'ios' ? 0 : 16, 
-              padding: 8, 
-              minWidth: 44, 
-              minHeight: 44, 
-              justifyContent: 'center', 
-              alignItems: 'flex-start' 
-            }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.primary[500]} />
-          </TouchableOpacity>
-        ),
+        headerBackVisible: true,
+        headerLeft: undefined, // Let the default back button show
+      });
+    } else {
+      navigation.setOptions({
+        headerBackVisible: false,
+        headerLeft: undefined,
       });
     }
   }, [navigation, postSaveNavigationTarget]);
@@ -122,6 +120,18 @@ const AddTransactionScreen: React.FC = () => {
         unsubscribe();
       };
     }, [user?.id, subscribeToMappings])
+  );
+
+  // Subscribe to service account mappings when user is available
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!user?.id) return;
+      
+      const unsubscribe = subscribeToServiceMappings(user.id);
+      return () => {
+        unsubscribe();
+      };
+    }, [user?.id, subscribeToServiceMappings])
   );
 
   // Form state
@@ -168,7 +178,16 @@ const AddTransactionScreen: React.FC = () => {
     if (typeof prefill.creditAccountId === 'string') {
       setCreditAccountId(prefill.creditAccountId);
     }
-  }, [isEditing, prefill, route.params]);
+    
+    // Load service mapping if serviceId is provided and accounts are not already set
+    if (prefill.serviceId && !debitAccountId && !creditAccountId) {
+      const serviceMapping = getServiceMapping(prefill.serviceId);
+      if (serviceMapping) {
+        setDebitAccountId(serviceMapping.debitAccountId);
+        setCreditAccountId(serviceMapping.creditAccountId);
+      }
+    }
+  }, [isEditing, prefill, route.params, getServiceMapping]);
 
 
   // Auto-fill accounts using merchant and bank mappings when SMS info is present
@@ -482,6 +501,34 @@ const AddTransactionScreen: React.FC = () => {
         note: note.trim() || undefined,
       });
 
+      // Save service account mapping if this is from a household service
+      if (prefill?.serviceId && debitAccountId && creditAccountId && !isEditing) {
+        try {
+          const existingServiceMapping = getServiceMapping(prefill.serviceId);
+          
+          if (!existingServiceMapping) {
+            // Create new service mapping
+            await createServiceMapping({
+              serviceId: prefill.serviceId,
+              debitAccountId,
+              creditAccountId,
+            });
+          } else if (
+            existingServiceMapping.debitAccountId !== debitAccountId ||
+            existingServiceMapping.creditAccountId !== creditAccountId
+          ) {
+            // Update existing service mapping if accounts changed
+            await updateServiceMapping(existingServiceMapping.id, {
+              debitAccountId,
+              creditAccountId,
+            });
+          }
+        } catch (error) {
+          // Don't fail transaction creation if mapping save fails
+          console.error('Failed to save/update service mapping:', error);
+        }
+      }
+
       // Save merchant and bank mappings if this is from SMS
       if (smsBankInfo && debitAccountId && creditAccountId && !isEditing) {
         try {
@@ -566,9 +613,9 @@ const AddTransactionScreen: React.FC = () => {
 
       if (postSaveNavigationTarget) {
         // Navigate to the target screen
-        // If target is 'BankSms', just pop back (since AddTransaction is a modal pushed from BankSms)
-        if (postSaveNavigationTarget === 'BankSms') {
-          // Pop back to BankSms screen (modal will close and return to previous screen)
+        // If target is 'BankSms' or 'HouseholdServicesLedger', just pop back
+        if (postSaveNavigationTarget === 'BankSms' || postSaveNavigationTarget === 'HouseholdServicesLedger') {
+          // Pop back to previous screen
           navigation.goBack();
         } else {
           // Navigate to the target screen (e.g. Transactions)

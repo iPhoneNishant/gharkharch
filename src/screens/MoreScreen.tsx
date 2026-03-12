@@ -94,6 +94,18 @@ const MoreScreen: React.FC = () => {
       onPress: () => navigation.navigate('RecurringTransactions'),
     },
     {
+      id: 'household-services',
+      title: 'Household Services',
+      icon: 'home-outline' as const,
+      onPress: () => navigation.navigate('HouseholdServicesManagement'),
+    },
+    {
+      id: 'household-services-today',
+      title: "Today's Services",
+      icon: 'today-outline' as const,
+      onPress: () => navigation.navigate('HouseholdServicesToday'),
+    },
+    {
       id: 'sms-account-mapping',
       title: t('more.smsAccountMapping'),
       icon: 'link-outline' as const,

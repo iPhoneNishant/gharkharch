@@ -232,6 +232,12 @@ export const COLLECTIONS = {
   ACCOUNTS: 'accounts',
   TRANSACTIONS: 'transactions',
   SMS_ACCOUNT_MAPPINGS: 'sms_account_mappings',
+  SERVICE_ACCOUNT_MAPPINGS: 'service_account_mappings',
+  // Household Services
+  HOUSEHOLD_SERVICES: 'householdServices',
+  HOUSEHOLD_SERVICE_PRICE_HISTORY: 'householdServicePriceHistory',
+  HOUSEHOLD_SERVICE_QUANTITY_HISTORY: 'householdServiceQuantityHistory',
+  HOUSEHOLD_SERVICE_DAILY_OVERRIDES: 'householdServiceDailyOverrides',
 } as const;
 
 /**

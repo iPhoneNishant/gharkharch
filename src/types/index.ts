@@ -237,6 +237,7 @@ export type RootStackParamList = {
           date?: string; // ISO string
           debitAccountId?: string;
           creditAccountId?: string;
+          serviceId?: string; // Household service ID for account mapping
         };
         postSaveNavigationTarget?: string;
         smsBankInfo?: {
@@ -274,6 +275,13 @@ export type RootStackParamList = {
     accountType: AccountType;
     fromDate?: Date;
     toDate?: Date;
+  };
+  HouseholdServicesLedger: undefined;
+  HouseholdServicesManagement: undefined;
+  HouseholdServicesToday: undefined;
+  HouseholdServicesHistory: {
+    service: import('./householdServices').HouseholdService;
+    historyType: 'price' | 'quantity';
   };
 };
 
