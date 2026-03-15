@@ -10,7 +10,7 @@ import { ActivityIndicator, View, StyleSheet, AppState, AppStateStatus, Touchabl
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { useAuthStore, usePinAuthStore, useRecurringTransactionStore, useNetworkStore } from '../stores';
+import { useAuthStore, usePinAuthStore, useRecurringTransactionStore, useNetworkStore, useAccountStore } from '../stores';
 import { RootStackParamList } from '../types';
 import { colors, addFontScaleListener, typography } from '../config/theme';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +45,11 @@ import HouseholdServicesLedgerScreen from '../screens/HouseholdServicesLedgerScr
 import HouseholdServicesManagementScreen from '../screens/HouseholdServicesManagementScreen';
 import HouseholdServicesTodayScreen from '../screens/HouseholdServicesTodayScreen';
 import HouseholdServicesHistoryScreen from '../screens/HouseholdServicesHistoryScreen';
+import SetupAssetsScreen from '../screens/SetupAssetsScreen';
+import SetupLiabilitiesScreen from '../screens/SetupLiabilitiesScreen';
+import SetupExpensesScreen from '../screens/SetupExpensesScreen';
+import SetupIncomeScreen from '../screens/SetupIncomeScreen';
+import SetupCompleteScreen from '../screens/SetupCompleteScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -57,6 +62,9 @@ const RootNavigator: React.FC = () => {
   const checkPinSetup = usePinAuthStore(state => state.checkPinSetup);
   const setPinVerified = usePinAuthStore(state => state.setPinVerified);
   const { subscribeToRecurringTransactions } = useRecurringTransactionStore();
+  const { subscribeToAccounts } = useAccountStore();
+  const accounts = useAccountStore(state => state.accounts);
+  const accountsLoading = useAccountStore(state => state.isLoading);
   const [isCheckingPin, setIsCheckingPin] = useState(false);
   const hasCheckedPinRef = useRef(false);
   const previousAuthRef = useRef<boolean | null>(null); // null = initial state, true/false = previous auth state
@@ -180,13 +188,19 @@ const RootNavigator: React.FC = () => {
     }
   }, [isAuthenticated, isAuthenticatedInThisSession, isPinSetup, isCheckingPin, signOut]);
 
-  // Subscribe to recurring transactions when user is authenticated
+  // Subscribe to accounts and recurring transactions when user is authenticated
   useEffect(() => {
+    let unsubscribeAccounts: (() => void) | null = null;
     let unsubscribeRecurringTransactions: (() => void) | null = null;
 
-    if (isAuthenticated && user?.id && !hasSubscribedToRecurringTransactionsRef.current) {
-      hasSubscribedToRecurringTransactionsRef.current = true;
-      unsubscribeRecurringTransactions = subscribeToRecurringTransactions(user.id);
+    if (isAuthenticated && user?.id) {
+      // Subscribe to accounts early to ensure they're loaded before navigation decisions
+      unsubscribeAccounts = subscribeToAccounts(user.id);
+      
+      if (!hasSubscribedToRecurringTransactionsRef.current) {
+        hasSubscribedToRecurringTransactionsRef.current = true;
+        unsubscribeRecurringTransactions = subscribeToRecurringTransactions(user.id);
+      }
     }
 
     // Reset subscription flag when user logs out
@@ -198,11 +212,14 @@ const RootNavigator: React.FC = () => {
     }
 
     return () => {
+      if (unsubscribeAccounts) {
+        unsubscribeAccounts();
+      }
       if (unsubscribeRecurringTransactions) {
         unsubscribeRecurringTransactions();
       }
     };
-  }, [isAuthenticated, user?.id, subscribeToRecurringTransactions]);
+  }, [isAuthenticated, user?.id, subscribeToAccounts, subscribeToRecurringTransactions]);
 
   // Determine initial route based on language, auth and PIN state
   const currentRoute = useMemo((): keyof RootStackParamList => {
@@ -224,8 +241,27 @@ const RootNavigator: React.FC = () => {
     
     // PIN is setup - check if verified
     if (!isPinVerified) return 'PinVerification';
+    
+    // Check if user has accounts
+    const hasAccounts = accounts && accounts.length > 0;
+    
+    // Priority: If no accounts exist, show onboarding flow regardless of onboardingComplete flag
+    // This ensures users can always access setup if they skipped earlier
+    if (!hasAccounts && isAuthenticated) {
+      // If accounts are still loading, we'll wait in the useEffect to navigate
+      // But return SetupAssets so the route is correct
+      return 'SetupAssets';
+    }
+    
+    // Wait for accounts to load before deciding route
+    // This prevents going to Main first and then redirecting to SetupAssets
+    if (accountsLoading) {
+      // Still loading accounts, keep current route or show loading
+      return 'Main'; // Temporary, will update when accounts load
+    }
+    
     return 'Main';
-  }, [isLanguageSelected, isAuthenticated, isPinSetup, isPinVerified, isAuthenticatedInThisSession]);
+  }, [isLanguageSelected, isAuthenticated, isPinSetup, isPinVerified, isAuthenticatedInThisSession, accounts, accountsLoading, user?.onboardingComplete]);
 
   // Memoize callbacks to prevent re-renders
   // Handle PIN setup completion - automatically verify PIN so user goes directly to app
@@ -237,6 +273,33 @@ const RootNavigator: React.FC = () => {
     setTimeout(() => {
       checkPinSetup();
     }, 100);
+    
+    // Wait for accounts to load, then navigate directly to SetupAssets if no accounts
+    // This prevents going to Main first and then redirecting
+    const checkAccountsAndNavigate = () => {
+      const currentAccounts = useAccountStore.getState().accounts;
+      const accountsStillLoading = useAccountStore.getState().isLoading;
+      
+      if (accountsStillLoading) {
+        // Accounts still loading, check again after a short delay
+        setTimeout(checkAccountsAndNavigate, 100);
+        return;
+      }
+      
+      // Accounts loaded - navigate directly to SetupAssets if empty
+      if (currentAccounts.length === 0 && navigationRef.isReady()) {
+        const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
+        if (currentRouteName !== 'SetupAssets') {
+          navigationRef.current?.reset({
+            index: 0,
+            routes: [{ name: 'SetupAssets' }],
+          });
+        }
+      }
+    };
+    
+    // Start checking after a brief delay to allow state updates
+    setTimeout(checkAccountsAndNavigate, 200);
   }, [checkPinSetup, setPinVerified]);
 
   // Memoize initial params
@@ -246,12 +309,73 @@ const RootNavigator: React.FC = () => {
   );
 
   // Navigate to the correct route when it changes
+  // But don't force navigation if user is already in Main tab and manually navigating
   useEffect(() => {
-    if (navigationRef.isReady() && navigationRef.current?.getCurrentRoute()?.name !== currentRoute) {
-      navigationRef.current?.reset({
-        index: 0,
-        routes: [{ name: currentRoute }],
-      });
+    if (navigationRef.isReady()) {
+      const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
+      
+      // Only auto-navigate if:
+      // 1. Current route doesn't match expected route
+      // 2. We're not already in Main tab (to allow manual navigation from MoreScreen)
+      // 3. Or if we need to redirect to SetupAssets (no accounts) and not already there
+      if (currentRouteName !== currentRoute) {
+        // If user is in Main tab and trying to navigate to SetupAssets manually, allow it
+        if (currentRouteName === 'Main' && currentRoute === 'SetupAssets') {
+          // Don't reset, allow manual navigation
+          return;
+        }
+        
+        // If coming from PinSetup or PinVerification, wait for accounts to load first
+        // This ensures we navigate directly to SetupAssets if no accounts, not Main first
+        if (currentRouteName === 'PinSetup' || currentRouteName === 'PinVerification') {
+          // Wait for accounts to load if still loading
+          if (accountsLoading) {
+            const checkAndNavigate = () => {
+              const stillLoading = useAccountStore.getState().isLoading;
+              if (stillLoading) {
+                setTimeout(checkAndNavigate, 100);
+                return;
+              }
+              // Accounts loaded, now navigate to correct route
+              // Priority: Check accounts first - if no accounts, show SetupAssets
+              const currentAccounts = useAccountStore.getState().accounts;
+              const hasAccounts = currentAccounts.length > 0;
+              const finalRoute = !hasAccounts ? 'SetupAssets' : 'Main';
+              
+              if (navigationRef.isReady() && navigationRef.current?.getCurrentRoute()?.name !== finalRoute) {
+                navigationRef.current?.reset({
+                  index: 0,
+                  routes: [{ name: finalRoute }],
+                });
+              }
+            };
+            setTimeout(checkAndNavigate, 100);
+            return;
+          }
+          
+          // Accounts already loaded, navigate with small delay
+          // Priority: Check accounts first - if no accounts, show SetupAssets
+          setTimeout(() => {
+            const currentAccounts = useAccountStore.getState().accounts;
+            const hasAccounts = currentAccounts.length > 0;
+            const targetRoute = !hasAccounts ? 'SetupAssets' : currentRoute;
+            
+            if (navigationRef.isReady() && navigationRef.current?.getCurrentRoute()?.name !== targetRoute) {
+              navigationRef.current?.reset({
+                index: 0,
+                routes: [{ name: targetRoute }],
+              });
+            }
+          }, 200);
+          return;
+        }
+        
+        // Otherwise, reset to the expected route immediately
+        navigationRef.current?.reset({
+          index: 0,
+          routes: [{ name: currentRoute }],
+        });
+      }
     }
   }, [currentRoute]);
 
@@ -570,9 +694,35 @@ const RootNavigator: React.FC = () => {
               })}
             />
             <Stack.Screen name="UserGuide" component={UserGuideScreen} />
-             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-           </>
-         )}
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+            {/* Onboarding Screens */}
+            <Stack.Screen 
+              name="SetupAssets" 
+              component={SetupAssetsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="SetupLiabilities" 
+              component={SetupLiabilitiesScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="SetupExpenses" 
+              component={SetupExpensesScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="SetupIncome" 
+              component={SetupIncomeScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="SetupComplete" 
+              component={SetupCompleteScreen}
+              options={{ headerShown: false }}
+            />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

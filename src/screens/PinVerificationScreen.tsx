@@ -244,20 +244,9 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
       // Reset error counts on successful verification
       setErrorCount(0);
       setDisplayErrorCount(0);
-      // Update the store directly to ensure state change triggers re-render
+      // Update the store - this will trigger RootNavigator to handle navigation
+      // Don't manually reset navigation here to avoid double reset
       setPinVerified(true);
-      
-      // Force navigation by using navigationRef directly
-      // This ensures navigation happens even if beforeRemove listener is still active
-      // Small delay to ensure state is updated and beforeRemove listener can check the new state
-      setTimeout(() => {
-        if (navigationRef.isReady()) {
-          navigationRef.current?.reset({
-            index: 0,
-            routes: [{ name: 'Main' }],
-          });
-        }
-      }, 150);
     } catch (error) {
       console.error('Error in handleVerificationSuccess:', error);
       Alert.alert(t('common.error'), t('pin.verification.verificationFailedMessage'));

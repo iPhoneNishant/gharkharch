@@ -29,8 +29,15 @@ service cloud.firestore {
       allow create: if isAuthenticated() 
                     && request.auth.uid == userId
                     && !exists(/databases/$(database)/documents/users/$(userId));
-      // Updates and deletes must go through Cloud Functions
-      allow update, delete: if false;
+      // Users can update their own profile, but only specific fields
+      // Allow updating onboardingComplete and updatedAt
+      allow update: if isOwner(userId)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['onboardingComplete', 'updatedAt'])
+                    && request.resource.data.onboardingComplete is bool
+                    && request.resource.data.updatedAt is timestamp;
+      // Deletes must go through Cloud Functions
+      allow delete: if false;
     }
     
     // Accounts collection
@@ -61,6 +68,16 @@ service cloud.firestore {
         // SMS Account Mappings collection
     match /sms_account_mappings/{mappingId} {
       allow read, write: if true;
+    }
+
+    // Service Account Mappings collection
+    match /service_account_mappings/{mappingId} {
+      // Users can read their own mappings
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create their own mappings
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can update/delete their own mappings
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     // Household Services collection

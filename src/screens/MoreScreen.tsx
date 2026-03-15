@@ -95,15 +95,27 @@ const MoreScreen: React.FC = () => {
     },
     {
       id: 'household-services',
-      title: 'Household Services',
+      title: t('more.householdServices'),
       icon: 'home-outline' as const,
       onPress: () => navigation.navigate('HouseholdServicesManagement'),
     },
     {
       id: 'household-services-today',
-      title: "Today's Services",
+      title: t('more.todaysServices'),
       icon: 'today-outline' as const,
       onPress: () => navigation.navigate('HouseholdServicesToday'),
+    },
+    {
+      id: 'add-account',
+      title: t('more.createNewAccount'),
+      icon: 'add-circle-outline' as const,
+      onPress: () => navigation.navigate('AddAccount'),
+    },
+    {
+      id: 'setup-accounts',
+      title: `${t('more.setupAccounts')}\n${t('more.setupAccountsSubtitle')}`,
+      icon: 'wallet-outline' as const,
+      onPress: () => navigation.navigate('SetupAssets'),
     },
     {
       id: 'sms-account-mapping',

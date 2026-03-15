@@ -224,6 +224,11 @@ export interface UpdateRecurringTransactionRequest {
 export type RootStackParamList = {
   LanguageSelection: undefined;
   Auth: undefined;
+  SetupAssets: undefined;
+  SetupLiabilities: undefined;
+  SetupExpenses: undefined;
+  SetupIncome: undefined;
+  SetupComplete: undefined;
   PinSetup: { onComplete?: () => void; allowBack?: boolean } | undefined;
   PinChange: { onComplete?: () => void; allowBack?: boolean } | undefined;
   PinVerification: undefined;

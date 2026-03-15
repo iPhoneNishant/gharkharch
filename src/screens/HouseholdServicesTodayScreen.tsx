@@ -397,6 +397,24 @@ const HouseholdServicesTodayScreen: React.FC = () => {
       fontSize: typography.fontSize.sm,
       color: colors.text.secondary,
       textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+    emptyStateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.primary[500],
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.base,
+      paddingHorizontal: spacing.lg,
+      marginTop: spacing.md,
+      gap: spacing.sm,
+      ...shadows.md,
+    },
+    emptyStateButtonText: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.neutral[0],
     },
     bottomSheetBackdrop: {
       flex: 1,
@@ -582,6 +600,13 @@ const HouseholdServicesTodayScreen: React.FC = () => {
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>{t('householdServices.noActiveServicesFound')}</Text>
             <Text style={styles.emptyStateSubtext}>{t('householdServices.createServicesInMoreTab')}</Text>
+            <TouchableOpacity 
+              style={styles.emptyStateButton} 
+              onPress={() => navigation.navigate('HouseholdServicesManagement')}
+            >
+              <Ionicons name="add-circle-outline" size={24} color={colors.neutral[0]} />
+              <Text style={styles.emptyStateButtonText}>Add New Service</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           activeServices.map(service => {

@@ -3,7 +3,7 @@
  * Shows list of available report types
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View,
@@ -50,7 +50,8 @@ const ReportsListScreen: React.FC = () => {
       unsub();
     };
   }, []);
-  const styles = StyleSheet.create({
+  
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background.primary,
@@ -115,7 +116,7 @@ const ReportsListScreen: React.FC = () => {
       color: colors.neutral[400],
       marginLeft: spacing.sm,
     },
-  });
+  }), [fontScaleVersion]);
 
   const reportOptions: Array<{
     id: string;
@@ -165,8 +166,8 @@ const ReportsListScreen: React.FC = () => {
     },
     {
       id: 'household-services',
-      title: 'Household Services Ledger',
-      description: 'View monthly household expenses like milk, newspaper, maid, cook',
+      title: t('reportsList.householdServicesLedgerTitle'),
+      description: t('reportsList.householdServicesLedgerDescription'),
       icon: '🏠',
       screen: 'HouseholdServicesLedger',
       variant: 'household',

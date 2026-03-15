@@ -31,6 +31,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useAccountStore } from '../stores';
 import { RootStackParamList, AccountType } from '../types';
@@ -68,13 +69,34 @@ const AddAccountScreen: React.FC = () => {
       unsub();
     };
   }, []);
-  const styles = StyleSheet.create({
+  
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background.primary,
     },
     scrollContent: {
       padding: spacing.base,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.base,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.light,
+      backgroundColor: colors.background.primary,
+    },
+    backButton: {
+      padding: spacing.xs,
+    },
+    headerTitle: {
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      flex: 1,
+      textAlign: 'center',
     },
     section: {
       marginBottom: spacing.xl,
@@ -107,13 +129,10 @@ const AddAccountScreen: React.FC = () => {
       color: colors.neutral[0],
     },
     typeGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: spacing.sm,
+      gap: spacing.md,
     },
     typeCard: {
-      flex: 1,
-      minWidth: '45%',
+      width: '100%',
       backgroundColor: colors.background.elevated,
       borderRadius: borderRadius.lg,
       padding: spacing.md,
@@ -178,8 +197,45 @@ const AddAccountScreen: React.FC = () => {
     inputLabel: {
       fontSize: typography.fontSize.sm,
       fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs,
+      marginTop: spacing.base,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border.medium,
+      borderRadius: borderRadius.md,
+      padding: spacing.base,
+      fontSize: typography.fontSize.base,
       color: colors.text.primary,
-      marginBottom: spacing.sm,
+      backgroundColor: colors.background.primary,
+    },
+    categoryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: colors.border.medium,
+      borderRadius: borderRadius.md,
+      padding: spacing.base,
+      backgroundColor: colors.background.primary,
+      marginBottom: spacing.base,
+    },
+    categoryButtonText: {
+      fontSize: typography.fontSize.base,
+      color: colors.text.primary,
+    },
+    categoryButtonPlaceholder: {
+      color: colors.text.tertiary,
+    },
+    balanceInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border.medium,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.background.primary,
+      paddingHorizontal: spacing.base,
     },
     selectorValue: {
       flex: 1,
@@ -201,26 +257,17 @@ const AddAccountScreen: React.FC = () => {
       backgroundColor: colors.border.light,
       marginLeft: spacing.base,
     },
-    textInput: {
-      fontSize: typography.fontSize.base,
-      color: colors.text.primary,
-      padding: spacing.base,
-    },
     balanceInput: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: spacing.base,
-    },
-    currencySymbol: {
-      fontSize: typography.fontSize.lg,
-      fontWeight: typography.fontWeight.medium,
-      color: colors.text.secondary,
-      marginRight: spacing.sm,
-    },
-    balanceTextInput: {
       flex: 1,
       fontSize: typography.fontSize.base,
       color: colors.text.primary,
+      paddingVertical: spacing.base,
+    },
+    currencySymbol: {
+      fontSize: typography.fontSize.base,
+      fontWeight: typography.fontWeight.medium,
+      color: colors.text.secondary,
+      marginRight: spacing.sm,
     },
     helperText: {
       fontSize: typography.fontSize.sm,
@@ -422,17 +469,19 @@ const AddAccountScreen: React.FC = () => {
       lineHeight: 18,
       marginTop: spacing.xs / 2,
     },
-  });
+  }), [fontScaleVersion]);
   
   const { createAccount, accounts, error: accountError } = useAccountStore();
 
+  // Step state
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  
   // Form state
-  const [accountType, setAccountType] = useState<AccountType>('asset');
+  const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [name, setName] = useState('');
   const [parentCategory, setParentCategory] = useState<string | null>(null);
   const [subCategory, setSubCategory] = useState<string | null>(null);
   const [openingBalance, setOpeningBalance] = useState('');
-  const [selectedColor, setSelectedColor] = useState(ACCOUNT_COLORS[0]);
   const [isCreating, setIsCreating] = useState(false);
 
   // Modal state
@@ -444,13 +493,15 @@ const AddAccountScreen: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newSubCategoryName, setNewSubCategoryName] = useState('');
 
-  // Get categories for selected account type
-  const availableCategories = useMemo(() => {
-    return getCategoriesByType(accountType);
-  }, [accountType]);
 
   // Custom categories state (in a real app, these would be stored per user in Firestore)
   const [customCategories, setCustomCategories] = useState<Record<string, string[]>>({});
+
+  // Get categories for selected account type
+  const availableCategoriesForType = useMemo(() => {
+    if (!accountType) return [];
+    return getCategoriesByType(accountType);
+  }, [accountType]);
 
   // Get sub-categories for selected parent category (including custom ones)
   const availableSubCategories = useMemo(() => {
@@ -464,14 +515,15 @@ const AddAccountScreen: React.FC = () => {
   const hasBalance = accountType === 'asset' || accountType === 'liability';
 
   /**
-   * Handle account type change
-   * Reset category selections when type changes
+   * Handle account type selection (Step 1)
+   * Move to Step 2 when type is selected
    */
-  const handleTypeChange = (type: AccountType) => {
+  const handleTypeSelect = (type: AccountType) => {
     setAccountType(type);
     setParentCategory(null);
     setSubCategory(null);
     setOpeningBalance('');
+    setCurrentStep(2);
   };
 
   /**
@@ -501,17 +553,17 @@ const AddAccountScreen: React.FC = () => {
    */
   const handleAddCustomCategory = () => {
     if (!newCategoryName.trim()) {
-      Alert.alert('Error', 'Please enter a category name');
+      Alert.alert(t('common.error'), t('addAccount.error.enterCategoryName'));
       return;
     }
 
     // Check if category already exists
-    const exists = availableCategories.some(cat => 
+    const exists = availableCategoriesForType.some((cat: { parentCategory: string }) => 
       cat.parentCategory.toLowerCase() === newCategoryName.trim().toLowerCase()
     );
     
     if (exists) {
-      Alert.alert('Error', 'This category already exists');
+      Alert.alert(t('common.error'), t('addAccount.error.categoryExists'));
       return;
     }
 
@@ -532,12 +584,12 @@ const AddAccountScreen: React.FC = () => {
    */
   const handleAddCustomSubCategory = () => {
     if (!newSubCategoryName.trim()) {
-      Alert.alert('Error', 'Please enter a sub-category name');
+      Alert.alert(t('common.error'), t('addAccount.error.enterSubCategoryName'));
       return;
     }
 
     if (!parentCategory) {
-      Alert.alert('Error', 'Please select a category first');
+      Alert.alert(t('common.error'), t('addAccount.error.selectCategoryFirst'));
       return;
     }
 
@@ -547,7 +599,7 @@ const AddAccountScreen: React.FC = () => {
     );
     
     if (exists) {
-      Alert.alert('Error', 'This sub-category already exists');
+      Alert.alert(t('common.error'), t('addAccount.error.subCategoryExists'));
       return;
     }
 
@@ -574,26 +626,26 @@ const AddAccountScreen: React.FC = () => {
   const handleSubmit = async () => {
     // Validate name
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter an account name');
+      Alert.alert(t('common.error'), t('addAccount.error.enterAccountName'));
       return;
     }
 
-    // Check for duplicate account name (case-insensitive)
+    // Check for duplicate account name (case-insensitive, exact match only)
     const trimmedName = name.trim();
-    const duplicateAccount = accounts.find(
+    const duplicateCheck = accounts.find(
       account => account.name.toLowerCase() === trimmedName.toLowerCase()
     );
-    if (duplicateAccount) {
+    if (duplicateCheck) {
       Alert.alert(
         'Duplicate Account Name',
-        `An account with the name "${duplicateAccount.name}" already exists. Please use a different name.`
+        `An account with the name "${duplicateCheck.name}" already exists. Please use a different name.`
       );
       return;
     }
 
     // Validate categories
     if (!parentCategory || !subCategory) {
-      Alert.alert('Error', 'Please select a category');
+      Alert.alert(t('common.error'), t('addAccount.error.selectCategory'));
       return;
     }
 
@@ -602,7 +654,7 @@ const AddAccountScreen: React.FC = () => {
     if (hasBalance && openingBalance.trim()) {
       balance = parseFloat(openingBalance);
       if (isNaN(balance)) {
-        Alert.alert('Error', 'Please enter a valid opening balance');
+        Alert.alert(t('common.error'), t('addAccount.error.enterValidBalance'));
         return;
       }
       // Allow negative balances for liability accounts (representing debts)
@@ -616,11 +668,10 @@ const AddAccountScreen: React.FC = () => {
     try {
       await createAccount({
         name: name.trim(),
-        accountType,
+        accountType: accountType!,
         parentCategory,
         subCategory,
         openingBalance: balance,
-        color: selectedColor,
       });
 
       navigation.goBack();
@@ -632,201 +683,192 @@ const AddAccountScreen: React.FC = () => {
     }
   };
 
+  // Step 1: Account Type Selection
+  const renderStep1 = () => (
+    <ScrollView
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingBottom: insets.bottom + spacing.xl }
+      ]}
+    >
+      <View style={styles.section}>
+        <View style={styles.sectionTitleRow}>
+          <Text style={styles.sectionTitle}>{t('addAccount.accountType')}</Text>
+          <TouchableOpacity
+            style={styles.infoButton}
+            onPress={() => setShowAccountTypeInfo(true)}
+          >
+            <Text style={styles.infoButtonText}>i</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.typeGrid}>
+          {(['asset', 'liability', 'income', 'expense'] as AccountType[]).map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.typeCard,
+                { borderColor: getAccountTypeColor(type) },
+              ]}
+              onPress={() => handleTypeSelect(type)}
+            >
+              <View style={[
+                styles.typeIcon,
+                { backgroundColor: getAccountTypeBgColor(type) }
+              ]}>
+                <Text style={[
+                  styles.typeIconText,
+                  { color: getAccountTypeColor(type) }
+                ]}>
+                  {type === 'asset' ? '↗' : type === 'liability' ? '↙' : type === 'income' ? '↓' : '↑'}
+                </Text>
+              </View>
+              <Text style={[
+                styles.typeName,
+                { color: getAccountTypeColor(type) }
+              ]}>
+                {type === 'asset' ? t('addAccount.asset') : type === 'liability' ? t('addAccount.liability') : type === 'income' ? t('addAccount.income') : t('addAccount.expense')}
+              </Text>
+              <Text style={styles.typeSubtitle} numberOfLines={2}>
+                {type === 'asset' 
+                  ? t('addAccount.assetSubtitle')
+                  : type === 'liability'
+                  ? t('addAccount.liabilitySubtitle')
+                  : type === 'expense'
+                  ? t('addAccount.expenseSubtitle')
+                  : t('addAccount.incomeSubtitle')}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  // Step 2: Account Details Form
+  const renderStep2 = () => (
+    <ScrollView
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingBottom: insets.bottom + spacing.xl }
+      ]}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* Category Selection */}
+      <View style={styles.section}>
+        <Text style={styles.inputLabel}>{t('addAccount.category')}</Text>
+        <TouchableOpacity
+          style={styles.categoryButton}
+          onPress={() => {
+            Keyboard.dismiss();
+            setShowCategoryPicker(true);
+          }}
+        >
+          <Text style={[styles.categoryButtonText, !parentCategory && styles.categoryButtonPlaceholder]}>
+            {parentCategory || t('addAccount.selectCategory')}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color={colors.text.secondary} />
+        </TouchableOpacity>
+
+        {parentCategory && (
+          <>
+            <Text style={styles.inputLabel}>{t('addAccount.subCategory')}</Text>
+            <TouchableOpacity
+              style={styles.categoryButton}
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowSubCategoryPicker(true);
+              }}
+            >
+              <Text style={[styles.categoryButtonText, !subCategory && styles.categoryButtonPlaceholder]}>
+                {subCategory || t('addAccount.selectSubCategory')}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+
+      {/* Account Name */}
+      <View style={styles.section}>
+        <Text style={styles.inputLabel}>{t('addAccount.accountName')}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={t('addAccount.enterAccountName')}
+          placeholderTextColor={colors.neutral[400]}
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+        />
+      </View>
+
+      {/* Opening Balance (only for asset/liability) */}
+      {hasBalance && accountType && (
+        <View style={styles.section}>
+          <Text style={styles.inputLabel}>{t('addAccount.openingBalance')}</Text>
+          <View style={styles.balanceInputContainer}>
+            <Text style={styles.currencySymbol}>₹</Text>
+            <TextInput
+              style={styles.balanceInput}
+              placeholder="0"
+              placeholderTextColor={colors.neutral[400]}
+              value={openingBalance}
+              onChangeText={setOpeningBalance}
+              keyboardType="decimal-pad"
+            />
+          </View>
+        </View>
+      )}
+
+      {/* Submit Button */}
+      <TouchableOpacity
+        style={[styles.submitButton, isCreating && styles.submitButtonDisabled]}
+        onPress={handleSubmit}
+        disabled={isCreating}
+      >
+        {isCreating ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color={colors.neutral[0]} size="small" />
+            <Text style={styles.submitButtonText}>{t('addAccount.creating')}</Text>
+          </View>
+        ) : (
+          <Text style={styles.submitButtonText}>{t('addAccount.createAccount')}</Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
+  );
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + spacing.xl }
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Account Type Selector */}
-        <View style={styles.section}>
-          <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionTitle}>{t('addAccount.accountType')}</Text>
-            <TouchableOpacity
-              style={styles.infoButton}
-              onPress={() => setShowAccountTypeInfo(true)}
-            >
-              <Text style={styles.infoButtonText}>i</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.typeGrid}>
-            {(['asset', 'liability', 'income', 'expense'] as AccountType[]).map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.typeCard,
-                  accountType === type && styles.typeCardActive,
-                  accountType === type && { borderColor: getAccountTypeColor(type) },
-                ]}
-                onPress={() => handleTypeChange(type)}
-              >
-                <View style={[
-                  styles.typeIcon,
-                  { backgroundColor: getAccountTypeBgColor(type) }
-                ]}>
-                  <Text style={[
-                    styles.typeIconText,
-                    { color: getAccountTypeColor(type) }
-                  ]}>
-                    {type === 'asset' ? '↗' : type === 'liability' ? '↙' : type === 'income' ? '↓' : '↑'}
-                  </Text>
-                </View>
-                <Text style={[
-                  styles.typeName,
-                  accountType === type && { color: getAccountTypeColor(type) }
-                ]}>
-                  {type === 'asset' ? t('addAccount.asset') : type === 'liability' ? t('addAccount.liability') : type === 'income' ? t('addAccount.income') : t('addAccount.expense')}
-                </Text>
-                {type === 'asset' && (
-                  <Text style={styles.typeSubtitle} numberOfLines={2}>
-                    {t('addAccount.assetSubtitle')}
-                  </Text>
-                )}
-                {type === 'liability' && (
-                  <Text style={styles.typeSubtitle} numberOfLines={2}>
-                    {t('addAccount.liabilitySubtitle')}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
+      {/* Header with back button on Step 2 */}
+      {currentStep === 2 && (
+        <View style={[styles.header, { paddingTop: insets.top }]}>
+          <TouchableOpacity
+            onPress={() => setCurrentStep(1)}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {accountType === 'asset' ? t('addAccount.asset') : 
+             accountType === 'liability' ? t('addAccount.liability') : 
+             accountType === 'income' ? t('addAccount.income') : 
+             t('addAccount.expense')}
+          </Text>
+          <View style={{ width: 24 }} />
         </View>
-
-        {/* Category Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('addAccount.category')}</Text>
-          <View style={styles.formCard}>
-            <TouchableOpacity
-              style={styles.selector}
-              onPress={() => {
-                Keyboard.dismiss();
-                setShowCategoryPicker(true);
-              }}
-            >
-              <Text style={styles.selectorLabel}>{t('addAccount.category')}</Text>
-              {parentCategory ? (
-                <Text style={styles.selectorValue}>{parentCategory}</Text>
-              ) : (
-                <Text style={styles.selectorPlaceholder}>{t('addAccount.selectCategory')}</Text>
-              )}
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
-
-            {parentCategory && (
-              <>
-                <View style={styles.divider} />
-                <TouchableOpacity
-                  style={styles.selector}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    setShowSubCategoryPicker(true);
-                  }}
-                >
-                  <Text style={styles.selectorLabel}>{t('addAccount.subCategory')}</Text>
-                  {subCategory ? (
-                    <Text style={styles.selectorValue}>{subCategory}</Text>
-                  ) : (
-                    <Text style={styles.selectorPlaceholder}>{t('addAccount.selectSubCategory')}</Text>
-                  )}
-                  <Text style={styles.chevron}>›</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Account Name */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('addAccount.accountName')}</Text>
-          <View style={styles.formCard}>
-            <TextInput
-              style={styles.textInput}
-              placeholder={t('addAccount.enterAccountName')}
-              placeholderTextColor={colors.neutral[400]}
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-          </View>
-        </View>
-
-        {/* Opening Balance (only for asset/liability) */}
-        {hasBalance && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('addAccount.openingBalance')}</Text>
-            <View style={styles.formCard}>
-              <View style={styles.balanceInput}>
-                <Text style={styles.currencySymbol}>₹</Text>
-                <TextInput
-                  style={styles.balanceTextInput}
-                  placeholder="0.00"
-                  placeholderTextColor={colors.neutral[400]}
-                  value={openingBalance}
-                  onChangeText={setOpeningBalance}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-            </View>
-            <Text style={styles.helperText}>
-              {accountType === 'asset' 
-                ? 'Current balance in this account'
-                : 'Current amount owed'}
-            </Text>
-          </View>
-        )}
-
-        {/* Color Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Color</Text>
-          <View style={styles.colorGrid}>
-            {ACCOUNT_COLORS.map((color) => (
-              <TouchableOpacity
-                key={color}
-                style={[
-                  styles.colorOption,
-                  { backgroundColor: color },
-                  selectedColor === color && styles.colorOptionSelected,
-                ]}
-                onPress={() => setSelectedColor(color)}
-              >
-                {selectedColor === color && (
-                  <Text style={styles.colorCheck}>✓</Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={[styles.submitButton, isCreating && styles.submitButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={isCreating}
-        >
-          {isCreating ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator color={colors.neutral[0]} size="small" />
-              <Text style={styles.submitButtonText}>Creating...</Text>
-            </View>
-          ) : (
-            <Text style={styles.submitButtonText}>Create Account</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
+      )}
+      
+      {currentStep === 1 ? renderStep1() : renderStep2()}
 
       {/* Loading Overlay */}
       {isCreating && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingContent}>
             <ActivityIndicator size="large" color={colors.primary[500]} />
-            <Text style={styles.loadingText}>Creating Account...</Text>
+            <Text style={styles.loadingText}>{t('addAccount.creatingAccount')}</Text>
           </View>
         </View>
       )}
@@ -851,7 +893,7 @@ const AddAccountScreen: React.FC = () => {
           </View>
 
           <FlatList
-            data={availableCategories}
+            data={availableCategoriesForType}
             keyExtractor={(item) => item.parentCategory}
             renderItem={({ item }) => (
               <TouchableOpacity
@@ -875,7 +917,7 @@ const AddAccountScreen: React.FC = () => {
                     setShowAddCategoryModal(true);
                   }}
                 >
-                  <Text style={styles.addCustomButtonText}>+ Add Custom Category</Text>
+                  <Text style={styles.addCustomButtonText}>+ {t('addAccount.addCustomCategory')}</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -925,7 +967,7 @@ const AddAccountScreen: React.FC = () => {
                     setShowAddSubCategoryModal(true);
                   }}
                 >
-                  <Text style={styles.addCustomButtonText}>+ Add Custom Sub-category</Text>
+                  <Text style={styles.addCustomButtonText}>+ {t('addAccount.addCustomSubCategory')}</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -953,21 +995,21 @@ const AddAccountScreen: React.FC = () => {
               setShowAddCategoryModal(false);
               setNewCategoryName('');
             }}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Add Custom Category</Text>
+            <Text style={styles.modalTitle}>{t('addAccount.addCustomCategory')}</Text>
             <TouchableOpacity onPress={handleAddCustomCategory}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <ScrollView
             contentContainerStyle={styles.modalContent}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.inputLabel}>Category Name</Text>
+            <Text style={styles.inputLabel}>{t('addAccount.categoryName')}</Text>
             <TextInput
-              style={styles.textInput}
-              placeholder="Enter category name"
+              style={styles.input}
+              placeholder={t('addAccount.enterCategoryName')}
               placeholderTextColor={colors.neutral[400]}
               value={newCategoryName}
               onChangeText={setNewCategoryName}
@@ -997,21 +1039,21 @@ const AddAccountScreen: React.FC = () => {
               setShowAddSubCategoryModal(false);
               setNewSubCategoryName('');
             }}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Add Custom Sub-category</Text>
+            <Text style={styles.modalTitle}>{t('addAccount.addCustomSubCategory')}</Text>
             <TouchableOpacity onPress={handleAddCustomSubCategory}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <ScrollView
             contentContainerStyle={styles.modalContent}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.inputLabel}>Sub-category Name</Text>
+            <Text style={styles.inputLabel}>{t('addAccount.subCategoryName')}</Text>
             <TextInput
-              style={styles.textInput}
-              placeholder="Enter sub-category name"
+              style={styles.input}
+              placeholder={t('addAccount.enterSubCategoryName')}
               placeholderTextColor={colors.neutral[400]}
               value={newSubCategoryName}
               onChangeText={setNewSubCategoryName}

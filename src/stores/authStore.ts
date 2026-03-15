@@ -32,6 +32,7 @@ interface AuthState {
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  updateOnboardingComplete: (complete: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   clearError: () => void;
 }
@@ -360,6 +361,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       
       set({ isLoading: false, error: errorMessage });
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Update onboarding complete status
+   */
+  updateOnboardingComplete: async (complete: boolean) => {
+    const { user } = get();
+    if (!user) {
+      throw new Error('No user is currently signed in');
+    }
+
+    try {
+      const userDocRef = doc(firestore, COLLECTIONS.USERS, user.id);
+      await setDoc(
+        userDocRef,
+        {
+          onboardingComplete: complete,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      // Update local state
+      set({
+        user: {
+          ...user,
+          onboardingComplete: complete,
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error: any) {
+      console.error('Error updating onboarding complete:', error);
+      const errorMessage = error?.message ?? 'Failed to update onboarding status';
       throw new Error(errorMessage);
     }
   },
