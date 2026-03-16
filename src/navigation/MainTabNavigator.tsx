@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 // Screens
 import DashboardScreen from '../screens/DashboardScreen';
+import QuickActionsScreen from '../screens/QuickActionsScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import BankSmsScreen from '../screens/BankSmsScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
@@ -156,9 +157,9 @@ const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="AddTransaction" 
-        component={AddTransactionScreen}
+        component={QuickActionsScreen}
         options={{
-          headerTitle: 'Add Transaction',
+          headerTitle: t('quickActions.title'),
           tabBarLabel: '',
           headerTitleAlign: 'center'
         }}

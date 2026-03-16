@@ -675,7 +675,7 @@
       "accountsSelected": "{{count}} खाते चुने गए",
       "next": "आगे",
       "skipSetupTitle": "सेटअप छोड़ें?",
-      "skipSetupMessage": "आप अधिक टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
+      "skipSetupMessage": "आप Quick Actions टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
       "editAccount": "खाता संपादित करें",
       "addNewAccount": "नया खाता जोड़ें",
       "name": "नाम",
@@ -700,7 +700,7 @@
       "accountsSelected": "{{count}} खाते चुने गए",
       "next": "आगे",
       "skipSetupTitle": "सेटअप छोड़ें?",
-      "skipSetupMessage": "आप अधिक टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
+      "skipSetupMessage": "आप Quick Actions टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
       "editAccount": "खाता संपादित करें",
       "addNewAccount": "नया खाता जोड़ें",
       "name": "नाम",
@@ -725,7 +725,7 @@
       "accountsSelected": "{{count}} खाते चुने गए",
       "next": "आगे",
       "skipSetupTitle": "सेटअप छोड़ें?",
-      "skipSetupMessage": "आप अधिक टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
+      "skipSetupMessage": "आप Quick Actions टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
       "editAccount": "खाता संपादित करें",
       "addNewAccount": "नया खाता जोड़ें",
       "name": "नाम",
@@ -748,7 +748,7 @@
       "accountsSelected": "{{count}} खाते चुने गए",
       "next": "आगे",
       "skipSetupTitle": "सेटअप छोड़ें?",
-      "skipSetupMessage": "आप अधिक टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
+      "skipSetupMessage": "आप Quick Actions टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
       "editAccount": "खाता संपादित करें",
       "addNewAccount": "नया खाता जोड़ें",
       "name": "नाम",
@@ -764,5 +764,17 @@
         "selectCategoryFirst": "कृपया पहले कैटेगरी चुनें"
       }
     }
+  },
+  "quickActions": {
+    "title": "त्वरित कार्य",
+    "addTransaction": "नया लेनदेन जोड़ें",
+    "householdServices": "आज की सेवाएं",
+    "manageHouseholdServices": "सेवाएं प्रबंधित करें",
+    "viewAccounts": "मेरे खाते",
+    "createAccount": "नया खाता बनाएं",
+    "repeatTransaction": "दोहराएं लेनदेन",
+    "viewTransactions": "नया लेनदेन जोड़ें",
+    "bankSms": "नया लेनदेन बैंक SMS से जोड़ें",
+
   }
 }

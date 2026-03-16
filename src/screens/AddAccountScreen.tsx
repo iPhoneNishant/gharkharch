@@ -156,12 +156,12 @@ const AddAccountScreen: React.FC = () => {
       fontWeight: typography.fontWeight.bold,
     },
     typeName: {
-      fontSize: typography.fontSize.sm,
+      fontSize: typography.fontSize.base,
       fontWeight: typography.fontWeight.medium,
       color: colors.text.secondary,
     },
     typeSubtitle: {
-      fontSize: typography.fontSize.xs,
+      fontSize: typography.fontSize.sm,
       color: colors.text.tertiary,
       textAlign: 'center',
       marginTop: spacing.xs,
@@ -454,11 +454,11 @@ const AddAccountScreen: React.FC = () => {
       backgroundColor: 'transparent',
     },
     infoIconText: {
-      fontSize: typography.fontSize.base,
+      fontSize: typography.fontSize.xl,
       fontWeight: typography.fontWeight.bold,
     },
     infoTitle: {
-      fontSize: typography.fontSize.base,
+      fontSize: typography.fontSize.xl,
       fontWeight: typography.fontWeight.semiBold,
       color: colors.text.primary,
       flex: 1,

@@ -95,9 +95,12 @@ const AddTransactionScreen: React.FC = () => {
     };
   }, []);
 
-  // Set header back button when opened from BankSms or HouseholdServicesLedger
+  // Set header back button when opened from BankSms, HouseholdServicesLedger, or when navigating from stack
   useLayoutEffect(() => {
-    if (postSaveNavigationTarget === 'BankSms' || postSaveNavigationTarget === 'HouseholdServicesLedger') {
+    // Check if we can go back (means we're in a stack navigator, not just a tab)
+    const canGoBack = navigation.canGoBack();
+    
+    if (postSaveNavigationTarget === 'BankSms' || postSaveNavigationTarget === 'HouseholdServicesLedger' || canGoBack) {
       navigation.setOptions({
         headerBackVisible: true,
         headerLeft: undefined, // Let the default back button show

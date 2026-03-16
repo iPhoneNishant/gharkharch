@@ -457,7 +457,7 @@ const RootNavigator: React.FC = () => {
               component={AddTransactionScreen}
               options={({ route, navigation }) => ({
                 headerShown: true,
-                headerBackVisible: false,
+                headerBackVisible: navigation.canGoBack(), // Show back button if we can go back
                 headerTitle: (route.params as any)?.editTransactionId ? 'Edit Transaction' : 'Add Transaction',
                 headerTitleAlign: 'center',
                 headerTintColor: colors.primary[500],

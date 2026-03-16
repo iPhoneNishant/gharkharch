@@ -599,7 +599,7 @@
   },
   "householdServices": {
     "noActiveServicesFound": "No active services found",
-    "createServicesInMoreTab": "Create services in the Household Services in the More Tab",
+    "createServicesInMoreTab": "Create services in the Household Services in the Quick Actions Tab",
     "selectService": "Select Service",
     "todaysInfo": "Today's Info",
     "quantity": "Quantity",
@@ -675,7 +675,7 @@
       "accountsSelected": "{{count}} accounts selected",
       "next": "Next",
       "skipSetupTitle": "Skip Setup?",
-      "skipSetupMessage": "You can setup account from more tab via create new account or Setup account",
+      "skipSetupMessage": "You can setup account from Quick Actions tab via create new account or Setup account",
       "editAccount": "Edit Account",
       "addNewAccount": "Add New Account",
       "name": "Name",
@@ -700,7 +700,7 @@
       "accountsSelected": "{{count}} accounts selected",
       "next": "Next",
       "skipSetupTitle": "Skip Setup?",
-      "skipSetupMessage": "You can setup account from more tab via create new account or Setup account",
+      "skipSetupMessage": "You can setup account from Quick Actions tab via create new account or Setup account",
       "editAccount": "Edit Account",
       "addNewAccount": "Add New Account",
       "name": "Name",
@@ -725,7 +725,7 @@
       "accountsSelected": "{{count}} accounts selected",
       "next": "Next",
       "skipSetupTitle": "Skip Setup?",
-      "skipSetupMessage": "You can setup account from more tab via create new account or Setup account",
+      "skipSetupMessage": "You can setup account from Quick Actions tab via create new account or Setup account",
       "editAccount": "Edit Account",
       "addNewAccount": "Add New Account",
       "name": "Name",
@@ -748,7 +748,7 @@
       "accountsSelected": "{{count}} accounts selected",
       "next": "Next",
       "skipSetupTitle": "Skip Setup?",
-      "skipSetupMessage": "You can setup account from more tab via create new account or Setup account",
+      "skipSetupMessage": "You can setup account from Quick Actions tab via create new account or Setup account",
       "editAccount": "Edit Account",
       "addNewAccount": "Add New Account",
       "name": "Name",
@@ -764,5 +764,16 @@
         "selectCategoryFirst": "Please select a category first"
       }
     }
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "householdServices": "Today's Services",
+    "manageHouseholdServices": "Manage Services",
+    "viewAccounts": "My Accounts",
+    "createAccount": "Create New Account",
+    "repeatTransaction": "Repeat Transactions",
+    "viewTransactions": "Add New Transaction",
+    "bankSms": "Add New Transaction from Bank SMS",
+   
   }
 }
