@@ -190,7 +190,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
               }}
               placeholder="••••"
               placeholderTextColor={colors.neutral[400]}
-              keyboardType="number-pad"
+              keyboardType={Platform.OS === 'android' ? 'numeric' : 'number-pad'}
               secureTextEntry={true}
               maxLength={4}
               autoFocus={true}
@@ -213,7 +213,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
               }}
               placeholder="••••"
               placeholderTextColor={colors.neutral[400]}
-              keyboardType="number-pad"
+              keyboardType={Platform.OS === 'android' ? 'numeric' : 'number-pad'}
               secureTextEntry={true}
               maxLength={4}
               editable={!isChanging}
@@ -235,7 +235,7 @@ const PinChangeScreen: React.FC<PinChangeScreenProps> = ({ navigation, route }) 
               }}
               placeholder="••••"
               placeholderTextColor={colors.neutral[400]}
-              keyboardType="number-pad"
+              keyboardType={Platform.OS === 'android' ? 'numeric' : 'number-pad'}
               secureTextEntry={true}
               maxLength={4}
               editable={!isChanging}

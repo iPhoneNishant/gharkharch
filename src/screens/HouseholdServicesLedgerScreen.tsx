@@ -1282,7 +1282,7 @@ const HouseholdServicesLedgerScreen: React.FC = () => {
     const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     const note = `${selectedService.name} - ${monthName}`;
     
-    // Get parent navigator to navigate to AddTransaction
+    // Navigate to ChooseTransactionType (not from Bank SMS), then AddTransaction with prefill
     const parent = navigation.getParent();
     if (parent) {
       parent.navigate('AddTransaction', {

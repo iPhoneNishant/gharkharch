@@ -233,9 +233,23 @@ export type RootStackParamList = {
   PinChange: { onComplete?: () => void; allowBack?: boolean } | undefined;
   PinVerification: undefined;
   Main: undefined;
+  ChooseTransactionType:
+    | {
+        prefill?: {
+          amount?: number;
+          note?: string;
+          date?: string;
+          debitAccountId?: string;
+          creditAccountId?: string;
+          serviceId?: string;
+        };
+        postSaveNavigationTarget?: string;
+      }
+    | undefined;
   AddTransaction:
     | {
         editTransactionId?: string;
+        presetTransactionType?: 'expense' | 'income' | 'transfer' | 'return';
         prefill?: {
           amount?: number;
           note?: string;
@@ -257,7 +271,17 @@ export type RootStackParamList = {
         };
       }
     | undefined;
-  AddAccount: { editAccountId?: string } | undefined;
+  AddAccount:
+    | {
+        editAccountId?: string;
+        fromTransaction?: {
+          /** When set, skip step 1 and open directly on step 2 with this account type (expense/income). */
+          presetAccountType?: AccountType;
+          /** When set, step 1 shows only Asset and Liability options. */
+          restrictToAssetLiability?: boolean;
+        };
+      }
+    | undefined;
   AccountDetail: { accountId: string; fromDate?: Date; toDate?: Date };
   TransactionDetail: { transactionId: string };
   SummaryMonthReport: undefined;

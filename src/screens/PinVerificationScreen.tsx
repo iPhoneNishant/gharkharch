@@ -325,9 +325,9 @@ const PinVerificationScreen: React.FC<PinVerificationScreenProps> = ({ navigatio
                   onChangeText={handlePinChange}
                   placeholder="••••"
                   placeholderTextColor={colors.neutral[400]}
-                  keyboardType="number-pad"
+                  keyboardType={Platform.OS === 'android' ? 'numeric' : 'number-pad'}
                   secureTextEntry
-                  maxLength={6}
+                  maxLength={4}
                   autoFocus={biometricAttempted}
                   editable={!isVerifying}
                 />

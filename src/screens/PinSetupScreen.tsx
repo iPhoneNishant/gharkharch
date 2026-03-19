@@ -206,7 +206,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
               onChangeText={handlePinChange}
               placeholder="••••"
               placeholderTextColor={colors.neutral[400]}
-              keyboardType="number-pad"
+              keyboardType={Platform.OS === 'android' ? 'numeric' : 'number-pad'}
               secureTextEntry
               maxLength={4}
               autoFocus
@@ -224,7 +224,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ navigation, route }) =>
               onChangeText={handleConfirmPinChange}
               placeholder="••••"
               placeholderTextColor={colors.neutral[400]}
-              keyboardType="number-pad"
+              keyboardType={Platform.OS === 'android' ? 'numeric' : 'number-pad'}
               secureTextEntry
               maxLength={4}
               editable={!isSettingUp}

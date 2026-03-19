@@ -225,7 +225,7 @@ const TransactionsScreen: React.FC = () => {
   }, [filteredTransactions]);
 
   const handleAddTransaction = () => {
-    navigation.navigate('AddTransaction');
+    navigation.navigate('ChooseTransactionType');
   };
 
 

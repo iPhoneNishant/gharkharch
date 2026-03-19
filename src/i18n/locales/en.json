@@ -165,6 +165,14 @@
     "fromDateTitle": "From Date",
     "toDateTitle": "To Date"
   },
+  "chooseTransactionType": {
+    "title": "What type of transaction?",
+    "subtitle": "Choose one to continue",
+    "expenseSubtitle": "Money going out (e.g. shopping, bills)",
+    "incomeSubtitle": "Money coming in (e.g. salary, interest)",
+    "transferSubtitle": "Moving money between your accounts",
+    "returnSubtitle": "Refund or money coming back from expense"
+  },
   "addTransaction": {
     "title": "Add Transaction",
     "editTitle": "Edit Transaction",
@@ -407,7 +415,19 @@
     "codeSent": "Verification code sent!",
     "codeSentMessage": "Please enter the 6-digit code sent to your phone number.",
     "resendCode": "Resend Code",
-    "changePhoneNumber": "Change Phone Number"
+    "changePhoneNumber": "Change Phone Number",
+    "validationNameRequired": "Please enter your name",
+    "validationNameMin": "Name must be at least 2 characters",
+    "validationNameAlphabetic": "Name can only contain letters",
+    "validationEmailRequired": "Please enter your email",
+    "validationEmailInvalid": "Please enter a valid email address",
+    "validationPasswordRequired": "Please enter a password",
+    "validationPasswordMin": "Password must be at least 8 characters",
+    "validationPasswordUppercase": "Password must contain at least one uppercase letter",
+    "validationPasswordNumber": "Password must contain at least one number",
+    "validationPasswordSpecial": "Password must contain at least one special character (!@#$%^&* etc.)",
+    "validationPasswordMatch": "Passwords do not match",
+    "passwordRequirements": "Min 8 characters, 1 uppercase, 1 number, 1 special character"
   },
   "pin": {
     "setup": {
@@ -651,7 +671,7 @@
     "viewPrices": "View Prices",
     "editService": "Edit Service",
     "addService": "Add Service",
-    "serviceNamePlaceholder": "Service Name (e.g., Milk, Newspaper, Maid)",
+    "serviceNamePlaceholder": "Service Name (e.g., Milk)",
     "selectBillingType": "Select Billing Type",
     "dailyQuantityMilk": "Daily Quantity (Milk)",
     "dailyFixedNewspaper": "Daily Fixed (Newspaper)",

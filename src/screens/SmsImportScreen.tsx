@@ -52,8 +52,8 @@ const SmsImportScreen: React.FC = () => {
       // Go back to the existing AddTransaction screen
       navigation.goBack();
     } else {
-      // Default behavior: navigate to AddTransaction and then to Transactions
-      navigation.navigate('AddTransaction', {
+      // Default behavior: choose type then AddTransaction with prefill
+      navigation.navigate('ChooseTransactionType', {
         prefill: prefillData,
         postSaveNavigationTarget: 'Transactions',
       });

@@ -11,6 +11,7 @@ export { default as ReportsScreen } from './ReportsScreen';
 export { default as MonthToMonthReportScreen } from './MonthToMonthReportScreen';
 export { default as DayToDayReportScreen } from './DayToDayReportScreen';
 export { default as SettingsScreen } from './SettingsScreen';
+export { default as ChooseTransactionTypeScreen } from './ChooseTransactionTypeScreen';
 export { default as AddTransactionScreen } from './AddTransactionScreen';
 export { default as AddAccountScreen } from './AddAccountScreen';
 export { default as AccountDetailScreen } from './AccountDetailScreen';

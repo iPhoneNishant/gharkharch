@@ -77,7 +77,6 @@ const QuickActionsScreen: React.FC = () => {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between',
-      // marginTop: spacing.base,
     },
     actionCard: {
       width: CARD_SIZE,
@@ -127,7 +126,7 @@ const QuickActionsScreen: React.FC = () => {
           // Navigate to AddTransaction tab which shows transaction list
           const tabNavigation = navigation.getParent();
           if (tabNavigation) {
-            (tabNavigation as any).navigate('AddTransaction');
+            (tabNavigation as any).navigate('ChooseTransactionType');
           }
         },
       },

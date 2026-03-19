@@ -93,6 +93,7 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
   },
   itemContent: {
     flex: 1,
+    minWidth: 0,
   },
   itemNameRow: {
     flexDirection: 'row',
@@ -113,6 +114,7 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
+    flexShrink: 1,
   },
   itemCategoryDisabled: {
     color: colors.text.tertiary,
@@ -246,7 +248,7 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
   },
   categoryButton: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: colors.border.medium,
@@ -256,6 +258,9 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
     marginBottom: spacing.base,
   },
   categoryButtonText: {
+    flex: 1,
+    flexShrink: 1,
+    marginRight: spacing.sm,
     fontSize: typography.fontSize.base,
     color: colors.text.primary,
   },
@@ -276,10 +281,13 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
     padding: spacing.base,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
+    width: '100%',
+    alignSelf: 'stretch',
   },
   pickerItemText: {
     fontSize: typography.fontSize.base,
     color: colors.text.primary,
+    flexShrink: 1,
   },
 });
 

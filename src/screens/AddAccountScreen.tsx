@@ -473,11 +473,22 @@ const AddAccountScreen: React.FC = () => {
   
   const { createAccount, accounts, error: accountError } = useAccountStore();
 
-  // Step state
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
-  
-  // Form state
-  const [accountType, setAccountType] = useState<AccountType | null>(null);
+  // When coming from transaction: expense/income → skip to step 2; asset/liability → show only those two in step 1
+  const fromTransaction = route.params?.fromTransaction;
+  const presetAccountType = fromTransaction?.presetAccountType;
+  const restrictToAssetLiability = fromTransaction?.restrictToAssetLiability === true;
+
+  // Step state (start at step 2 if we already know account type from transaction)
+  const [currentStep, setCurrentStep] = useState<1 | 2>(() => (presetAccountType ? 2 : 1));
+
+  // Form state (pre-fill account type when coming from transaction with expense/income)
+  const [accountType, setAccountType] = useState<AccountType | null>(() => presetAccountType ?? null);
+
+  // Step 1 types: only asset & liability when coming from transaction for that side
+  const step1AccountTypes = useMemo((): AccountType[] => {
+    if (restrictToAssetLiability) return ['asset', 'liability'];
+    return ['asset', 'liability', 'income', 'expense'];
+  }, [restrictToAssetLiability]);
   const [name, setName] = useState('');
   const [parentCategory, setParentCategory] = useState<string | null>(null);
   const [subCategory, setSubCategory] = useState<string | null>(null);
@@ -702,7 +713,7 @@ const AddAccountScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <View style={styles.typeGrid}>
-          {(['asset', 'liability', 'income', 'expense'] as AccountType[]).map((type) => (
+          {step1AccountTypes.map((type) => (
             <TouchableOpacity
               key={type}
               style={[
@@ -845,19 +856,22 @@ const AddAccountScreen: React.FC = () => {
       {/* Header with back button on Step 2 */}
       {currentStep === 2 && (
         <View style={[styles.header, { paddingTop: insets.top }]}>
+          {!presetAccountType && (
           <TouchableOpacity
             onPress={() => setCurrentStep(1)}
             style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
+          )
+          }
           <Text style={styles.headerTitle}>
             {accountType === 'asset' ? t('addAccount.asset') : 
              accountType === 'liability' ? t('addAccount.liability') : 
              accountType === 'income' ? t('addAccount.income') : 
              t('addAccount.expense')}
           </Text>
-          <View style={{ width: 24 }} />
+          {!presetAccountType && ( <View style={{ width: 24 }} /> )}
         </View>
       )}
       

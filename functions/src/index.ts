@@ -241,10 +241,11 @@ export const createAccount = onCall(
   const accountType = validateAccountType(data.accountType);
 
   // Validate opening balance for asset/liability accounts
+  // Assets: non-negative. Liabilities: negative allowed (debt = negative balance)
   let openingBalance: number | undefined;
   if (hasBalance(accountType)) {
     openingBalance = data.openingBalance ?? 0;
-    if (openingBalance < 0) {
+    if (accountType === 'asset' && openingBalance < 0) {
       throw new HttpsError('invalid-argument', 'Opening balance cannot be negative');
     }
   }

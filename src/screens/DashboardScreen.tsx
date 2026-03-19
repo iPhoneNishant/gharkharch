@@ -133,7 +133,7 @@ const DashboardScreen: React.FC = () => {
 
   const handleAddTransaction = () => {
     setShowAddMenu(false);
-    navigation.navigate('AddTransaction');
+    navigation.navigate('ChooseTransactionType');
   };
 
   const handleAddRecurringTransaction = () => {

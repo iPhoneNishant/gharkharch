@@ -994,7 +994,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
                 style={styles.optionItem}
                 onPress={() => handleFrequencySelect(item.value)}
               >
-                <Text style={styles.optionText}>{item.label}</Text>
+                <Text style={styles.optionText}>{item.label} </Text>
                 {frequency === item.value && (
                   <Text style={styles.checkmark}>✓</Text>
                 )}
@@ -1034,7 +1034,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
                   style={styles.optionItem}
                   onPress={() => handleDaySelect(item.value)}
                 >
-                  <Text style={styles.optionText}>{item.label}</Text>
+                  <Text style={styles.optionText}>{item.label} </Text>
                   {dayOfRecurrence === item.value && (
                     <Text style={styles.checkmark}>✓</Text>
                   )}

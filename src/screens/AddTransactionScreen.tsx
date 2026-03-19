@@ -84,7 +84,10 @@ const AddTransactionScreen: React.FC = () => {
   const prefill = route.params?.prefill;
   const postSaveNavigationTarget = route.params?.postSaveNavigationTarget;
   const smsBankInfo = route.params?.smsBankInfo;
+  const presetTransactionType = route.params?.presetTransactionType;
   const hasAppliedPrefillRef = useRef(false);
+  /** When coming from ChooseTransactionType (not Bank SMS), type is fixed and shown as display-only. */
+  const isTransactionTypeLocked = !!(presetTransactionType && !smsBankInfo);
   const [fontScaleVersion, setFontScaleVersion] = useState(0);
   React.useEffect(() => {
     const unsub = addFontScaleListener(() => {
@@ -247,8 +250,14 @@ const AddTransactionScreen: React.FC = () => {
   const [accountSearchQuery, setAccountSearchQuery] = useState('');
   const [selectedTransactionType, setSelectedTransactionType] = useState<
     'expense' | 'income' | 'transfer' | 'return' | null
-  >('expense');
+  >(presetTransactionType ?? 'expense');
   const hasUserSelectedTypeRef = useRef(false);
+  React.useEffect(() => {
+    if (presetTransactionType) {
+      hasUserSelectedTypeRef.current = true;
+      setSelectedTransactionType(presetTransactionType);
+    }
+  }, [presetTransactionType]);
   const reopenPickerOnFocusRef = useRef(false);
   const reopenPickerTypeRef = useRef<'debit' | 'credit'>('credit');
   const [showCalculator, setShowCalculator] = useState(false);
@@ -369,7 +378,26 @@ const AddTransactionScreen: React.FC = () => {
     reopenPickerTypeRef.current = accountPickerType;
     setShowAccountPicker(false);
     setAccountSearchQuery('');
-    navigation.navigate('AddAccount');
+    // Pass context: for expense/income we know account type (skip to step 2); for asset/liability show only those two in step 1
+    const effectiveType = effectiveTransactionType ?? 'expense';
+    const isFrom = accountPickerType === 'credit';
+    let presetAccountType: 'expense' | 'income' | undefined;
+    let restrictToAssetLiability = false;
+    if (effectiveType === 'expense') {
+      if (isFrom) restrictToAssetLiability = true;
+      else presetAccountType = 'expense';
+    } else if (effectiveType === 'income') {
+      if (isFrom) presetAccountType = 'income';
+      else restrictToAssetLiability = true;
+    } else if (effectiveType === 'transfer') {
+      restrictToAssetLiability = true;
+    } else if (effectiveType === 'return') {
+      if (isFrom) presetAccountType = 'expense';
+      else restrictToAssetLiability = true;
+    }
+    navigation.navigate('AddAccount', {
+      fromTransaction: { presetAccountType, restrictToAssetLiability },
+    });
   };
 
   const AddAccountFooter = () => (
@@ -1336,73 +1364,99 @@ const AddTransactionScreen: React.FC = () => {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Transaction Type Selector */}
+        {/* Transaction Type: display-only when preset (from ChooseTransactionType), selector when from Bank SMS */}
         <View style={styles.typeSection}>
           <View style={styles.typeHeaderRow}>
             <Text style={styles.typeHeaderLabel}>{t('addTransaction.transactionType')}</Text>
-            {selectedTransactionType && (
+            {selectedTransactionType && !isTransactionTypeLocked && (
               <Text style={styles.typeHeaderHint}>{t('addTransaction.manual')}</Text>
             )}
           </View>
           <View style={styles.typeChipsRow}>
-            {(['expense', 'income', 'transfer', 'return'] as const).map((type) => {
-              const isActive = selectedTransactionType === type;
-              const fg =
-                type === 'expense' || type === 'return'
-                  ? colors.expense
-                  : type === 'income'
-                  ? colors.income
-                  : colors.asset;
-
-              const label =
-                type === 'expense'
-                  ? t('addTransaction.expense')
-                  : type === 'income'
-                  ? t('addTransaction.income')
-                  : type === 'transfer'
-                  ? t('addTransaction.transfer')
-                  : t('addTransaction.return');
-
-              return (
-          <TouchableOpacity
-                  key={type}
-            style={[
-                    styles.typeChip,
-                    !isActive && styles.typeChipInactive,
-                    { borderColor: isActive ? fg : colors.border.light },
-                    isActive && { backgroundColor: fg }
+            {isTransactionTypeLocked && effectiveTransactionType ? (
+              <View
+                style={[
+                  styles.typeChip,
+                  {
+                    borderColor: effectiveTransactionType === 'expense' || effectiveTransactionType === 'return' ? colors.expense : effectiveTransactionType === 'income' ? colors.income : colors.asset,
+                    backgroundColor: effectiveTransactionType === 'expense' || effectiveTransactionType === 'return' ? colors.expense : effectiveTransactionType === 'income' ? colors.income : colors.asset,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.typeChipText,
+                    { color: colors.neutral[0] },
                   ]}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    hasUserSelectedTypeRef.current = true;
-                    const next = selectedTransactionType === type ? null : type;
-                    setSelectedTransactionType(next);
-
-                    // If switching to a manual type, clear any incompatible selections
-                    if (next) {
-                      const currentDebit = debitAccount;
-                      const currentCredit = creditAccount;
-
-                      if (currentCredit && !isAccountAllowedForSide(next, 'credit', currentCredit)) {
-                        setCreditAccountId(null);
-                      }
-                      if (currentDebit && !isAccountAllowedForSide(next, 'debit', currentDebit)) {
-                        setDebitAccountId(null);
-                      }
-                    }
-                  }}
                 >
-                  <Text
-            style={[
+                  {effectiveTransactionType === 'expense'
+                    ? t('addTransaction.expense')
+                    : effectiveTransactionType === 'income'
+                    ? t('addTransaction.income')
+                    : effectiveTransactionType === 'transfer'
+                    ? t('addTransaction.transfer')
+                    : t('addTransaction.return')}
+                </Text>
+              </View>
+            ) : (
+              (['expense', 'income', 'transfer', 'return'] as const).map((type) => {
+                const isActive = selectedTransactionType === type;
+                const fg =
+                  type === 'expense' || type === 'return'
+                    ? colors.expense
+                    : type === 'income'
+                    ? colors.income
+                    : colors.asset;
+
+                const label =
+                  type === 'expense'
+                    ? t('addTransaction.expense')
+                    : type === 'income'
+                    ? t('addTransaction.income')
+                    : type === 'transfer'
+                    ? t('addTransaction.transfer')
+                    : t('addTransaction.return');
+
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.typeChip,
+                      !isActive && styles.typeChipInactive,
+                      { borderColor: isActive ? fg : colors.border.light },
+                      isActive && { backgroundColor: fg },
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      hasUserSelectedTypeRef.current = true;
+                      const next = selectedTransactionType === type ? null : type;
+                      setSelectedTransactionType(next);
+
+                      if (next) {
+                        const currentDebit = debitAccount;
+                        const currentCredit = creditAccount;
+
+                        if (currentCredit && !isAccountAllowedForSide(next, 'credit', currentCredit)) {
+                          setCreditAccountId(null);
+                        }
+                        if (currentDebit && !isAccountAllowedForSide(next, 'debit', currentDebit)) {
+                          setDebitAccountId(null);
+                        }
+                      }
+                    }}
+                  >
+                    <Text
+                    style={[
                       styles.typeChipText,
-                      { color: isActive ? colors.neutral[0] : fg }
+                      { color: isActive ? colors.neutral[0] : fg },
                     ]}
                   >
                     {label}
-            </Text>
-          </TouchableOpacity>
-              );
-            })}
+                  </Text>
+                </TouchableOpacity>
+                );
+              })
+            )}
           </View>
         </View>
 

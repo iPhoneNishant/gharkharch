@@ -165,6 +165,14 @@
   "fromDateTitle": "शुरू की तारीख",
   "toDateTitle": "अंत की तारीख"
 },
+"chooseTransactionType": {
+  "title": "किस तरह का लेनदेन?",
+  "subtitle": "जारी रखने के लिए एक चुनें",
+  "expenseSubtitle": "पैसा बाहर जा रहा (खरीदारी, बिल आदि)",
+  "incomeSubtitle": "पैसा आ रहा (सैलरी, ब्याज आदि)",
+  "transferSubtitle": "अपने खातों के बीच पैसा ट्रांसफर",
+  "returnSubtitle": "वापसी या खर्च से पैसा वापस आना"
+},
 "addTransaction": {
   "title": "लेनदेन जोड़ें",
   "editTitle": "लेनदेन बदलें",
@@ -407,7 +415,19 @@
     "codeSent": "सत्यापन कोड भेजा गया!",
     "codeSentMessage": "कृपया अपने फोन नंबर पर भेजा गया 6-अंकीय कोड दर्ज करें।",
     "resendCode": "कोड पुनः भेजें",
-    "changePhoneNumber": "फोन नंबर बदलें"
+    "changePhoneNumber": "फोन नंबर बदलें",
+    "validationNameRequired": "कृपया अपना नाम दर्ज करें",
+    "validationNameMin": "नाम कम से कम 2 अक्षर का होना चाहिए",
+    "validationNameAlphabetic": "नाम में केवल अक्षर हो सकते हैं",
+    "validationEmailRequired": "कृपया अपना ईमेल दर्ज करें",
+    "validationEmailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें",
+    "validationPasswordRequired": "कृपया पासवर्ड दर्ज करें",
+    "validationPasswordMin": "पासवर्ड कम से कम 8 अक्षर का होना चाहिए",
+    "validationPasswordUppercase": "पासवर्ड में कम से कम एक बड़ा अक्षर होना चाहिए",
+    "validationPasswordNumber": "पासवर्ड में कम से कम एक अंक होना चाहिए",
+    "validationPasswordSpecial": "पासवर्ड में कम से कम एक विशेष अक्षर होना चाहिए (!@#$%^&* आदि)",
+    "validationPasswordMatch": "पासवर्ड मेल नहीं खाते",
+    "passwordRequirements": "कम से कम 8 अक्षर, 1 बड़ा अक्षर, 1 अंक, 1 विशेष अक्षर"
   },
   "pin": {
     "setup": {

@@ -25,6 +25,7 @@ import PinSetupScreen from '../screens/PinSetupScreen';
 import PinChangeScreen from '../screens/PinChangeScreen';
 import PinVerificationScreen from '../screens/PinVerificationScreen';
 import MainTabNavigator from './MainTabNavigator';
+import ChooseTransactionTypeScreen from '../screens/ChooseTransactionTypeScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import AddAccountScreen from '../screens/AddAccountScreen';
 import AccountDetailScreen from '../screens/AccountDetailScreen';
@@ -452,6 +453,16 @@ const RootNavigator: React.FC = () => {
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabNavigator} />
+            <Stack.Screen
+              name="ChooseTransactionType"
+              component={ChooseTransactionTypeScreen}
+              options={{
+                headerShown: true,
+                headerTitle: t('chooseTransactionType.title'),
+                headerTitleAlign: 'center',
+                headerTintColor: colors.primary[500],
+              }}
+            />
             <Stack.Screen 
               name="AddTransaction" 
               component={AddTransactionScreen}

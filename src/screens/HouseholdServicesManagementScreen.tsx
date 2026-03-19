@@ -48,6 +48,9 @@ import { colors, spacing, typography, borderRadius, shadows, addFontScaleListene
 import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 import { useAuthStore } from '../stores';
 
+/** Required on Android (and some themes) or placeholder can be invisible next to input text color */
+const INPUT_PLACEHOLDER_COLOR = colors.neutral[400];
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const HouseholdServicesManagementScreen: React.FC = () => {
@@ -496,8 +499,8 @@ const HouseholdServicesManagementScreen: React.FC = () => {
       backgroundColor: colors.background.elevated,
       borderRadius: borderRadius.lg,
       padding: spacing.lg,
-      width: '70%',
-      maxWidth: 400,
+      width: '90%',
+      maxWidth: 600,
     },
     modalTitle: {
       fontSize: typography.fontSize.lg,
@@ -522,9 +525,12 @@ const HouseholdServicesManagementScreen: React.FC = () => {
       marginBottom: spacing.base,
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
+      alignItems: 'flex-start',
     },
     pickerButtonText: {
+      flex: 1,
+      flexShrink: 1,
+      marginRight: spacing.sm,
       fontSize: typography.fontSize.base,
       color: colors.text.primary,
     },
@@ -794,6 +800,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder={t('householdServices.serviceNamePlaceholder')}
+              placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
               value={serviceName}
               onChangeText={setServiceName}
             />
@@ -841,6 +848,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                 <TextInput
                   style={styles.input}
                   placeholder={t('householdServices.defaultQuantityPlaceholder')}
+                  placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
                   value={defaultQuantity}
                   onChangeText={setDefaultQuantity}
                   keyboardType="numeric"
@@ -848,6 +856,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                 <TextInput
                   style={styles.input}
                   placeholder={t('householdServices.unitPlaceholder')}
+                  placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
                   value={unit}
                   onChangeText={setUnit}
                 />
@@ -855,6 +864,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                   <TextInput
                     style={styles.input}
                     placeholder={t('householdServices.pricePerUnitPlaceholder')}
+                    placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
                     value={price}
                     onChangeText={handlePriceChange}
                     keyboardType="decimal-pad"
@@ -867,6 +877,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder={t('householdServices.pricePlaceholder')}
+                placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
                 value={price}
                 onChangeText={handlePriceChange}
                 keyboardType="decimal-pad"
@@ -877,6 +888,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                 <TextInput
                   style={styles.input}
                   placeholder={t('householdServices.monthlySalaryPlaceholder')}
+                  placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
                   value={monthlySalary}
                   onChangeText={setMonthlySalary}
                   keyboardType="numeric"
@@ -884,6 +896,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                 <TextInput
                   style={styles.input}
                   placeholder="Allowed Leaves per Month"
+                  placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
                   value={allowedLeaves}
                   onChangeText={setAllowedLeaves}
                   keyboardType="numeric"
@@ -955,6 +968,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder={t('householdServices.price')}
+              placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
               value={price}
               onChangeText={handlePriceChange}
               keyboardType="decimal-pad"
@@ -1021,6 +1035,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Quantity"
+              placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
               value={quantity}
               onChangeText={setQuantity}
               keyboardType="numeric"

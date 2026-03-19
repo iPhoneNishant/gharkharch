@@ -25,6 +25,39 @@ import { colors, typography, spacing, borderRadius, shadows } from '../config/th
 
 type AuthMode = 'signIn' | 'signUp' | 'forgotPassword';
 
+// Name: only letters (any language) and spaces
+const isNameAlphabeticOnly = (value: string): boolean =>
+  /^[\p{L}\s]+$/u.test(value.trim());
+
+// Email: basic valid format
+const isValidEmail = (value: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+// Password: min 8 chars, at least one uppercase, one number, one special char
+const PASSWORD_MIN_LENGTH = 8;
+const hasUpperCase = (s: string) => /[A-Z]/.test(s);
+const hasNumber = (s: string) => /\d/.test(s);
+const hasSpecialChar = (s: string) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(s);
+
+const getPasswordValidationError = (
+  password: string,
+  t: (key: string) => string
+): string | null => {
+  if (!password || password.length < PASSWORD_MIN_LENGTH) {
+    return t('auth.validationPasswordMin');
+  }
+  if (!hasUpperCase(password)) {
+    return t('auth.validationPasswordUppercase');
+  }
+  if (!hasNumber(password)) {
+    return t('auth.validationPasswordNumber');
+  }
+  if (!hasSpecialChar(password)) {
+    return t('auth.validationPasswordSpecial');
+  }
+  return null;
+};
+
 const AuthScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -46,6 +79,39 @@ const AuthScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
+  const validateName = (value: string): string => {
+    const trim = value.trim();
+    if (!trim) return t('auth.validationNameRequired');
+    if (trim.length < 2) return t('auth.validationNameMin');
+    if (!isNameAlphabeticOnly(value)) return t('auth.validationNameAlphabetic');
+    return '';
+  };
+
+  const filterNameInput = (text: string): string =>
+    text.replace(/[^\p{L}\s]/gu, '');
+
+  const validateEmail = (value: string): string => {
+    if (!value.trim()) return t('auth.validationEmailRequired');
+    if (!isValidEmail(value)) return t('auth.validationEmailInvalid');
+    return '';
+  };
+
+  const validatePasswordBlur = (value: string): string => {
+    return getPasswordValidationError(value, t) || '';
+  };
+
+  const clearFieldErrors = () => {
+    setNameError('');
+    setEmailError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+  };
 
   const handleSubmit = async () => {
     setIsAuthenticating(true);
@@ -82,19 +148,44 @@ const AuthScreen: React.FC = () => {
     }
 
     if (!email.trim() || !password.trim()) {
-      Alert.alert(t('common.error'), 'Please enter email and password');
+      Alert.alert(
+        t('common.error'),
+        mode === 'signUp' ? t('auth.validationEmailRequired') : 'Please enter email and password'
+      );
       setIsAuthenticating(false);
       return;
     }
 
     if (mode === 'signUp') {
-      if (password.length < 6) {
-        Alert.alert(t('common.error'), 'Password must be at least 6 characters');
+      const nameTrim = displayName.trim();
+      if (!nameTrim) {
+        Alert.alert(t('common.error'), t('auth.validationNameRequired'));
+        setIsAuthenticating(false);
+        return;
+      }
+      if (nameTrim.length < 2) {
+        Alert.alert(t('common.error'), t('auth.validationNameMin'));
+        setIsAuthenticating(false);
+        return;
+      }
+      if (!isNameAlphabeticOnly(displayName)) {
+        Alert.alert(t('common.error'), t('auth.validationNameAlphabetic'));
+        setIsAuthenticating(false);
+        return;
+      }
+      if (!isValidEmail(email)) {
+        Alert.alert(t('common.error'), t('auth.validationEmailInvalid'));
+        setIsAuthenticating(false);
+        return;
+      }
+      const pwdError = getPasswordValidationError(password, t);
+      if (pwdError) {
+        Alert.alert(t('common.error'), pwdError);
         setIsAuthenticating(false);
         return;
       }
       if (password !== confirmPassword) {
-        Alert.alert(t('common.error'), 'Passwords do not match. Please try again.');
+        Alert.alert(t('common.error'), t('auth.validationPasswordMatch'));
         setIsAuthenticating(false);
         return;
       }
@@ -115,6 +206,7 @@ const AuthScreen: React.FC = () => {
 
   const toggleMode = () => {
     clearError();
+    clearFieldErrors();
     setMode(mode === 'signIn' ? 'signUp' : 'signIn');
     setPassword('');
     setConfirmPassword('');
@@ -125,6 +217,7 @@ const AuthScreen: React.FC = () => {
 
   const handleForgotPassword = () => {
     clearError();
+    clearFieldErrors();
     setMode('forgotPassword');
     setPassword('');
     setConfirmPassword('');
@@ -135,6 +228,7 @@ const AuthScreen: React.FC = () => {
 
   const handleBackToSignIn = () => {
     clearError();
+    clearFieldErrors();
     setMode('signIn');
     setPassword('');
     setConfirmPassword('');
@@ -181,40 +275,48 @@ const AuthScreen: React.FC = () => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('auth.name')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, nameError ? styles.inputError : undefined]}
                 placeholder={t('auth.enterName')}
                 placeholderTextColor={colors.neutral[400]}
                 value={displayName}
-                onChangeText={setDisplayName}
+                onChangeText={(text) => {
+                  setDisplayName(filterNameInput(text));
+                  if (nameError) setNameError('');
+                }}
+                onBlur={() => setNameError(validateName(displayName))}
                 autoCapitalize="words"
                 autoCorrect={false}
               />
+              {nameError ? <Text style={styles.fieldErrorText}>{nameError}</Text> : null}
             </View>
           )}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('auth.email')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, emailError ? styles.inputError : undefined]}
               placeholder={t('auth.enterEmail')}
               placeholderTextColor={colors.neutral[400]}
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
+                if (emailError) setEmailError('');
                 if (error) clearError();
               }}
+              onBlur={() => setEmailError(validateEmail(email))}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="email"
             />
+            {emailError ? <Text style={styles.fieldErrorText}>{emailError}</Text> : null}
           </View>
 
           {mode !== 'forgotPassword' && (
             <>
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>{t('auth.password')}</Text>
-                <View style={styles.passwordInputWrapper}>
+                <View style={[styles.passwordInputWrapper, passwordError ? styles.inputError : undefined]}>
                   <TextInput
                     style={styles.passwordInput}
                     placeholder={t('auth.enterPassword')}
@@ -222,7 +324,11 @@ const AuthScreen: React.FC = () => {
                     value={password}
                     onChangeText={(text) => {
                       setPassword(text);
+                      if (passwordError) setPasswordError('');
                       if (error) clearError();
+                    }}
+                    onBlur={() => {
+                      if (mode === 'signUp') setPasswordError(validatePasswordBlur(password));
                     }}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -238,17 +344,29 @@ const AuthScreen: React.FC = () => {
                     />
                   </TouchableOpacity>
                 </View>
+                {mode === 'signUp' && (
+                  <Text style={styles.hintText}>{t('auth.passwordRequirements')}</Text>
+                )}
+                {passwordError ? <Text style={styles.fieldErrorText}>{passwordError}</Text> : null}
               </View>
               {mode === 'signUp' && (
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
-                  <View style={styles.passwordInputWrapper}>
+                  <View style={[styles.passwordInputWrapper, confirmPasswordError ? styles.inputError : undefined]}>
                     <TextInput
                       style={styles.passwordInput}
                       placeholder={t('auth.enterConfirmPassword')}
                       placeholderTextColor={colors.neutral[400]}
                       value={confirmPassword}
-                      onChangeText={setConfirmPassword}
+                      onChangeText={(text) => {
+                        setConfirmPassword(text);
+                        if (confirmPasswordError) setConfirmPasswordError('');
+                      }}
+                      onBlur={() => {
+                        setConfirmPasswordError(
+                          password !== confirmPassword ? t('auth.validationPasswordMatch') : ''
+                        );
+                      }}
                       secureTextEntry={!showConfirmPassword}
                       autoCapitalize="none"
                       autoComplete="password"
@@ -263,6 +381,7 @@ const AuthScreen: React.FC = () => {
                       />
                     </TouchableOpacity>
                   </View>
+                  {confirmPasswordError ? <Text style={styles.fieldErrorText}>{confirmPasswordError}</Text> : null}
                 </View>
               )}
             </>
@@ -409,6 +528,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.light,
   },
+  inputError: {
+    borderColor: colors.error,
+  },
+  fieldErrorText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.error,
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
+  },
   passwordInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -435,6 +563,12 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     tintColor: colors.text.secondary,
+  },
+  hintText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
   },
   errorContainer: {
     backgroundColor: '#FFEBEE',

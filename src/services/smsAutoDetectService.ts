@@ -59,7 +59,7 @@ export function startSmsAutoDetect() {
           text: 'Create',
           onPress: () => {
             if (navigationRef.isReady()) {
-              navigationRef.navigate('AddTransaction', {
+              navigationRef.navigate('ChooseTransactionType', {
                 prefill: {
                   amount: parsed.amount,
                   note: parsed.note,
