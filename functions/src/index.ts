@@ -1298,6 +1298,25 @@ export const deleteUserAccount = onCall(async (request: CallableRequest<{}>) => 
     console.log(`Successfully deleted all data for user: ${userId}`);
     console.log(`Deleted: ${accountsSnapshot.size} accounts, ${transactionsSnapshot.size} transactions, ${recurringTransactionsSnapshot.size} recurring transactions, and user profile`);
 
+    // Remove Firebase Auth user so the same email can register again.
+    // Client-side delete() often fails with requires-recent-login, which left Auth
+    // users orphaned after Firestore was already wiped.
+    try {
+      await admin.auth().deleteUser(userId);
+      console.log(`Deleted Firebase Auth user: ${userId}`);
+    } catch (authErr: unknown) {
+      const code = (authErr as { code?: string })?.code;
+      if (code === 'auth/user-not-found') {
+        console.log(`Auth user ${userId} already absent`);
+      } else {
+        console.error(`Failed to delete Auth user ${userId}:`, authErr);
+        throw new HttpsError(
+          'internal',
+          'Data was removed but sign-in record could not be deleted. Please contact support or try again.'
+        );
+      }
+    }
+
     return {
       success: true,
       deletedItems: {
@@ -1310,6 +1329,9 @@ export const deleteUserAccount = onCall(async (request: CallableRequest<{}>) => 
 
   } catch (error) {
     console.error(`Error deleting account for user ${userId}:`, error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
     throw new HttpsError('internal', 'Failed to delete account data');
   }
 });

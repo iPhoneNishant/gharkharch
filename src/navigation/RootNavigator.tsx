@@ -329,6 +329,14 @@ const RootNavigator: React.FC = () => {
         // If coming from PinSetup or PinVerification, wait for accounts to load first
         // This ensures we navigate directly to SetupAssets if no accounts, not Main first
         if (currentRouteName === 'PinSetup' || currentRouteName === 'PinVerification') {
+          // After sign-out or account deletion, target is Auth — never apply SetupAssets/Main heuristic
+          if (currentRoute === 'Auth' || currentRoute === 'LanguageSelection') {
+            navigationRef.current?.reset({
+              index: 0,
+              routes: [{ name: currentRoute }],
+            });
+            return;
+          }
           // Wait for accounts to load if still loading
           if (accountsLoading) {
             const checkAndNavigate = () => {

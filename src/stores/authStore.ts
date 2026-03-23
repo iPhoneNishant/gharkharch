@@ -153,23 +153,48 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         } catch (error: any) {
           console.error('Error fetching user profile:', error);
+          try {
+            const { clearPinAuth } = await import('../services/pinAuthService');
+            await clearPinAuth();
+            const pinAuthStoreModule = await import('./pinAuthStore');
+            pinAuthStoreModule.usePinAuthStore.getState().reset();
+          } catch (pinErr) {
+            console.error('Error clearing PIN after profile load failure:', pinErr);
+          }
           set({
             user: null,
             firebaseUser: null,
             isAuthenticated: false,
             isLoading: false,
+            isAuthenticatedInThisSession: false,
             error: error?.code === 'permission-denied'
               ? 'Permission denied. Please check Firestore security rules.'
               : 'Failed to load user profile',
           });
         }
       } else {
+        // User signed out or account deleted — clear device PIN state (same as signOut)
+        try {
+          const { clearPinAuth } = await import('../services/pinAuthService');
+          await clearPinAuth();
+          const pinAuthStoreModule = await import('./pinAuthStore');
+          pinAuthStoreModule.usePinAuthStore.getState().reset();
+        } catch (pinError) {
+          console.error('Error clearing PIN on auth sign-out:', pinError);
+          try {
+            const pinAuthStoreModule = await import('./pinAuthStore');
+            pinAuthStoreModule.usePinAuthStore.getState().reset();
+          } catch (_) {
+            /* ignore */
+          }
+        }
         set({
           user: null,
           firebaseUser: null,
           isAuthenticated: false,
           isLoading: false,
           error: null,
+          isAuthenticatedInThisSession: false,
         });
       }
     });
@@ -303,16 +328,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       await deleteUserData();
 
-      // Delete the user account from Firebase Auth
-      await currentUser.delete();
+      // Auth user is removed by Cloud Function (Admin SDK) so email can be reused.
+      // Client delete() often fails with requires-recent-login and left orphaned Auth users.
+      // Clear local Firebase session after server deletion.
+      await firebaseSignOut(firebaseAuth);
 
-      // Clear local data and sign out
+      // Clear PIN / biometric on device (deleteAccount does not go through full signOut path before this)
+      try {
+        const { clearPinAuth } = await import('../services/pinAuthService');
+        await clearPinAuth();
+        const pinAuthStoreModule = await import('./pinAuthStore');
+        pinAuthStoreModule.usePinAuthStore.getState().reset();
+      } catch (pinError) {
+        console.error('Error clearing PIN after account deletion:', pinError);
+        try {
+          const pinAuthStoreModule = await import('./pinAuthStore');
+          pinAuthStoreModule.usePinAuthStore.getState().reset();
+        } catch (_) {
+          /* ignore */
+        }
+      }
+
+      // Clear local auth state (onAuthStateChanged will also run; keep consistent)
       set({
         user: null,
+        firebaseUser: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
         isFreshLogin: false,
+        isAuthenticatedInThisSession: false,
       });
 
     } catch (error: any) {

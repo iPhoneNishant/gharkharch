@@ -146,10 +146,11 @@ exports.createAccount = (0, https_1.onCall)({
     }
     const accountType = validateAccountType(data.accountType);
     // Validate opening balance for asset/liability accounts
+    // Assets: non-negative. Liabilities: negative allowed (debt = negative balance)
     let openingBalance;
     if (hasBalance(accountType)) {
         openingBalance = data.openingBalance ?? 0;
-        if (openingBalance < 0) {
+        if (accountType === 'asset' && openingBalance < 0) {
             throw new https_1.HttpsError('invalid-argument', 'Opening balance cannot be negative');
         }
     }
@@ -1022,6 +1023,23 @@ exports.deleteUserAccount = (0, https_1.onCall)(async (request) => {
         await batch.commit();
         console.log(`Successfully deleted all data for user: ${userId}`);
         console.log(`Deleted: ${accountsSnapshot.size} accounts, ${transactionsSnapshot.size} transactions, ${recurringTransactionsSnapshot.size} recurring transactions, and user profile`);
+        // Remove Firebase Auth user so the same email can register again.
+        // Client-side delete() often fails with requires-recent-login, which left Auth
+        // users orphaned after Firestore was already wiped.
+        try {
+            await admin.auth().deleteUser(userId);
+            console.log(`Deleted Firebase Auth user: ${userId}`);
+        }
+        catch (authErr) {
+            const code = authErr?.code;
+            if (code === 'auth/user-not-found') {
+                console.log(`Auth user ${userId} already absent`);
+            }
+            else {
+                console.error(`Failed to delete Auth user ${userId}:`, authErr);
+                throw new https_1.HttpsError('internal', 'Data was removed but sign-in record could not be deleted. Please contact support or try again.');
+            }
+        }
         return {
             success: true,
             deletedItems: {
@@ -1034,6 +1052,9 @@ exports.deleteUserAccount = (0, https_1.onCall)(async (request) => {
     }
     catch (error) {
         console.error(`Error deleting account for user ${userId}:`, error);
+        if (error instanceof https_1.HttpsError) {
+            throw error;
+        }
         throw new https_1.HttpsError('internal', 'Failed to delete account data');
     }
 });
