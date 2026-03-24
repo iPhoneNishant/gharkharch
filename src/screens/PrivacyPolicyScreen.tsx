@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -17,6 +18,7 @@ import { colors, spacing, typography, borderRadius, shadows, addFontScaleListene
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const PrivacyPolicyScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const [fontScaleVersion, setFontScaleVersion] = React.useState(0);
@@ -118,7 +120,7 @@ const PrivacyPolicyScreen: React.FC = () => {
         >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Privacy Policy</Text>
+        <Text style={styles.headerTitle}>{t('privacyPolicy.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -130,95 +132,95 @@ const PrivacyPolicyScreen: React.FC = () => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.lastUpdated}>Last Updated: May 20, 2024</Text>
+        <Text style={styles.lastUpdated}>{t('privacyPolicy.lastUpdated')}</Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>1. Introduction</Text>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.introduction.title')}</Text>
           <Text style={styles.paragraph}>
-            DailyMunim ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
+            {t('privacyPolicy.sections.introduction.body')}
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>2. Information We Collect</Text>
-          <Text style={styles.subHeader}>Personal Information</Text>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.informationCollected.title')}</Text>
+          <Text style={styles.subHeader}>{t('privacyPolicy.sections.informationCollected.personalInformationTitle')}</Text>
           <Text style={styles.paragraph}>
-            We may collect personal information that you voluntarily provide, such as:
+            {t('privacyPolicy.sections.informationCollected.personalInformationBody')}
           </Text>
           <View style={styles.bulletPoint}>
             <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>Account information (email address, name)</Text>
+            <Text style={styles.bulletText}>{t('privacyPolicy.sections.informationCollected.bullets.accountInformation')}</Text>
           </View>
           <View style={styles.bulletPoint}>
             <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>Financial transaction data you enter manually</Text>
+            <Text style={styles.bulletText}>{t('privacyPolicy.sections.informationCollected.bullets.transactionData')}</Text>
           </View>
           <View style={styles.bulletPoint}>
             <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>SMS data (only with your explicit permission for the SMS import feature)</Text>
+            <Text style={styles.bulletText}>{t('privacyPolicy.sections.informationCollected.bullets.smsData')}</Text>
           </View>
 
-          <Text style={styles.subHeader}>Device Information</Text>
+          <Text style={styles.subHeader}>{t('privacyPolicy.sections.informationCollected.deviceInformationTitle')}</Text>
           <Text style={styles.paragraph}>
-            We may collect information about your mobile device, including device model, operating system version, and unique device identifiers.
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>3. How We Use Your Information</Text>
-          <Text style={styles.paragraph}>
-            We use the information we collect to:
-          </Text>
-          <View style={styles.bulletPoint}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>Provide and maintain our services</Text>
-          </View>
-          <View style={styles.bulletPoint}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>Process your financial transactions and generate reports</Text>
-          </View>
-          <View style={styles.bulletPoint}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>Improve user experience and app functionality</Text>
-          </View>
-          <View style={styles.bulletPoint}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>Authenticate your identity and secure your account</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>4. Data Storage and Security</Text>
-          <Text style={styles.paragraph}>
-            We implement appropriate technical and organizational measures to protect your personal data. Your financial data is stored securely. We do not sell your personal data to third parties.
+            {t('privacyPolicy.sections.informationCollected.deviceInformationBody')}
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>5. SMS Data Usage</Text>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.usage.title')}</Text>
           <Text style={styles.paragraph}>
-            If you enable the SMS Import feature, the app accesses your SMS messages solely to extract transaction details (amount, date, merchant). This processing happens locally on your device. We do not upload your raw SMS messages to our servers.
+            {t('privacyPolicy.sections.usage.body')}
+          </Text>
+          <View style={styles.bulletPoint}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>{t('privacyPolicy.sections.usage.bullets.provideServices')}</Text>
+          </View>
+          <View style={styles.bulletPoint}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>{t('privacyPolicy.sections.usage.bullets.processTransactions')}</Text>
+          </View>
+          <View style={styles.bulletPoint}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>{t('privacyPolicy.sections.usage.bullets.improveExperience')}</Text>
+          </View>
+          <View style={styles.bulletPoint}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>{t('privacyPolicy.sections.usage.bullets.authenticateIdentity')}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.storageSecurity.title')}</Text>
+          <Text style={styles.paragraph}>
+            {t('privacyPolicy.sections.storageSecurity.body')}
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>6. Your Rights</Text>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.smsDataUsage.title')}</Text>
           <Text style={styles.paragraph}>
-            You have the right to access, correct, or delete your personal information. You can delete your account and all associated data directly within the app settings.
+            {t('privacyPolicy.sections.smsDataUsage.body')}
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>7. Changes to This Policy</Text>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.yourRights.title')}</Text>
           <Text style={styles.paragraph}>
-            We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
+            {t('privacyPolicy.sections.yourRights.body')}
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>8. Contact Us</Text>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.policyChanges.title')}</Text>
           <Text style={styles.paragraph}>
-            If you have any questions about this Privacy Policy, please contact us at dailymunimorhome@gmail.com.
+            {t('privacyPolicy.sections.policyChanges.body')}
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('privacyPolicy.sections.contact.title')}</Text>
+          <Text style={styles.paragraph}>
+            {t('privacyPolicy.sections.contact.body')}
           </Text>
         </View>
       </ScrollView>

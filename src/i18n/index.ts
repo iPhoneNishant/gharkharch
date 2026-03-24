@@ -6,10 +6,21 @@ import 'intl-pluralrules';
 
 import en from './locales/en.json';
 import hi from './locales/hi.json';
+import gu from './locales/gu.json';
+import ta from './locales/ta.json';
+import mr from './locales/mr.json';
+import te from './locales/te.json';
+import kn from './locales/kn.json';
+import { normalizeLanguageCode, SUPPORTED_LANGUAGE_CODES } from './supportedLanguages';
 
 const RESOURCES = {
   en: { translation: en },
   hi: { translation: hi },
+  gu: { translation: gu },
+  ta: { translation: ta },
+  mr: { translation: mr },
+  te: { translation: te },
+  kn: { translation: kn },
 };
 
 const LANGUAGE_DETECTOR = {
@@ -17,15 +28,13 @@ const LANGUAGE_DETECTOR = {
   async: true,
   detect: async (callback: (lang: string) => void) => {
     try {
-      // 1. Check AsyncStorage
       const savedLanguage = await AsyncStorage.getItem('user-language');
       if (savedLanguage) {
-        return callback(savedLanguage);
+        return callback(normalizeLanguageCode(savedLanguage));
       }
-      
-      // 2. Check Device Language
-      const deviceLanguage = Localization.getLocales()[0].languageCode;
-      return callback(deviceLanguage || 'en');
+
+      const deviceLanguage = Localization.getLocales()[0]?.languageCode;
+      return callback(normalizeLanguageCode(deviceLanguage));
     } catch (error) {
       console.error('Error reading language', error);
       callback('en');
@@ -34,7 +43,7 @@ const LANGUAGE_DETECTOR = {
   init: () => {},
   cacheUserLanguage: async (language: string) => {
     try {
-      await AsyncStorage.setItem('user-language', language);
+      await AsyncStorage.setItem('user-language', normalizeLanguageCode(language));
     } catch (error) {
       console.error('Error saving language', error);
     }
@@ -47,12 +56,16 @@ i18n
   .init({
     resources: RESOURCES,
     fallbackLng: 'en',
+    supportedLngs: [...SUPPORTED_LANGUAGE_CODES],
+    nonExplicitSupportedLngs: true,
+    load: 'languageOnly',
     interpolation: {
-      escapeValue: false, // react already safes from xss
+      escapeValue: false,
     },
     react: {
-      useSuspense: false, // in case you have any suspense components
+      useSuspense: false,
     },
   });
 
+export { normalizeLanguageCode, SUPPORTED_LANGUAGE_CODES } from './supportedLanguages';
 export default i18n;

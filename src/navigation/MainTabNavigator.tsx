@@ -98,9 +98,9 @@ const MainTabNavigator: React.FC = () => {
             }
             // Use localized labels
             const labels: Record<string, string> = {
-              Dashboard: 'Dashboard',
+              Dashboard: t('tabs.dashboard'),
               BankSms: t('more.bankSms'),
-              Reports: 'Reports',
+              Reports: t('tabs.reports'),
               More: t('more.title'),
             };
             return (
@@ -143,7 +143,7 @@ const MainTabNavigator: React.FC = () => {
         name="Dashboard" 
         component={DashboardScreen}
         options={{
-          headerTitle: 'Daily Munim',
+          headerTitle: t('tabs.appTitle'),
           headerTitleAlign: 'center',
         }}
       />
@@ -168,7 +168,7 @@ const MainTabNavigator: React.FC = () => {
         name="Reports" 
         component={ReportsListScreen}
         options={{
-          headerTitle: 'Reports',
+          headerTitle: t('tabs.reports'),
           headerTitleAlign: 'center'
         }}
       />
@@ -176,7 +176,7 @@ const MainTabNavigator: React.FC = () => {
         name="More" 
         component={MoreScreen}
         options={{
-          headerTitle: 'More',
+          headerTitle: t('more.title'),
           headerTitleAlign: 'center',
         }}
       />

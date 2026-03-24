@@ -138,6 +138,10 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
     backgroundColor: colors.neutral[200],
     borderColor: colors.border.light,
   },
+  itemActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   actionButton: {
     padding: spacing.xs,
   },
@@ -183,6 +187,20 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semiBold,
     color: colors.neutral[0],
+  },
+  footerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.base,
+  },
+  skipButton: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+  },
+  skipButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
   },
   modalBackdrop: {
     flex: 1,
@@ -528,11 +546,11 @@ const SetupExpensesScreen: React.FC = () => {
                   t('onboarding.expenses.skipSetupMessage'),
                   [
                     {
-                      text: 'Cancel',
+                      text: t('common.cancel'),
                       style: 'cancel',
                     },
                     {
-                      text: 'Skip',
+                      text: t('onboarding.assets.skip'),
                       style: 'destructive',
                       onPress: () => {
                         // Don't mark onboarding as complete when skipping
@@ -544,7 +562,7 @@ const SetupExpensesScreen: React.FC = () => {
                 );
               }}
             >
-              <Text style={styles.skipButton}>Skip</Text>
+              <Text style={styles.skipButton}>{t('onboarding.assets.skip')}</Text>
             </TouchableOpacity>
           ) : (
             <View style={{ width: 24 }} />
@@ -650,7 +668,7 @@ const SetupExpensesScreen: React.FC = () => {
                 style={[styles.modalButton, styles.modalButtonSave]}
                 onPress={handleSaveEdit}
               >
-                <Text style={styles.modalButtonTextSave}>Save</Text>
+                <Text style={styles.modalButtonTextSave}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -719,7 +737,7 @@ const SetupExpensesScreen: React.FC = () => {
                 style={[styles.modalButton, styles.modalButtonSave]}
                 onPress={handleAdd}
               >
-                <Text style={styles.modalButtonTextSave}>Add</Text>
+                <Text style={styles.modalButtonTextSave}>{t('addTransaction.add')}</Text>
               </TouchableOpacity>
             </View>
           </View>

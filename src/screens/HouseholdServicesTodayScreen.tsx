@@ -196,7 +196,7 @@ const HouseholdServicesTodayScreen: React.FC = () => {
       setSaving(true);
 
       if (!selectedOverrideType) {
-        Alert.alert(t('common.error'), t('householdServices.pleaseSelectOption', { options: 'Present, Leave, Holiday, etc.' }));
+        Alert.alert(t('common.error'), t('householdServices.pleaseSelectOption', { options: t('householdServices.presentLeaveHolidayEtc') }));
         setSaving(false);
         return;
       }
@@ -605,7 +605,7 @@ const HouseholdServicesTodayScreen: React.FC = () => {
               onPress={() => navigation.navigate('HouseholdServicesManagement')}
             >
               <Ionicons name="add-circle-outline" size={24} color={colors.neutral[0]} />
-              <Text style={styles.emptyStateButtonText}>Add New Service</Text>
+              <Text style={styles.emptyStateButtonText}>{t('householdServices.addNewService')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -699,7 +699,7 @@ const HouseholdServicesTodayScreen: React.FC = () => {
               </View>
               <View style={styles.bottomSheetContent}>
                 {/* Override Type Selection */}
-                <Text style={styles.modalLabel}>Mark as:</Text>
+                <Text style={styles.modalLabel}>{t('householdServices.markAs')}</Text>
                 <View style={styles.overrideTypeContainer}>
                   {selectedService?.billingType === 'DAILY_QUANTITY' ? (
                     <>
@@ -889,7 +889,7 @@ const HouseholdServicesTodayScreen: React.FC = () => {
                     }}
                     disabled={saving}
                   >
-                    <Text style={styles.buttonText}>Remove</Text>
+                    <Text style={styles.buttonText}>{t('householdServices.remove')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
@@ -903,14 +903,14 @@ const HouseholdServicesTodayScreen: React.FC = () => {
                   }}
                   disabled={saving}
                 >
-                  <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Cancel</Text>
+                  <Text style={[styles.buttonText, styles.buttonTextSecondary]}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.button, styles.buttonPrimary, { flex: 1 }, saving && styles.buttonDisabled]}
                   onPress={handleSaveOverride}
                   disabled={saving}
                 >
-                  <Text style={styles.buttonText}>{saving ?  'Saving...' : 'Save'}</Text>
+                  <Text style={styles.buttonText}>{saving ? t('common.saving') : t('common.save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

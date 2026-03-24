@@ -464,18 +464,18 @@ const AddTransactionScreen: React.FC = () => {
     // Validate amount
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('addTransaction.invalidAmount'));
       return;
     }
 
     // Validate accounts
     if (!debitAccountId || !creditAccountId) {
-      Alert.alert('Error', 'Please select both accounts');
+      Alert.alert(t('common.error'), t('addTransaction.selectBothAccounts'));
       return;
     }
 
     if (debitAccountId === creditAccountId) {
-      Alert.alert('Error', 'Debit and credit accounts must be different');
+      Alert.alert(t('common.error'), t('addTransaction.accountsMustBeDifferent'));
       return;
     }
 
@@ -505,9 +505,9 @@ const AddTransactionScreen: React.FC = () => {
           if (alreadyProcessed) {
             setIsSaving(false);
             Alert.alert(
-              'Transaction Already Exists',
-              'This SMS has already been processed and a transaction was created from it. Please check your transactions list.',
-              [{ text: 'OK' }]
+              t('addTransaction.smsTransactionExistsTitle'),
+              t('addTransaction.smsTransactionExistsMessage'),
+              [{ text: t('common.ok') }]
             );
             return;
           }
@@ -659,7 +659,10 @@ const AddTransactionScreen: React.FC = () => {
       }
     } catch (error) {
       setIsSaving(false);
-      Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'create'} transaction. Please try again.`);
+      Alert.alert(
+        t('common.error'),
+        isEditing ? t('addTransaction.updateError') : t('addTransaction.createError')
+      );
     }
   };
 
@@ -667,7 +670,7 @@ const AddTransactionScreen: React.FC = () => {
    * Get label for account selector
    */
   const getAccountLabel = (type: 'debit' | 'credit'): string => {
-      return type === 'debit' ? 'To Account' : 'From Account';
+      return type === 'debit' ? t('addTransaction.toAccount') : t('addTransaction.fromAccount');
   };
 
   const openCalculator = () => {
@@ -1465,7 +1468,7 @@ const AddTransactionScreen: React.FC = () => {
           <Text style={styles.currencySymbol}>{currency === 'INR' ? '₹' : '$'}</Text>
           <TextInput
             style={styles.amountInput}
-            placeholder="0.00"
+            placeholder={t('addTransaction.amountPlaceholder')}
             placeholderTextColor={colors.neutral[300]}
             value={amount}
             onChangeText={setAmount}
@@ -1509,12 +1512,16 @@ const AddTransactionScreen: React.FC = () => {
           {/* Show bank name under From Account for debit, merchant for credit */}
           {smsBankInfo && smsBankInfo.transactionType === 'debit' && smsBankInfo.bankName && smsBankInfo.bankName.trim() && (
             <View style={styles.smsInfoContainer}>
-              <Text style={styles.smsInfoText}>SMS From: {smsBankInfo.bankName}</Text>
+              <Text style={styles.smsInfoText}>
+                {t('addTransaction.smsInfoFrom', { name: smsBankInfo.bankName })}
+              </Text>
             </View>
           )}
           {smsBankInfo && smsBankInfo.transactionType === 'credit' && smsBankInfo.merchant && smsBankInfo.merchant.trim() && (
             <View style={styles.smsInfoContainer}>
-              <Text style={styles.smsInfoText}>SMS From: {smsBankInfo.merchant}</Text>
+              <Text style={styles.smsInfoText}>
+                {t('addTransaction.smsInfoFrom', { name: smsBankInfo.merchant })}
+              </Text>
             </View>
           )}
 
@@ -1550,12 +1557,16 @@ const AddTransactionScreen: React.FC = () => {
           {/* Show merchant name under To Account for debit, bank for credit */}
           {smsBankInfo && smsBankInfo.transactionType === 'debit' && smsBankInfo.merchant && smsBankInfo.merchant.trim() && (
             <View style={styles.smsInfoContainer}>
-              <Text style={styles.smsInfoText}>SMS To: {smsBankInfo.merchant}</Text>
+              <Text style={styles.smsInfoText}>
+                {t('addTransaction.smsInfoTo', { name: smsBankInfo.merchant })}
+              </Text>
             </View>
           )}
           {smsBankInfo && smsBankInfo.transactionType === 'credit' && smsBankInfo.bankName && smsBankInfo.bankName.trim() && (
             <View style={styles.smsInfoContainer}>
-              <Text style={styles.smsInfoText}>SMS To: {smsBankInfo.bankName}</Text>
+              <Text style={styles.smsInfoText}>
+                {t('addTransaction.smsInfoTo', { name: smsBankInfo.bankName })}
+              </Text>
             </View>
           )}
         </View>
@@ -1586,10 +1597,10 @@ const AddTransactionScreen: React.FC = () => {
         {/* Note Input */}
         <View style={styles.formSection}>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Note (optional)</Text>
+            <Text style={styles.inputLabel}>{t('addTransaction.noteOptional')}</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Add a note..."
+              placeholder={t('addTransaction.addNote')}
               placeholderTextColor={colors.neutral[400]}
               value={note}
               onChangeText={setNote}
@@ -1609,12 +1620,12 @@ const AddTransactionScreen: React.FC = () => {
             <View style={styles.loadingContainer}>
               <ActivityIndicator color={colors.neutral[0]} size="small" />
           <Text style={styles.submitButtonText}>
-                {isEditing ? 'Updating...' : 'Saving...'}
+                {isEditing ? t('addTransaction.updating') : t('addTransaction.saving')}
           </Text>
             </View>
           ) : (
             <Text style={styles.submitButtonText}>
-              {isEditing ? 'Update Transaction' : 'Save Transaction'}
+              {isEditing ? t('addTransaction.updateTransaction') : t('addTransaction.saveTransaction')}
             </Text>
           )}
         </TouchableOpacity>
@@ -1648,7 +1659,7 @@ const AddTransactionScreen: React.FC = () => {
               setShowAccountPicker(false);
               setAccountSearchQuery(''); // Reset search when closing modal
             }}>
-              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">{t('common.cancel')}</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{getAccountLabel(accountPickerType)}</Text>
             <TouchableOpacity onPress={handleAddNewAccountFromPicker}>
@@ -1748,11 +1759,11 @@ const AddTransactionScreen: React.FC = () => {
                 <View style={styles.bottomSheetHandle} />
                 <View style={styles.modalHeader}>
                   <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                    <Text style={styles.modalCancel}>Cancel</Text>
+                    <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
-                  <Text style={styles.modalTitle}>Select Date</Text>
+                  <Text style={styles.modalTitle}>{t('addTransaction.selectDate')}</Text>
                   <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                    <Text style={styles.modalDone}>Done</Text>
+                    <Text style={styles.modalDone}>{t('common.done')}</Text>
                   </TouchableOpacity>
                 </View>
                 <DateTimePicker
@@ -1803,11 +1814,11 @@ const AddTransactionScreen: React.FC = () => {
             <View style={styles.bottomSheetHandle} />
             <View style={styles.calcHeader}>
               <TouchableOpacity onPress={() => setShowCalculator(false)}>
-                <Text style={styles.modalCancel}>Close</Text>
+                <Text style={styles.modalCancel}>{t('addTransaction.calculatorClose')}</Text>
               </TouchableOpacity>
-              <Text style={styles.calcTitle}>Calculator</Text>
+              <Text style={styles.calcTitle}>{t('addTransaction.calculatorTitle')}</Text>
               <TouchableOpacity onPress={useCalcAmount}>
-                <Text style={styles.modalDone}>Use</Text>
+                <Text style={styles.modalDone}>{t('addTransaction.calculatorUse')}</Text>
               </TouchableOpacity>
             </View>
 

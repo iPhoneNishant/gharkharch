@@ -40,6 +40,7 @@ import { getTimezone, setTimezone, TIMEZONES, Timezone } from '../services/timez
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FONT_SCALE_OPTIONS } from '../config/constants';
 import { Platform, TextInput } from 'react-native';
+import { normalizeLanguageCode, SUPPORTED_LANGUAGE_CODES } from '../i18n/supportedLanguages';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -181,7 +182,7 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleLanguageChange = () => {
-    setPendingLanguage(i18n.language);
+    setPendingLanguage(normalizeLanguageCode(i18n.language));
     setShowLanguageSheet(true);
   };
 
@@ -428,7 +429,7 @@ const SettingsScreen: React.FC = () => {
             <Text style={styles.settingLabel}>{t('settings.language')} </Text>
             <View style={styles.settingValue}>
               <Text style={styles.settingValueText}>
-                {i18n.language === 'hi' ? 'हिंदी ' : 'English '}
+                {t(`languages.${normalizeLanguageCode(i18n.language)}`)}{' '}
               </Text>
             </View>
           </TouchableOpacity>
@@ -623,7 +624,7 @@ const SettingsScreen: React.FC = () => {
             <Text style={styles.modalTitle}>{t('settings.language')}</Text>
             <TouchableOpacity onPress={() => {
               if (pendingLanguage) {
-                i18n.changeLanguage(pendingLanguage);
+                i18n.changeLanguage(normalizeLanguageCode(pendingLanguage));
               }
               setPendingLanguage(null);
               setShowLanguageSheet(false);
@@ -631,24 +632,22 @@ const SettingsScreen: React.FC = () => {
               <Text style={styles.modalDone}>{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.sheetOption}
-            onPress={() => {
-              setPendingLanguage('en');
-            }}
+          <ScrollView
+            style={{ maxHeight: 360 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator
           >
-            <Text style={styles.sheetOptionText}>{t('languages.en')}</Text>
-            {pendingLanguage === 'en' && <Text style={styles.checkmark}>✓</Text>}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.sheetOption}
-            onPress={() => {
-              setPendingLanguage('hi');
-            }}
-          >
-            <Text style={styles.sheetOptionText}>हिंदी</Text>
-            {pendingLanguage === 'hi' && <Text style={styles.checkmark}>✓</Text>}
-          </TouchableOpacity>
+            {SUPPORTED_LANGUAGE_CODES.map((code) => (
+              <TouchableOpacity
+                key={code}
+                style={styles.sheetOption}
+                onPress={() => setPendingLanguage(code)}
+              >
+                <Text style={styles.sheetOptionText}>{t(`languages.${code}`)}</Text>
+                {pendingLanguage === code && <Text style={styles.checkmark}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       </View>
     </Modal>

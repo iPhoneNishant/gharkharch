@@ -133,7 +133,32 @@
   "emptySubtext": "शुरू करने के लिए पहला बार-बार होने वाला लेनदेन जोड़ें",
   "addRepeatTransaction": "नया दोहराया लेनदेन जोड़ें",
   "testNotificationTitle": "टेस्ट नोटिफिकेशन सेट हो गया",
-  "testNotificationMessage": "5 सेकंड में एक टेस्ट नोटिफिकेशन आएगा। अगर दिखे, तो नोटिफिकेशन सही से काम कर रहे हैं!"
+  "testNotificationMessage": "5 सेकंड में एक टेस्ट नोटिफिकेशन आएगा। अगर दिखे, तो नोटिफिकेशन सही से काम कर रहे हैं!",
+  "deleteTitle": "दोहराया लेनदेन हटाएं",
+  "deleteMessage": "क्या आप इस दोहराए जाने वाले लेनदेन को हटाना चाहते हैं?\n\n{{from}} -> {{to}}\n{{amount}} {{frequency}}",
+  "deleteError": "दोहराया लेनदेन हटाने में विफल",
+  "amountPlaceholder": "0.00",
+  "frequencyLabel": "आवृत्ति",
+  "dayOfWeek": "सप्ताह का दिन",
+  "dayOfMonth": "महीने का दिन",
+  "startDate": "शुरू की तारीख",
+  "endDateOptional": "अंत की तारीख (वैकल्पिक)",
+  "noEndDate": "कोई अंत तारीख नहीं",
+  "notifyBeforeDays": "कितने दिन पहले सूचित करें",
+  "zeroPlaceholder": "0",
+  "notifyHint": "नोटिफिकेशन बंद करने के लिए 0 रखें",
+  "invalidNotifyDays": "नोटिफिकेशन दिनों के लिए सही संख्या दर्ज करें",
+  "createError": "दोहराया लेनदेन बनाने में विफल। फिर प्रयास करें।",
+  "updateError": "दोहराया लेनदेन अपडेट करने में विफल। फिर प्रयास करें।",
+  "createRepeat": "दोहराया लेनदेन बनाएं",
+  "updateRepeat": "दोहराया लेनदेन अपडेट करें",
+  "creatingRepeat": "दोहराया लेनदेन बनाया जा रहा है...",
+  "updatingRepeat": "दोहराया लेनदेन अपडेट किया जा रहा है...",
+  "selectFrequency": "आवृत्ति चुनें",
+  "selectFromAccount": "से वाला खाता चुनें",
+  "selectToAccount": "में वाला खाता चुनें",
+  "selectDayOfWeek": "सप्ताह का दिन चुनें",
+  "selectDayOfMonth": "महीने का दिन चुनें"
   },
 "transactions": {
   "searchPlaceholder": "लेनदेन खोजें…",
@@ -210,12 +235,25 @@
     "invalidCalc": "गलत गणना",
     "invalidAmountTitle": "गलत रकम",
     "add": "जोड़ें",
-    "importFromSms": "SMS से भरें"
+    "importFromSms": "SMS से भरें",
+    "amountPlaceholder": "0.00",
+    "smsTransactionExistsTitle": "लेनदेन पहले से मौजूद है",
+    "smsTransactionExistsMessage": "यह SMS पहले प्रोसेस हो चुका है और उससे लेनदेन बन चुका है। लेनदेन सूची देखें।",
+    "smsInfoFrom": "SMS से: {{name}}",
+    "smsInfoTo": "SMS को: {{name}}",
+    "selectDate": "तारीख चुनें",
+    "calculatorTitle": "कैलकुलेटर",
+    "calculatorClose": "बंद करें",
+    "calculatorUse": "लागू करें"
 },
   "languages": {
     "en": "English",
     "hi": "हिंदी",
-    "es": "स्पेनिश"
+    "gu": "ગુજરાતી",
+    "ta": "தமிழ்",
+    "mr": "मराठी",
+    "te": "తెలుగు",
+    "kn": "ಕನ್ನಡ"
   },
  "transactionDetail": {
   "notFound": "लेनदेन नहीं मिला",
@@ -255,6 +293,8 @@
   "selectCategory": "कैटेगरी चुनें",
   "subCategory": "सब-कैटेगरी",
   "selectSubCategory": "सब-कैटेगरी चुनें",
+  "subCategoryCount_one": "{{count}} उप-श्रेणी",
+  "subCategoryCount_other": "{{count}} उप-श्रेणियाँ",
   "accountName": "नाम",
   "enterAccountName": "अकाउंट का नाम",
   "openingBalance": "शुरुआती बैलेंस",
@@ -336,7 +376,15 @@
   "allCategories": "सभी कैटेगरी",
   "allSubCategories": "सभी सब-कैटेगरी",
   "allAccounts": "सभी अकाउंट",
-  "totalTransactions": "कुल लेनदेन"
+  "totalTransactions": "कुल लेनदेन",
+  "transactionsCountLabel": "लेनदेन",
+  "totalDebits": "कुल निकासी:",
+  "totalCredits": "कुल जमा:",
+  "netChange": "शुद्ध बदलाव:",
+  "categoryTransactionCount": "{{count}} लेनदेन",
+  "transactionsListTitle": "लेनदेन ({{count}})",
+  "noTransactionsFound": "कोई लेनदेन नहीं मिला",
+  "selectMonthYear": "महीना और साल चुनें"
 },
 "reportsActions": {
   "monthWise": "महीने के हिसाब से",
@@ -508,7 +556,84 @@
     "noBankSmsFound": "कोई बैंक SMS नहीं मिला",
     "noBankSmsFoundMessage": "बैंक लेनदेन SMS संदेश यहाँ दिखाई देंगे",
     "smsReadingOnlyAndroid": "SMS पढ़ना केवल Android पर उपलब्ध है",
-    "smsPermissionNotGranted": "SMS अनुमति नहीं दी गई"
+  "smsPermissionNotGranted": "SMS अनुमति नहीं दी गई",
+  "failedToLoadSmsMessages": "SMS संदेश लोड करने में विफल"
+  },
+  "noNetwork": {
+    "title": "इंटरनेट कनेक्शन नहीं है",
+    "description": "कृपया अपनी नेटवर्क सेटिंग जांचें और फिर से प्रयास करें। ऑनलाइन आते ही हम अपने-आप दोबारा कनेक्ट कर लेंगे।"
+  },
+  "setupComplete": {
+    "userNotAuthenticated": "उपयोगकर्ता प्रमाणित नहीं है",
+    "failedToCreateSomeAccounts": "कुछ खाते नहीं बन पाए। कृपया फिर से कोशिश करें या उन्हें मैन्युअली बनाएं।",
+    "continueAnyway": "फिर भी जारी रखें",
+    "settingUpAccounts": "आपके खाते सेट किए जा रहे हैं...",
+    "creatingAccountsMessage": "हम आपके लिए {{count}} खाते बना रहे हैं। इसमें बस एक क्षण लगेगा।",
+    "createdAccountsProgress": "{{total}} में से {{created}} खाते बन गए",
+    "allAccountsCreatedSuccessfully": "सभी खाते सफलतापूर्वक बन गए!",
+    "redirectingToDashboard": "आपको डैशबोर्ड पर भेजा जा रहा है..."
+  },
+  "subCategoryTransactions": {
+    "fromAccount": "{{name}} से",
+    "toAccount": "{{name}} को",
+    "loadingTransactions": "लेनदेन लोड हो रहे हैं...",
+    "noMatchingTransactions": "मिलते-जुलते लेनदेन नहीं मिले",
+    "tryAdjustingSearchQuery": "अपना सर्च बदलकर देखें",
+    "noTransactionsForSubCategory": "चुनी गई अवधि में \"{{subCategory}}\" के लिए कोई लेनदेन नहीं मिला",
+    "allTime": "सभी समय",
+    "searchTransactions": "लेनदेन खोजें..."
+  },
+  "privacyPolicy": {
+    "title": "प्राइवेसी पॉलिसी",
+    "lastUpdated": "आखिरी अपडेट: 20 मई, 2024",
+    "sections": {
+      "introduction": {
+        "title": "1. परिचय",
+        "body": "DailyMunim (\"हम\", \"हमारा\") आपकी गोपनीयता की सुरक्षा के लिए प्रतिबद्ध है। यह प्राइवेसी पॉलिसी बताती है कि मोबाइल ऐप उपयोग करते समय हम आपकी जानकारी कैसे एकत्रित, उपयोग और सुरक्षित रखते हैं।"
+      },
+      "informationCollected": {
+        "title": "2. हम कौन-सी जानकारी एकत्र करते हैं",
+        "personalInformationTitle": "व्यक्तिगत जानकारी",
+        "personalInformationBody": "हम आपके द्वारा स्वेच्छा से दी गई जानकारी एकत्र कर सकते हैं, जैसे:",
+        "deviceInformationTitle": "डिवाइस जानकारी",
+        "deviceInformationBody": "हम आपके मोबाइल डिवाइस से जुड़ी जानकारी जैसे डिवाइस मॉडल, ऑपरेटिंग सिस्टम संस्करण और यूनिक डिवाइस पहचानकर्ता एकत्र कर सकते हैं।",
+        "bullets": {
+          "accountInformation": "खाता जानकारी (ईमेल पता, नाम)",
+          "transactionData": "आपके द्वारा मैन्युअली डाला गया वित्तीय लेनदेन डेटा",
+          "smsData": "SMS डेटा (केवल आपकी स्पष्ट अनुमति होने पर SMS आयात सुविधा के लिए)"
+        }
+      },
+      "usage": {
+        "title": "3. आपकी जानकारी का उपयोग कैसे करते हैं",
+        "body": "हम एकत्रित जानकारी का उपयोग इन उद्देश्यों के लिए करते हैं:",
+        "bullets": {
+          "provideServices": "अपनी सेवाएं उपलब्ध कराना और बनाए रखना",
+          "processTransactions": "आपके वित्तीय लेनदेन प्रोसेस करना और रिपोर्ट बनाना",
+          "improveExperience": "यूजर अनुभव और ऐप कार्यक्षमता बेहतर करना",
+          "authenticateIdentity": "आपकी पहचान सत्यापित करना और खाते को सुरक्षित रखना"
+        }
+      },
+      "storageSecurity": {
+        "title": "4. डेटा स्टोरेज और सुरक्षा",
+        "body": "हम आपके व्यक्तिगत डेटा की सुरक्षा के लिए उचित तकनीकी और संगठनात्मक उपाय अपनाते हैं। आपका वित्तीय डेटा सुरक्षित रूप से संग्रहीत किया जाता है। हम आपका व्यक्तिगत डेटा तीसरे पक्ष को नहीं बेचते।"
+      },
+      "smsDataUsage": {
+        "title": "5. SMS डेटा उपयोग",
+        "body": "यदि आप SMS आयात सुविधा सक्षम करते हैं, तो ऐप केवल लेनदेन विवरण (राशि, तारीख, व्यापारी) निकालने के लिए SMS पढ़ता है। यह प्रोसेसिंग आपके डिवाइस पर स्थानीय रूप से होती है। हम आपके कच्चे SMS संदेश अपने सर्वर पर अपलोड नहीं करते।"
+      },
+      "yourRights": {
+        "title": "6. आपके अधिकार",
+        "body": "आपको अपनी व्यक्तिगत जानकारी देखने, सुधारने या हटाने का अधिकार है। आप ऐप सेटिंग्स में जाकर अपना खाता और संबंधित डेटा हटा सकते हैं।"
+      },
+      "policyChanges": {
+        "title": "7. इस नीति में बदलाव",
+        "body": "हम समय-समय पर इस प्राइवेसी पॉलिसी को अपडेट कर सकते हैं। किसी भी बदलाव की सूचना इस पेज पर नई पॉलिसी पोस्ट करके दी जाएगी।"
+      },
+      "contact": {
+        "title": "8. संपर्क करें",
+        "body": "यदि इस प्राइवेसी पॉलिसी के बारे में कोई प्रश्न हो, तो हमें dailymunimorhome@gmail.com पर संपर्क करें।"
+      }
+    }
   },
   "userGuide": {
     "title": "उपयोगकर्ता गाइड",
@@ -653,6 +778,7 @@
     "enterQuantityToOverride": "डिफ़ॉल्ट को ओवरराइड करने के लिए मात्रा दर्ज करें",
     "quantityWillBeIgnored": "इस ओवरराइड के लिए मात्रा को अनदेखा किया जाएगा",
     "selectEditQuantityOrLeaveHolidaySkip": "मात्रा बदलने के लिए \"मात्रा संपादित करें\" चुनें, या छुट्टी/अवकाश/छोड़ें चुनें",
+    "presentLeaveHolidayEtc": "उपस्थित, छुट्टी, अवकाश आदि",
     "monthlySalary": "मासिक वेतन",
     "daysInMonth": "महीने में दिन",
     "perDaySalary": "प्रति दिन वेतन",
@@ -685,7 +811,36 @@
     "effectiveDate": "प्रभावी तिथि",
     "quantityHistory": "मात्रा इतिहास",
     "effectiveFrom": "प्रभावी से",
-    "current": "वर्तमान"
+    "current": "वर्तमान",
+    "type": "प्रकार",
+    "default": "डिफ़ॉल्ट",
+    "salary": "वेतन",
+    "month": "माह",
+    "allowedLeavesLabel": "अनुमत छुट्टियां",
+    "addQuantity": "मात्रा जोड़ें",
+    "viewQuantities": "मात्राएं देखें",
+    "addNewService": "नई सेवा जोड़ें",
+    "markAs": "ऐसे चिह्नित करें:",
+    "remove": "हटाएं",
+    "noPriceHistoryFound": "कोई मूल्य इतिहास नहीं मिला",
+    "noQuantityHistoryFound": "कोई मात्रा इतिहास नहीं मिला",
+    "pleaseSelectService": "कृपया एक सेवा चुनें",
+    "cannotCreateTransactionWithZeroAmountDetailed": "शून्य राशि के साथ लेनदेन नहीं बनाया जा सकता। कृपया इस महीने के लिए एंट्री जोड़ें।",
+    "allowedLeavesPerMonthPlaceholder": "प्रति माह अनुमत छुट्टियां",
+    "deleteServiceConfirm": "क्या आप \"{{name}}\" सेवा को हटाना चाहते हैं?",
+    "error": {
+      "enterServiceName": "कृपया सेवा का नाम दर्ज करें",
+      "validDefaultQuantity": "कृपया वैध डिफ़ॉल्ट मात्रा दर्ज करें",
+      "enterUnit": "कृपया इकाई दर्ज करें (जैसे L, kg)",
+      "validMonthlySalary": "कृपया वैध मासिक वेतन दर्ज करें",
+      "validPrice": "कृपया वैध मूल्य दर्ज करें",
+      "saveService": "सेवा सहेजने में विफल",
+      "deleteService": "सेवा हटाने में विफल",
+      "addPrice": "मूल्य जोड़ने में विफल",
+      "quantityOnlyDaily": "मात्रा इतिहास केवल DAILY_QUANTITY सेवाओं के लिए है",
+      "validQuantity": "कृपया वैध मात्रा दर्ज करें",
+      "addQuantity": "मात्रा जोड़ने में विफल"
+    }
   },
   "onboarding": {
     "assets": {
@@ -694,6 +849,8 @@
       "addNew": "नया जोड़ें",
       "accountsSelected": "{{count}} खाते चुने गए",
       "next": "आगे",
+      "skip": "छोड़ें",
+      "zeroPlaceholder": "0",
       "skipSetupTitle": "सेटअप छोड़ें?",
       "skipSetupMessage": "आप Quick Actions टैब से नया खाता बनाएं या सेटअप खाता के माध्यम से खाता सेटअप कर सकते हैं",
       "editAccount": "खाता संपादित करें",
@@ -732,6 +889,9 @@
       "subCategory": "सब-कैटेगरी",
       "selectSubCategory": "सब-कैटेगरी चुनें",
       "alreadyCreated": "पहले से बना है",
+      "editLoan": "लोन संपादित करें",
+      "loansSelected_one": "{{count}} लोन चुना गया",
+      "loansSelected_other": "{{count}} लोन चुने गए",
       "error": {
         "enterName": "कृपया नाम लिखें",
         "duplicateAccount": "\"{{name}}\" नाम का खाता पहले से मौजूद है। कृपया एक अलग नाम का उपयोग करें।",
@@ -785,6 +945,20 @@
       }
     }
   },
+  "navigation": {
+    "accountDetails": "खाते का विवरण",
+    "transactionDetails": "लेनदेन का विवरण",
+    "addRepeatTransaction": "दोहराया लेनदेन जोड़ें",
+    "editRepeatTransaction": "दोहराया लेनदेन संपादित करें",
+    "manageServices": "सेवाएं प्रबंधित करें",
+    "history": "इतिहास"
+  },
+  "tabs": {
+    "appTitle": "डेली मुनीम",
+    "dashboard": "डैशबोर्ड",
+    "reports": "रिपोर्ट्स",
+    "accounts": "खाते"
+  },
   "quickActions": {
     "title": "त्वरित कार्य",
     "addTransaction": "नया लेनदेन जोड़ें",
@@ -794,7 +968,6 @@
     "createAccount": "नया खाता बनाएं",
     "repeatTransaction": "दोहराएं लेनदेन",
     "viewTransactions": "नया लेनदेन जोड़ें",
-    "bankSms": "नया लेनदेन बैंक SMS से जोड़ें",
-
+    "bankSms": "नया लेनदेन बैंक SMS से जोड़ें"
   }
 }

@@ -15,7 +15,7 @@
     "unknown": "Unknown",
     "retry": "Retry",
     "refresh": "Refresh",
-    "locale": "en-IN"
+    "locale": "ta-IN"
   },
   "settings": {
     "title": "Settings",
@@ -250,7 +250,7 @@
     "en": "English",
     "hi": "Hindi",
     "gu": "Gujarati",
-    "ta": "Tamil",
+    "ta": "தமிழ்",
     "mr": "Marathi",
     "te": "Telugu",
     "kn": "Kannada"

@@ -541,7 +541,7 @@ const SetupAssetsScreen: React.FC = () => {
           <Text style={[styles.itemType, isDisabled && styles.itemTypeDisabled]}>{item.type}</Text>
           {item.isSelected && !isDisabled && (
             <Text style={styles.itemBalance}>
-              Opening Balance: {item.openingBalance.toLocaleString('en-IN', {
+              {t('onboarding.assets.openingBalance')}: {item.openingBalance.toLocaleString('en-IN', {
                 style: 'currency',
                 currency: 'INR',
                 minimumFractionDigits: 0,
@@ -594,11 +594,11 @@ const SetupAssetsScreen: React.FC = () => {
                   t('onboarding.assets.skipSetupMessage'),
                   [
                     {
-                      text: 'Cancel',
+                      text: t('common.cancel'),
                       style: 'cancel',
                     },
                     {
-                      text: 'Skip',
+                      text: t('onboarding.assets.skip'),
                       style: 'destructive',
                       onPress: () => {
                         // Don't mark onboarding as complete when skipping
@@ -610,7 +610,7 @@ const SetupAssetsScreen: React.FC = () => {
                 );
               }}
             >
-              <Text style={styles.skipButton}>Skip</Text>
+              <Text style={styles.skipButton}>{t('onboarding.assets.skip')}</Text>
             </TouchableOpacity>
           ) : (
             <View style={{ width: 24 }} />
@@ -677,7 +677,7 @@ const SetupAssetsScreen: React.FC = () => {
               style={styles.input}
               value={editBalance}
               onChangeText={setEditBalance}
-              placeholder="0"
+              placeholder={t('onboarding.assets.zeroPlaceholder')}
               keyboardType="numeric"
             />
 
@@ -719,13 +719,13 @@ const SetupAssetsScreen: React.FC = () => {
                 style={[styles.modalButton, styles.modalButtonCancel]}
                 onPress={() => setEditingItem(null)}
               >
-                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+                <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonSave]}
                 onPress={handleSaveEdit}
               >
-                <Text style={styles.modalButtonTextSave}>Save</Text>
+                <Text style={styles.modalButtonTextSave}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -743,7 +743,7 @@ const SetupAssetsScreen: React.FC = () => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('onboarding.assets.addNewAccount')}</Text>
             
-            <Text style={styles.inputLabel}>Type</Text>
+            <Text style={styles.inputLabel}>{t('onboarding.assets.type')}</Text>
             <View style={styles.typeSelector}>
               {(['BANK', 'CASH', 'FD'] as const).map((type) => (
                 <TouchableOpacity
@@ -766,24 +766,24 @@ const SetupAssetsScreen: React.FC = () => {
               ))}
             </View>
 
-            <Text style={styles.inputLabel}>Name</Text>
+            <Text style={styles.inputLabel}>{t('onboarding.assets.name')}</Text>
             <TextInput
               style={styles.input}
               value={newItemName}
               onChangeText={setNewItemName}
-              placeholder="Account name"
+              placeholder={t('onboarding.assets.accountName')}
             />
 
-            <Text style={styles.inputLabel}>Opening Balance</Text>
+            <Text style={styles.inputLabel}>{t('onboarding.assets.openingBalance')}</Text>
             <TextInput
               style={styles.input}
               value={newItemBalance}
               onChangeText={setNewItemBalance}
-              placeholder="0"
+              placeholder={t('onboarding.assets.zeroPlaceholder')}
               keyboardType="numeric"
             />
 
-            <Text style={styles.inputLabel}>Category</Text>
+            <Text style={styles.inputLabel}>{t('onboarding.assets.category')}</Text>
             <TouchableOpacity
               style={styles.categoryButton}
               onPress={() => {
@@ -792,14 +792,14 @@ const SetupAssetsScreen: React.FC = () => {
               }}
             >
               <Text style={[styles.categoryButtonText, !newItemParentCategory && styles.categoryButtonPlaceholder]}>
-                {newItemParentCategory || 'Select Category'}
+                {newItemParentCategory || t('onboarding.assets.selectCategory')}
               </Text>
               <Ionicons name="chevron-down" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
 
             {newItemParentCategory && (
               <>
-                <Text style={styles.inputLabel}>Sub Category</Text>
+                <Text style={styles.inputLabel}>{t('onboarding.assets.subCategory')}</Text>
                 <TouchableOpacity
                   style={styles.categoryButton}
                   onPress={() => {
@@ -808,7 +808,7 @@ const SetupAssetsScreen: React.FC = () => {
                   }}
                 >
                   <Text style={[styles.categoryButtonText, !newItemSubCategory && styles.categoryButtonPlaceholder]}>
-                    {newItemSubCategory || 'Select Sub Category'}
+                    {newItemSubCategory || t('onboarding.assets.selectSubCategory')}
                   </Text>
                   <Ionicons name="chevron-down" size={20} color={colors.text.secondary} />
                 </TouchableOpacity>
@@ -820,13 +820,13 @@ const SetupAssetsScreen: React.FC = () => {
                 style={[styles.modalButton, styles.modalButtonCancel]}
                 onPress={() => setShowAddModal(false)}
               >
-                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+                <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonSave]}
                 onPress={handleAdd}
               >
-                <Text style={styles.modalButtonTextSave}>Add</Text>
+                <Text style={styles.modalButtonTextSave}>{t('common.add')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -842,7 +842,7 @@ const SetupAssetsScreen: React.FC = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.pickerModalContent}>
-            <Text style={styles.modalTitle}>Select Category</Text>
+            <Text style={styles.modalTitle}>{t('onboarding.assets.selectCategory')}</Text>
             <FlatList
               data={availableCategories}
               keyExtractor={(item) => item.parentCategory}
@@ -868,7 +868,7 @@ const SetupAssetsScreen: React.FC = () => {
               style={[styles.modalButton, styles.modalButtonCancel]}
               onPress={() => setShowCategoryPicker(false)}
             >
-              <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+              <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -883,7 +883,7 @@ const SetupAssetsScreen: React.FC = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.pickerModalContent}>
-            <Text style={styles.modalTitle}>Select Sub Category</Text>
+            <Text style={styles.modalTitle}>{t('onboarding.assets.selectSubCategory')}</Text>
             <FlatList
               data={availableSubCategories}
               keyExtractor={(item) => item}
@@ -907,7 +907,7 @@ const SetupAssetsScreen: React.FC = () => {
               style={[styles.modalButton, styles.modalButtonCancel]}
               onPress={() => setShowSubCategoryPicker(false)}
             >
-              <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+              <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

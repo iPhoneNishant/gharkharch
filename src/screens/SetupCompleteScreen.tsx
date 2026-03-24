@@ -80,7 +80,7 @@ const SetupCompleteScreen: React.FC = () => {
 
   const createAllAccounts = async () => {
     if (!user?.id) {
-      Alert.alert('Error', 'User not authenticated');
+      Alert.alert(t('common.error'), t('setupComplete.userNotAuthenticated'));
       return;
     }
 
@@ -252,11 +252,11 @@ const SetupCompleteScreen: React.FC = () => {
     } catch (error: any) {
       console.error('Error creating accounts:', error);
       Alert.alert(
-        'Error',
-        'Failed to create some accounts. Please try again or create them manually.',
+        t('common.error'),
+        t('setupComplete.failedToCreateSomeAccounts'),
         [
           {
-            text: 'Continue Anyway',
+            text: t('setupComplete.continueAnyway'),
             onPress: () => {
               reset();
               navigation.reset({
@@ -279,16 +279,14 @@ const SetupCompleteScreen: React.FC = () => {
           <Ionicons name="checkmark-circle" size={80} color={colors.primary[500]} />
         </View>
 
-        <Text style={styles.title}>Setting up your accounts...</Text>
-        <Text style={styles.subtitle}>
-          We're creating {totalCount} accounts for you. This will just take a moment.
-        </Text>
+        <Text style={styles.title}>{t('setupComplete.settingUpAccounts')}</Text>
+        <Text style={styles.subtitle}>{t('setupComplete.creatingAccountsMessage', { count: totalCount })}</Text>
 
         {isCreating && (
           <View style={styles.progressContainer}>
             <ActivityIndicator size="large" color={colors.primary[500]} />
             <Text style={styles.progressText}>
-              Created {createdCount} of {totalCount} accounts
+              {t('setupComplete.createdAccountsProgress', { created: createdCount, total: totalCount })}
             </Text>
           </View>
         )}
@@ -296,8 +294,8 @@ const SetupCompleteScreen: React.FC = () => {
         {!isCreating && totalCount > 0 && (
           <View style={styles.successContainer}>
             <Ionicons name="checkmark-done-circle" size={60} color={colors.success} />
-            <Text style={styles.successText}>All accounts created successfully!</Text>
-            <Text style={styles.successSubtext}>Redirecting to your dashboard...</Text>
+            <Text style={styles.successText}>{t('setupComplete.allAccountsCreatedSuccessfully')}</Text>
+            <Text style={styles.successSubtext}>{t('setupComplete.redirectingToDashboard')}</Text>
           </View>
         )}
       </View>

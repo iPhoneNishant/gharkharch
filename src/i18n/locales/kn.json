@@ -15,7 +15,7 @@
     "unknown": "Unknown",
     "retry": "Retry",
     "refresh": "Refresh",
-    "locale": "en-IN"
+    "locale": "kn-IN"
   },
   "settings": {
     "title": "Settings",
@@ -253,7 +253,7 @@
     "ta": "Tamil",
     "mr": "Marathi",
     "te": "Telugu",
-    "kn": "Kannada"
+    "kn": "ಕನ್ನಡ"
   },
   "transactionDetail": {
     "notFound": "Transaction not found",

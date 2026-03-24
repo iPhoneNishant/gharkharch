@@ -581,28 +581,28 @@ const ReportsScreen: React.FC = () => {
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Transactions</Text>
+                  <Text style={styles.statLabel}>{t('reports.transactionsCountLabel')}</Text>
                   <Text style={styles.statValue}>{subCategoryReport.transactionCount}</Text>
                 </View>
               </>
             ) : (
               <>
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Opening</Text>
+                  <Text style={styles.statLabel}>{t('reportsSummary.opening')}</Text>
                   <Text style={styles.statValue}>
                     {formatCurrency(subCategoryReport.openingBalance, currency)}
                   </Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Closing</Text>
+                  <Text style={styles.statLabel}>{t('reportsSummary.closing')}</Text>
                   <Text style={styles.statValue}>
                     {formatCurrency(subCategoryReport.closingBalance, currency)}
                   </Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Transactions</Text>
+                  <Text style={styles.statLabel}>{t('reports.transactionsCountLabel')}</Text>
                   <Text style={styles.statValue}>{subCategoryReport.transactionCount}</Text>
                 </View>
               </>
@@ -614,7 +614,7 @@ const ReportsScreen: React.FC = () => {
           <View style={styles.transactionSummary}>
             <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
-                Total Debits:
+                {t('reports.totalDebits')}
               </Text>
               <Text style={styles.summaryValue} numberOfLines={1} ellipsizeMode="tail">
                 {formatCurrency(subCategoryReport.totalDebits, currency)}
@@ -622,7 +622,7 @@ const ReportsScreen: React.FC = () => {
             </View>
             <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
-                Total Credits:
+                {t('reports.totalCredits')}
               </Text>
               <Text style={styles.summaryValue} numberOfLines={1} ellipsizeMode="tail">
                 {formatCurrency(subCategoryReport.totalCredits, currency)}
@@ -630,7 +630,7 @@ const ReportsScreen: React.FC = () => {
             </View>
             <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
-                Net Change:
+                {t('reports.netChange')}
               </Text>
               <Text style={[
                 styles.summaryValue,
@@ -645,7 +645,7 @@ const ReportsScreen: React.FC = () => {
           <View style={styles.transactionSummary}>
             <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
-                Total Debits:
+                {t('reports.totalDebits')}
               </Text>
               <Text style={styles.summaryValue} numberOfLines={1} ellipsizeMode="tail">
                 {formatCurrency(subCategoryReport.totalDebits, currency)}
@@ -653,7 +653,7 @@ const ReportsScreen: React.FC = () => {
             </View>
             <View style={styles.summaryRowCompact}>
               <Text style={styles.summaryLabel} numberOfLines={1} ellipsizeMode="tail">
-                Total Credits:
+                {t('reports.totalCredits')}
               </Text>
               <Text style={styles.summaryValue} numberOfLines={1} ellipsizeMode="tail">
                 {formatCurrency(subCategoryReport.totalCredits, currency)}
@@ -691,7 +691,7 @@ const ReportsScreen: React.FC = () => {
               {categoryReport.category}
             </Text>
             <Text style={styles.categoryMeta} numberOfLines={1} ellipsizeMode="tail">
-         {categoryReport.totalTransactions} transactions
+         {t('reports.categoryTransactionCount', { count: categoryReport.totalTransactions })}
             </Text>
           </View>
           <View style={styles.categoryBalance}>
@@ -720,7 +720,7 @@ const ReportsScreen: React.FC = () => {
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  Opening
+                  {t('reportsSummary.opening')}
                 </Text>
                 <Text style={styles.categoryBalanceValue}>
                   {formatCurrency(categoryReport.totalOpeningBalance, currency)}
@@ -730,7 +730,7 @@ const ReportsScreen: React.FC = () => {
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  Closing
+                  {t('reportsSummary.closing')}
                 </Text>
                 <Text style={styles.categoryBalanceValue}>
                   {formatCurrency(categoryReport.totalClosingBalance, currency)}
@@ -1006,11 +1006,11 @@ const ReportsScreen: React.FC = () => {
         {(viewMode === 'transactions-month' || viewMode === 'transactions-custom') && (
           <View style={styles.transactionsContainer}>
             <Text style={styles.sectionTitle}>
-              Transactions ({filteredTransactions.length})
+              {t('reports.transactionsListTitle', { count: filteredTransactions.length })}
             </Text>
             {filteredTransactions.length === 0 ? (
               <View style={styles.emptyTransactions}>
-                <Text style={styles.emptyTransactionsText}>No transactions found</Text>
+                <Text style={styles.emptyTransactionsText}>{t('reports.noTransactionsFound')}</Text>
               </View>
             ) : (
               <View style={styles.transactionsList}>
@@ -1093,7 +1093,7 @@ const ReportsScreen: React.FC = () => {
                     </Text>
                   </View>
                   <Text style={styles.accountTypeTitle}>
-                    {accountType.charAt(0).toUpperCase() + accountType.slice(1)}
+                    {t(`addAccount.${accountType}`)}
                   </Text>
                 </View>
                 {categoryReports.map(cr => renderCategoryReport(cr))}
@@ -1116,15 +1116,15 @@ const ReportsScreen: React.FC = () => {
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
                   <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                    Cancel
+                    {t('common.cancel')}
                   </Text>
                 </TouchableOpacity>
                 <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">
-                  Select From Date
+                  {t('reportsActions.selectFromDate')}
                 </Text>
                 <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
                   <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">
-                    Done
+                    {t('common.done')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1171,15 +1171,15 @@ const ReportsScreen: React.FC = () => {
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
                   <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                    Cancel
+                    {t('common.cancel')}
                   </Text>
                 </TouchableOpacity>
                 <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">
-                  Select To Date
+                  {t('reportsActions.selectToDate')}
                 </Text>
                 <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
                   <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">
-                    Done
+                    {t('common.done')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1225,15 +1225,15 @@ const ReportsScreen: React.FC = () => {
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowMonthYearPicker(false)}>
-              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">Cancel</Text>
+              <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">Select Month & Year</Text>
+            <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{t('reports.selectMonthYear')}</Text>
             <TouchableOpacity onPress={() => {
               setShowMonthYearPicker(false);
               setSelectedCategory(null);
               setSelectedSubCategory(null);
             }}>
-              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">Done</Text>
+              <Text style={styles.modalDone} numberOfLines={1} ellipsizeMode="tail">{t('common.done')}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.monthYearPickerContainer}>
@@ -1350,10 +1350,10 @@ const ReportsScreen: React.FC = () => {
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
               <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                Cancel
+                {t('common.cancel')}
               </Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Category</Text>
+            <Text style={styles.modalTitle}>{t('reportsActions.selectCategory')}</Text>
             <View style={{ width: 60 }} />
           </View>
           <FlatList
@@ -1396,10 +1396,10 @@ const ReportsScreen: React.FC = () => {
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowSubCategoryPicker(false)}>
               <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                Cancel
+                {t('common.cancel')}
               </Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Sub-Category</Text>
+            <Text style={styles.modalTitle}>{t('reportsActions.selectSubCategory')}</Text>
             <View style={{ width: 60 }} />
           </View>
           <FlatList
@@ -1441,10 +1441,10 @@ const ReportsScreen: React.FC = () => {
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowAccountPicker(false)}>
               <Text style={styles.modalCancel} numberOfLines={1} ellipsizeMode="tail">
-                Cancel
+                {t('common.cancel')}
               </Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Account</Text>
+            <Text style={styles.modalTitle}>{t('reportsActions.selectAccount')}</Text>
             <View style={{ width: 60 }} />
           </View>
           <FlatList

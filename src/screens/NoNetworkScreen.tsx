@@ -1,20 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../config/theme';
 
 const NoNetworkScreen = () => {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons name="wifi-off" size={64} color={colors.primary[500]} />
         </View>
-        <Text style={styles.title}>No Internet Connection</Text>
-        <Text style={styles.description}>
-          Please check your network settings and try again.
-          We'll reconnect automatically when you're back online.
-        </Text>
+        <Text style={styles.title}>{t('noNetwork.title')}</Text>
+        <Text style={styles.description}>{t('noNetwork.description')}</Text>
       </View>
     </View>
   );

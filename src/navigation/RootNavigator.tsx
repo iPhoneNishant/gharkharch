@@ -38,6 +38,7 @@ import RecurringTransactionsScreen from '../screens/RecurringTransactionsScreen'
 import SettingsScreen from '../screens/SettingsScreen';
 import SubCategoryTransactionsScreen from '../screens/SubCategoryTransactionsScreen';
 import BankSmsScreen from '../screens/BankSmsScreen';
+import SmsImportScreen from '../screens/SmsImportScreen';
 import AccountsScreen from '../screens/AccountsScreen';
 import SmsAccountMappingScreen from '../screens/SmsAccountMappingScreen';
 import UserGuideScreen from '../screens/UserGuideScreen';
@@ -477,7 +478,7 @@ const RootNavigator: React.FC = () => {
               options={({ route, navigation }) => ({
                 headerShown: true,
                 headerBackVisible: navigation.canGoBack(), // Show back button if we can go back
-                headerTitle: (route.params as any)?.editTransactionId ? 'Edit Transaction' : 'Add Transaction',
+                headerTitle: (route.params as any)?.editTransactionId ? t('addTransaction.editTitle') : t('addTransaction.title'),
                 headerTitleAlign: 'center',
                 headerTintColor: colors.primary[500],
               })}
@@ -488,7 +489,7 @@ const RootNavigator: React.FC = () => {
               options={{
                 presentation: 'modal',
                 headerShown: true,
-                headerTitle: 'Add Account',
+                headerTitle: t('addAccount.createAccount'),
                 headerTintColor: colors.primary[500],
               }}
             />
@@ -497,7 +498,7 @@ const RootNavigator: React.FC = () => {
               component={AccountDetailScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Account Details',
+                headerTitle: t('navigation.accountDetails'),
                 headerTintColor: colors.primary[500],
                 headerBackTitle: 'Back',
               }}
@@ -507,10 +508,10 @@ const RootNavigator: React.FC = () => {
               component={TransactionDetailScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Transaction Details',
+                headerTitle: t('navigation.transactionDetails'),
                 headerTitleAlign: 'center',
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen 
@@ -579,7 +580,7 @@ const RootNavigator: React.FC = () => {
               options={{
                 presentation: 'modal',
                 headerShown: true,
-                headerTitle: 'Setup PIN',
+                headerTitle: t('pin.setup.title'),
                 headerTintColor: colors.primary[500],
               }}
             />
@@ -597,7 +598,7 @@ const RootNavigator: React.FC = () => {
               options={({ route }) => ({
                 presentation: 'modal',
                 headerShown: true,
-                headerTitle: (route.params as any)?.editRecurringTransactionId ? 'Edit Repeat Transaction' : 'Add Repeat Transaction',
+                headerTitle: (route.params as any)?.editRecurringTransactionId ? t('navigation.editRepeatTransaction') : t('navigation.addRepeatTransaction'),
                 headerTintColor: colors.primary[500],
               })}
             />
@@ -606,9 +607,9 @@ const RootNavigator: React.FC = () => {
               component={RecurringTransactionsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Repeat Transactions',
+                headerTitle: t('more.repeatTransactions'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen
@@ -616,9 +617,9 @@ const RootNavigator: React.FC = () => {
               component={SettingsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Settings',
+                headerTitle: t('settings.title'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen
@@ -626,9 +627,9 @@ const RootNavigator: React.FC = () => {
               component={PinChangeScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Change PIN',
+                headerTitle: t('settings.changePin'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
                 gestureEnabled: false, // Disable swipe back gesture for security
               }}
             />
@@ -637,9 +638,19 @@ const RootNavigator: React.FC = () => {
               component={BankSmsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Bank SMS',
+                headerTitle: t('more.bankSms'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
+              }}
+            />
+            <Stack.Screen
+              name="SmsImport"
+              component={SmsImportScreen}
+              options={{
+                headerShown: true,
+                headerTitle: t('more.smsImport'),
+                headerTintColor: colors.primary[500],
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen
@@ -647,7 +658,7 @@ const RootNavigator: React.FC = () => {
               component={AccountsScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Accounts',
+                headerTitle: t('tabs.accounts'),
                 headerTintColor: colors.primary[500],
                 headerBackTitle: t('common.back'),
               }}
@@ -667,9 +678,9 @@ const RootNavigator: React.FC = () => {
               component={SubCategoryTransactionsScreen}
               options={({ route }) => ({
                 headerShown: true,
-                headerTitle: (route.params as any)?.subCategory || 'Transactions',
+                headerTitle: (route.params as any)?.subCategory || t('reportsList.transactionsTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               })}
             />
             <Stack.Screen
@@ -677,9 +688,9 @@ const RootNavigator: React.FC = () => {
               component={HouseholdServicesLedgerScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Household Services',
+                headerTitle: t('reportsList.householdServicesLedgerTitle'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen
@@ -687,9 +698,9 @@ const RootNavigator: React.FC = () => {
               component={HouseholdServicesManagementScreen}
               options={{
                 headerShown: true,
-                headerTitle: 'Manage Services',
+                headerTitle: t('navigation.manageServices'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen
@@ -697,9 +708,9 @@ const RootNavigator: React.FC = () => {
               component={HouseholdServicesTodayScreen}
               options={{
                 headerShown: true,
-                headerTitle: "Today's Services",
+                headerTitle: t('more.todaysServices'),
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               }}
             />
             <Stack.Screen
@@ -707,9 +718,9 @@ const RootNavigator: React.FC = () => {
               component={HouseholdServicesHistoryScreen}
               options={({ route }) => ({
                 headerShown: true,
-                headerTitle: `${route.params.historyType === 'price' ? 'Price' : 'Quantity'} History - ${route.params.service.name}`,
+                headerTitle: `${route.params.historyType === 'price' ? t('householdServices.price') : t('householdServices.quantity')} ${t('navigation.history')} - ${route.params.service.name}`,
                 headerTintColor: colors.primary[500],
-                headerBackTitle: 'Back',
+                headerBackTitle: t('common.back'),
               })}
             />
             <Stack.Screen name="UserGuide" component={UserGuideScreen} />

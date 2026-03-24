@@ -7,7 +7,16 @@
  */
 
 import i18n from '../i18n';
+import { normalizeLanguageCode } from '../i18n/supportedLanguages';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/** Slightly larger base type for scripts that need more room than Latin. */
+const INDIC_UI_LANGUAGE_BASE_SCALE = 1.12;
+
+function baseFontScaleForLanguage(lang: string | undefined): number {
+  const code = normalizeLanguageCode(lang);
+  return code === 'en' ? 1 : INDIC_UI_LANGUAGE_BASE_SCALE;
+}
 
 // ============================================================================
 // COLOR CUSTOMIZATION - Change these values to customize the app's appearance
@@ -137,7 +146,7 @@ export const colors = {
 
 let BASE_FONT_SCALE = (() => {
   try {
-    return i18n.language === 'hi' ? 1.12 : 1;
+    return baseFontScaleForLanguage(i18n.language);
   } catch {
     return 1;
   }
@@ -261,7 +270,7 @@ export const removeFontScaleListener = (fn: () => void) => {
 };
 
 i18n.on('languageChanged', (lang) => {
-  BASE_FONT_SCALE = lang === 'hi' ? 1.12 : 1;
+  BASE_FONT_SCALE = baseFontScaleForLanguage(lang);
   recalcTypography();
   fontScaleListeners.forEach(fn => fn());
 });

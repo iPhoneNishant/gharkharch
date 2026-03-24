@@ -303,7 +303,7 @@ const MonthToMonthReportScreen: React.FC = () => {
               <Text style={styles.summaryLabel}>{t('reportsActions.from')}</Text>
             </View>
             <Text style={styles.selectedDateText}>
-              {new Date(fromYear, fromMonth - 1, 1).toLocaleDateString('en-IN', { day: 1, month: 'short', year: 'numeric' })}
+              {new Date(fromYear, fromMonth - 1, 1).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </Text>
             <View style={styles.chevronContainer}>
               <Text style={styles.dateSelectionChevron}>›</Text>
@@ -318,7 +318,7 @@ const MonthToMonthReportScreen: React.FC = () => {
               <Text style={styles.summaryLabel}>{t('reportsActions.to')}</Text>
             </View>
             <Text style={styles.selectedDateText}>
-              {new Date(toYear, toMonth - 1, 1).toLocaleDateString('en-IN', { day: 1, month: 'short', year: 'numeric' })}
+              {new Date(toYear, toMonth - 1, 1).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </Text>
             <View style={styles.chevronContainer}>
               <Text style={styles.dateSelectionChevron}>›</Text>

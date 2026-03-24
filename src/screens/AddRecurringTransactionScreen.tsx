@@ -23,6 +23,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import { useAuthStore, useAccountStore, useRecurringTransactionStore } from '../stores';
 import { RootStackParamList, Account, AccountType, RecurrenceFrequency } from '../types';
@@ -52,6 +53,7 @@ const FREQUENCY_OPTIONS: { label: string; value: RecurrenceFrequency }[] = [
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const AddRecurringTransactionScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
@@ -514,18 +516,18 @@ const AddRecurringTransactionScreen: React.FC = () => {
     // Validate amount
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('addTransaction.invalidAmount'));
       return;
     }
 
     // Validate accounts
     if (!debitAccountId || !creditAccountId) {
-      Alert.alert('Error', 'Please select both accounts');
+      Alert.alert(t('common.error'), t('addTransaction.selectBothAccounts'));
       return;
     }
 
     if (debitAccountId === creditAccountId) {
-      Alert.alert('Error', 'Debit and credit accounts must be different');
+      Alert.alert(t('common.error'), t('addTransaction.accountsMustBeDifferent'));
       return;
     }
 
@@ -641,7 +643,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
           <Text style={styles.currencySymbol}>{currency === 'INR' ? '₹' : '$'}</Text>
           <TextInput
             style={styles.amountInput}
-            placeholder="0.00"
+            placeholder={t('recurring.amountPlaceholder')}
             placeholderTextColor={colors.neutral[300]}
             value={amount}
             onChangeText={setAmount}
@@ -654,7 +656,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
           <View style={styles.recurringIndicator}>
             <View style={styles.recurringBadge}>
               <Ionicons name="repeat-outline" size={16} color={colors.primary[500]} />
-              <Text style={styles.recurringText}>Repeat Transaction</Text>
+              <Text style={styles.recurringText}>{t('recurring.addRepeatTransaction')}</Text>
             </View>
           </View>
 
@@ -667,7 +669,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
           >
             <View style={styles.accountSelectorContent}>
               <View style={styles.accountSelectorLeft}>
-                <Text style={styles.accountLabel}>From Account</Text>
+                <Text style={styles.accountLabel}>{t('addTransaction.fromAccount')}</Text>
                 {creditAccount ? (
                   <View style={styles.selectedAccount}>
                     <View style={[
@@ -677,7 +679,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
                     <Text style={styles.accountName}>{creditAccount.name}</Text>
                   </View>
                 ) : (
-                  <Text style={styles.accountPlaceholder}>Select account</Text>
+                  <Text style={styles.accountPlaceholder}>{t('addTransaction.selectAccount')}</Text>
                 )}
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
@@ -695,7 +697,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
           >
             <View style={styles.accountSelectorContent}>
               <View style={styles.accountSelectorLeft}>
-                <Text style={styles.accountLabel}>To Account</Text>
+                <Text style={styles.accountLabel}>{t('addTransaction.toAccount')}</Text>
                 {debitAccount ? (
                   <View style={styles.selectedAccount}>
                     <View style={[
@@ -705,7 +707,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
                     <Text style={styles.accountName}>{debitAccount.name}</Text>
                   </View>
                 ) : (
-                  <Text style={styles.accountPlaceholder}>Select account</Text>
+                  <Text style={styles.accountPlaceholder}>{t('addTransaction.selectAccount')}</Text>
                 )}
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
@@ -779,7 +781,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
               <View style={styles.selectorLeft}>
                   <View style={styles.selectorLabelRow}>
                     <Ionicons name="calendar-outline" size={18} color={colors.text.secondary} />
-                    <Text style={styles.inputLabel}>Start Date</Text>
+                    <Text style={styles.inputLabel}>{t('recurring.startDate')}</Text>
                   </View>
                   <View style={styles.selectorValueContainer}>
                     <Text style={styles.selectorValue} numberOfLines={1}>
@@ -807,7 +809,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
               <View style={styles.selectorLeft}>
                   <View style={styles.selectorLabelRow}>
                     <Ionicons name="calendar-outline" size={18} color={colors.text.secondary} />
-                    <Text style={styles.inputLabel}>End Date (Optional)</Text>
+                    <Text style={styles.inputLabel}>{t('recurring.endDateOptional')}</Text>
                   </View>
                   <View style={styles.selectorValueContainer}>
                     <Text style={styles.selectorValue} numberOfLines={1}>
@@ -817,7 +819,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
                             month: 'short',
                             year: 'numeric',
                           })
-                        : 'No end date'
+                        : t('recurring.noEndDate')
                       }
                     </Text>
                   </View>
@@ -846,17 +848,17 @@ const AddRecurringTransactionScreen: React.FC = () => {
           <View style={styles.inputContainer}>
             <View style={styles.selectorLabelRow}>
               <Ionicons name="notifications-outline" size={18} color={colors.text.secondary} />
-              <Text style={styles.inputLabel}>Notify Before (Days)</Text>
+              <Text style={styles.inputLabel}>{t('recurring.notifyBeforeDays')}</Text>
             </View>
             <TextInput
               style={styles.textInput}
-              placeholder="0"
+              placeholder={t('recurring.zeroPlaceholder')}
               placeholderTextColor={colors.neutral[400]}
               value={notifyBeforeDays}
               onChangeText={setNotifyBeforeDays}
               keyboardType="number-pad"
             />
-            <Text style={styles.hint}>Set to 0 to disable notifications</Text>
+            <Text style={styles.hint}>{t('recurring.notifyHint')}</Text>
           </View>
         </View>
 
@@ -865,11 +867,11 @@ const AddRecurringTransactionScreen: React.FC = () => {
           <View style={styles.inputContainer}>
             <View style={styles.selectorLabelRow}>
               <Ionicons name="document-text-outline" size={18} color={colors.text.secondary} />
-              <Text style={styles.inputLabel}>Note (optional)</Text>
+              <Text style={styles.inputLabel}>{t('addTransaction.noteOptional')}</Text>
             </View>
             <TextInput
               style={styles.textInput}
-              placeholder="Add a note..."
+              placeholder={t('addTransaction.addNote')}
               placeholderTextColor={colors.neutral[400]}
               value={note}
               onChangeText={setNote}
@@ -925,7 +927,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
               onPress={() => setShowAccountPicker(false)}
               style={styles.modalCancelButton}
             >
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
               Select {accountPickerType === 'debit' ? 'To' : 'From'} Account
@@ -935,7 +937,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
 
           <TextInput
             style={styles.searchInput}
-            placeholder="Search accounts..."
+            placeholder={t('addTransaction.searchAccounts')}
             placeholderTextColor={colors.neutral[400]}
             value={accountSearchQuery}
             onChangeText={setAccountSearchQuery}
@@ -980,9 +982,9 @@ const AddRecurringTransactionScreen: React.FC = () => {
               onPress={() => setShowFrequencyPicker(false)}
               style={styles.modalCancelButton}
             >
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Frequency</Text>
+            <Text style={styles.modalTitle}>{t('recurring.selectFrequency')}</Text>
             <View style={styles.modalCancelButton} />
           </View>
 
@@ -1018,7 +1020,7 @@ const AddRecurringTransactionScreen: React.FC = () => {
                 onPress={() => setShowDayPicker(false)}
                 style={styles.modalCancelButton}
               >
-                <Text style={styles.modalCancel}>Cancel</Text>
+                <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <Text style={styles.modalTitle}>
                 Select {frequency === 'weekly' ? 'Day of Week' : 'Day of Month'}

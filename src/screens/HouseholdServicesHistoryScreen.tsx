@@ -28,13 +28,13 @@ import {
 } from '../services/householdServices/householdServicesService';
 import { setMidnightInTimezoneSync, getTodayInTimezoneSync, initializeTimezoneCache } from '../services/timezoneService';
 import { colors, spacing, typography, borderRadius, addFontScaleListener } from '../config/theme';
-import { formatCurrency } from '../config/constants';
+import { formatCurrency, DEFAULT_CURRENCY } from '../config/constants';
 
-type RouteProp = RouteProp<RootStackParamList, 'HouseholdServicesHistory'>;
+type HouseholdServicesHistoryRouteProp = RouteProp<RootStackParamList, 'HouseholdServicesHistory'>;
 
 const HouseholdServicesHistoryScreen: React.FC = () => {
   const { t } = useTranslation();
-  const route = useRoute<RouteProp>();
+  const route = useRoute<HouseholdServicesHistoryRouteProp>();
   const insets = useSafeAreaInsets();
   const { service, historyType } = route.params;
   const [fontScaleVersion, setFontScaleVersion] = useState(0);
@@ -159,7 +159,7 @@ const HouseholdServicesHistoryScreen: React.FC = () => {
                 <View key={entry.id || index} style={styles.historyItem}>
                   <View style={styles.historyItemLeft}>
                     <Text style={styles.historyItemValue}>
-                      {formatCurrency(entry.price, service.currency || 'INR')}
+                      {formatCurrency(entry.price, DEFAULT_CURRENCY)}
                     </Text>
                     <Text style={styles.historyItemDate}>
                       {t('householdServices.effectiveFrom')}: {entry.effectiveDate.toLocaleDateString('en-IN', {
@@ -181,7 +181,7 @@ const HouseholdServicesHistoryScreen: React.FC = () => {
             })
           ) : (
             <View style={styles.emptyHistory}>
-              <Text style={styles.emptyHistoryText}>No price history found</Text>
+              <Text style={styles.emptyHistoryText}>{t('householdServices.noPriceHistoryFound')}</Text>
             </View>
           )
         ) : (
@@ -217,7 +217,7 @@ const HouseholdServicesHistoryScreen: React.FC = () => {
             })
           ) : (
             <View style={styles.emptyHistory}>
-              <Text style={styles.emptyHistoryText}>No quantity history found</Text>
+              <Text style={styles.emptyHistoryText}>{t('householdServices.noQuantityHistoryFound')}</Text>
             </View>
           )
         )}

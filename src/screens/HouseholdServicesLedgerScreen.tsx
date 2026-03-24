@@ -1270,8 +1270,8 @@ const HouseholdServicesLedgerScreen: React.FC = () => {
     if (amount === 0) {
       Alert.alert(
         t('common.error'),
-        t('householdServices.cannotCreateTransactionWithZeroAmount') || 'Cannot create transaction with zero amount. Please add entries for this month.',
-        [{ text: t('common.ok') || 'OK' }]
+        t('householdServices.cannotCreateTransactionWithZeroAmountDetailed'),
+        [{ text: t('common.ok') }]
       );
       return;
     }
@@ -1675,7 +1675,7 @@ const HouseholdServicesLedgerScreen: React.FC = () => {
         </View>
       ) : (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: spacing.xl }]}>
-          <Text style={styles.emptyStateText}>Please select a service</Text>
+          <Text style={styles.emptyStateText}>{t('householdServices.pleaseSelectService')}</Text>
         </View>
       )}
 
@@ -1689,7 +1689,7 @@ const HouseholdServicesLedgerScreen: React.FC = () => {
         <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowServicePicker(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>{t('householdServices.selectService')}</Text>
             <View style={{ width: 60 }} />
@@ -2010,7 +2010,7 @@ const HouseholdServicesLedgerScreen: React.FC = () => {
                   }}
                   disabled={saving}
                 >
-                  <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Cancel</Text>
+                  <Text style={[styles.buttonText, styles.buttonTextSecondary]}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.button, styles.buttonPrimary, { flex: 1 }, saving && styles.buttonDisabled]}

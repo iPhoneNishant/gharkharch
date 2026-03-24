@@ -163,25 +163,25 @@ const HouseholdServicesManagementScreen: React.FC = () => {
   // Save service
   const handleSaveService = async () => {
     if (!serviceName.trim()) {
-      Alert.alert('Error', 'Please enter a service name');
+      Alert.alert(t('common.error'), t('householdServices.error.enterServiceName'));
       return;
     }
 
     // Validate required fields based on billing type
     if (billingType === 'DAILY_QUANTITY') {
       if (!defaultQuantity.trim() || isNaN(parseFloat(defaultQuantity)) || parseFloat(defaultQuantity) <= 0) {
-        Alert.alert('Error', 'Please enter a valid default quantity');
+        Alert.alert(t('common.error'), t('householdServices.error.validDefaultQuantity'));
         return;
       }
       if (!unit.trim()) {
-        Alert.alert('Error', 'Please enter a unit (e.g., L, kg)');
+        Alert.alert(t('common.error'), t('householdServices.error.enterUnit'));
         return;
       }
     }
 
     if (billingType === 'MONTHLY_SALARY') {
       if (!monthlySalary.trim() || isNaN(parseFloat(monthlySalary)) || parseFloat(monthlySalary) <= 0) {
-        Alert.alert('Error', 'Please enter a valid monthly salary');
+        Alert.alert(t('common.error'), t('householdServices.error.validMonthlySalary'));
         return;
       }
     }
@@ -189,7 +189,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
     // Validate price for non-salary services (required during creation)
     if (!isEditing && billingType !== 'MONTHLY_SALARY') {
       if (!price.trim() || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-        Alert.alert('Error', 'Please enter a valid price');
+        Alert.alert(t('common.error'), t('householdServices.error.validPrice'));
         return;
       }
     }
@@ -232,7 +232,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
       setShowServiceModal(false);
       resetServiceForm();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save service');
+      Alert.alert(t('common.error'), error.message || t('householdServices.error.saveService'));
     } finally {
       setSaving(false);
     }
@@ -242,7 +242,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
   const handleDeleteService = (service: HouseholdService) => {
     Alert.alert(
       t('householdServices.deleteService'),
-      `Are you sure you want to delete "${service.name}"?`,
+      t('householdServices.deleteServiceConfirm', { name: service.name }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -252,7 +252,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
             try {
               await deleteService(service.id);
             } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete service');
+              Alert.alert(t('common.error'), error.message || t('householdServices.error.deleteService'));
             }
           },
         },
@@ -280,7 +280,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
   const handleSavePrice = async () => {
     if (!selectedService) return;
     if (!price.trim() || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-      Alert.alert('Error', 'Please enter a valid price');
+      Alert.alert(t('common.error'), t('householdServices.error.validPrice'));
       return;
     }
 
@@ -317,7 +317,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
         setPrice('');
         setPriceEffectiveDate(new Date());
         setSelectedService(null);
-        Alert.alert('Error', error.message || 'Failed to add price');
+        Alert.alert(t('common.error'), error.message || t('householdServices.error.addPrice'));
       }, 100);
     }
   };
@@ -325,7 +325,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
   // Open quantity modal
   const handleAddQuantity = (service: HouseholdService) => {
     if (service.billingType !== 'DAILY_QUANTITY') {
-      Alert.alert('Error', 'Quantity history is only for DAILY_QUANTITY services');
+      Alert.alert(t('common.error'), t('householdServices.error.quantityOnlyDaily'));
       return;
     }
     setSelectedService(service);
@@ -338,7 +338,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
   const handleSaveQuantity = async () => {
     if (!selectedService) return;
     if (!quantity.trim() || isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0) {
-      Alert.alert('Error', 'Please enter a valid quantity');
+      Alert.alert(t('common.error'), t('householdServices.error.validQuantity'));
       return;
     }
 
@@ -362,7 +362,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
       setQuantity('');
       setQuantityEffectiveDate(new Date());
       setSelectedService(null);
-      Alert.alert('Error', error.message || 'Failed to add quantity');
+      Alert.alert(t('common.error'), error.message || t('householdServices.error.addQuantity'));
     }
   };
 
@@ -725,18 +725,18 @@ const HouseholdServicesManagementScreen: React.FC = () => {
               </View>
             </View>
             <Text style={styles.serviceType}>
-              Type: {service.billingType.replace('_', ' ')}
+              {t('householdServices.type')}: {service.billingType.replace('_', ' ')}
             </Text>
             {service.billingType === 'DAILY_QUANTITY' && (
               <Text style={styles.serviceDetails}>
-                Default: {service.defaultQuantity} {service.unit}
+                {t('householdServices.default')}: {service.defaultQuantity} {service.unit}
               </Text>
             )}
             {service.billingType === 'MONTHLY_SALARY' && (
               <Text style={styles.serviceDetails}>
-                Salary: {formatCurrency(service.monthlySalary || 0, currency)}/month
+                {t('householdServices.salary')}: {formatCurrency(service.monthlySalary || 0, currency)}/{t('householdServices.month')}
                 {service.allowedLeaves !== undefined && (
-                  <> • Allowed Leaves: {service.allowedLeaves}</>
+                  <> • {t('householdServices.allowedLeavesLabel')}: {service.allowedLeaves}</>
                 )}
               </Text>
             )}
@@ -763,13 +763,13 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                     style={styles.actionButton}
                     onPress={() => handleAddQuantity(service)}
                   >
-                    <Text style={styles.actionButtonText}>Add Quantity</Text>
+                    <Text style={styles.actionButtonText}>{t('householdServices.addQuantity')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.actionButton}
                     onPress={() => handleViewHistory(service, 'quantity')}
                   >
-                    <Text style={styles.actionButtonText}>View Quantities</Text>
+                    <Text style={styles.actionButtonText}>{t('householdServices.viewQuantities')}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -837,7 +837,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                 }}
               >
                 <Text style={styles.pickerButtonText}>
-                  Type: {billingType.replace('_', ' ')}
+                  {t('householdServices.type')}: {billingType.replace('_', ' ')}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color={colors.text.secondary} />
               </TouchableOpacity>
@@ -895,7 +895,7 @@ const HouseholdServicesManagementScreen: React.FC = () => {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Allowed Leaves per Month"
+                  placeholder={t('householdServices.allowedLeavesPerMonthPlaceholder')}
                   placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
                   value={allowedLeaves}
                   onChangeText={setAllowedLeaves}
@@ -1029,12 +1029,12 @@ const HouseholdServicesManagementScreen: React.FC = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              Add Quantity - {selectedService?.name}
+              {t('householdServices.addQuantity')} - {selectedService?.name}
             </Text>
 
             <TextInput
               style={styles.input}
-              placeholder="Quantity"
+              placeholder={t('householdServices.quantity')}
               placeholderTextColor={INPUT_PLACEHOLDER_COLOR}
               value={quantity}
               onChangeText={setQuantity}

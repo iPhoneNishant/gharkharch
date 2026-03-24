@@ -21,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../types';
 import { colors, typography, spacing, borderRadius, shadows, addFontScaleListener } from '../config/theme';
 import i18n from '../i18n';
+import { normalizeLanguageCode, SUPPORTED_LANGUAGE_CODES } from '../i18n/supportedLanguages';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'LanguageSelection'>;
 
@@ -29,15 +30,27 @@ interface LanguageSelectionScreenProps {
   route: { params?: undefined };
 }
 
-const LANGUAGES = [
-  { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
-];
+const NATIVE_LANGUAGE_NAMES: Record<(typeof SUPPORTED_LANGUAGE_CODES)[number], string> = {
+  en: 'English',
+  hi: 'हिंदी',
+  gu: 'ગુજરાતી',
+  ta: 'தமிழ்',
+  mr: 'मराठी',
+  te: 'తెలుగు',
+  kn: 'ಕನ್ನಡ',
+};
+
+const LANGUAGES = SUPPORTED_LANGUAGE_CODES.map((code) => ({
+  code,
+  nativeName: NATIVE_LANGUAGE_NAMES[code],
+}));
 
 const LanguageSelectionScreen: React.FC<LanguageSelectionScreenProps> = ({ navigation }) => {
   const { t, i18n: i18nInstance } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(i18nInstance.language || 'en');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    normalizeLanguageCode(i18nInstance.language)
+  );
   const [fontScaleVersion, setFontScaleVersion] = useState(0);
 
   useEffect(() => {
@@ -142,19 +155,20 @@ const LanguageSelectionScreen: React.FC<LanguageSelectionScreenProps> = ({ navig
   });
 
   const handleLanguageSelect = (languageCode: string) => {
-    setSelectedLanguage(languageCode);
+    const code = normalizeLanguageCode(languageCode);
+    setSelectedLanguage(code);
     // Change language immediately for preview
-    i18nInstance.changeLanguage(languageCode);
+    i18nInstance.changeLanguage(code);
   };
 
   const handleContinue = async () => {
     try {
       // Save selected language
-      await AsyncStorage.setItem('user-language', selectedLanguage);
+      await AsyncStorage.setItem('user-language', normalizeLanguageCode(selectedLanguage));
       await AsyncStorage.setItem('language-selected', 'true');
       
       // Change language
-      await i18nInstance.changeLanguage(selectedLanguage);
+      await i18nInstance.changeLanguage(normalizeLanguageCode(selectedLanguage));
       
       // Navigate to next screen (will be determined by RootNavigator)
       // The navigation will happen automatically when language is set

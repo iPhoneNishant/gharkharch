@@ -15,7 +15,7 @@
     "unknown": "Unknown",
     "retry": "Retry",
     "refresh": "Refresh",
-    "locale": "en-IN"
+    "locale": "te-IN"
   },
   "settings": {
     "title": "Settings",
@@ -252,7 +252,7 @@
     "gu": "Gujarati",
     "ta": "Tamil",
     "mr": "Marathi",
-    "te": "Telugu",
+    "te": "తెలుగు",
     "kn": "Kannada"
   },
   "transactionDetail": {

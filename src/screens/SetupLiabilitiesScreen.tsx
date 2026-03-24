@@ -143,6 +143,10 @@ const getStyles = (fontScaleVersion: number) => StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.tertiary,
   },
+  itemActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   actionButton: {
     padding: spacing.xs,
   },
@@ -560,11 +564,11 @@ const SetupLiabilitiesScreen: React.FC = () => {
                   t('onboarding.liabilities.skipSetupMessage'),
                   [
                     {
-                      text: 'Cancel',
+                      text: t('common.cancel'),
                       style: 'cancel',
                     },
                     {
-                      text: 'Skip',
+                      text: t('onboarding.assets.skip'),
                       style: 'destructive',
                       onPress: () => {
                         // Don't mark onboarding as complete when skipping
@@ -576,7 +580,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
                 );
               }}
             >
-              <Text style={styles.skipButton}>Skip</Text>
+              <Text style={styles.skipButton}>{t('onboarding.assets.skip')}</Text>
             </TouchableOpacity>
           ) : (
             <View style={{ width: 24 }} />
@@ -607,7 +611,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.base }]}>
           <Text style={styles.footerText}>
-            {selectedCount} {selectedCount === 1 ? 'loan' : 'loans'} selected
+            {t('onboarding.liabilities.loansSelected', { count: selectedCount })}
           </Text>
           <TouchableOpacity
             style={styles.nextButton}
@@ -628,7 +632,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Loan</Text>
+            <Text style={styles.modalTitle}>{t('onboarding.liabilities.editLoan')}</Text>
             
             <Text style={styles.inputLabel}>{t('onboarding.liabilities.name')}</Text>
             <TextInput
@@ -643,7 +647,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
               style={styles.input}
               value={editAmount}
               onChangeText={setEditAmount}
-              placeholder="0"
+              placeholder={t('onboarding.assets.zeroPlaceholder')}
               keyboardType="numeric"
             />
 
@@ -691,7 +695,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
                 style={[styles.modalButton, styles.modalButtonSave]}
                 onPress={handleSaveEdit}
               >
-                <Text style={styles.modalButtonTextSave}>Save</Text>
+                <Text style={styles.modalButtonTextSave}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -722,7 +726,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
               style={styles.input}
               value={newItemAmount}
               onChangeText={setNewItemAmount}
-              placeholder="0"
+              placeholder={t('onboarding.assets.zeroPlaceholder')}
               keyboardType="numeric"
             />
 
@@ -769,7 +773,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
                 style={[styles.modalButton, styles.modalButtonSave]}
                 onPress={handleAdd}
               >
-                <Text style={styles.modalButtonTextSave}>Add</Text>
+                <Text style={styles.modalButtonTextSave}>{t('addTransaction.add')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -826,7 +830,7 @@ const SetupLiabilitiesScreen: React.FC = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.pickerModalContent}>
-            <Text style={styles.modalTitle}>Select Sub Category</Text>
+            <Text style={styles.modalTitle}>{t('onboarding.liabilities.selectSubCategory')}</Text>
             <FlatList
               data={availableSubCategories}
               keyExtractor={(item) => item}

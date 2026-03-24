@@ -190,7 +190,7 @@ const BankSmsScreen: React.FC = () => {
       }
     } catch (err) {
       console.error('Error loading SMS:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load SMS messages');
+      setError(err instanceof Error ? err.message : t('bankSms.failedToLoadSmsMessages'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

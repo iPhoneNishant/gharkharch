@@ -820,7 +820,7 @@ const AddAccountScreen: React.FC = () => {
             <Text style={styles.currencySymbol}>₹</Text>
             <TextInput
               style={styles.balanceInput}
-              placeholder="0"
+              placeholder={t('onboarding.assets.zeroPlaceholder')}
               placeholderTextColor={colors.neutral[400]}
               value={openingBalance}
               onChangeText={setOpeningBalance}
@@ -900,9 +900,9 @@ const AddAccountScreen: React.FC = () => {
               onPress={() => setShowCategoryPicker(false)}
               style={styles.modalCancelButton}
             >
-              <Text style={styles.modalCancel}>Cancel </Text>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Category</Text>
+            <Text style={styles.modalTitle}>{t('addAccount.selectCategory')}</Text>
             <View style={{ width: 90 }} />
           </View>
 
@@ -916,7 +916,7 @@ const AddAccountScreen: React.FC = () => {
               >
                 <Text style={styles.optionText}>{item.parentCategory}</Text>
                 <Text style={styles.optionSubtext}>
-                  {item.subCategories.length} sub-categories
+                  {t('addAccount.subCategoryCount', { count: item.subCategories.length })}
                 </Text>
               </TouchableOpacity>
             )}
@@ -953,9 +953,9 @@ const AddAccountScreen: React.FC = () => {
               onPress={() => setShowSubCategoryPicker(false)}
               style={styles.modalCancelButton}
             >
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Sub-category</Text>
+            <Text style={styles.modalTitle}>{t('addAccount.selectSubCategory')}</Text>
             <View style={{ width: 90 }} />
           </View>
 

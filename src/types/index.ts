@@ -294,6 +294,8 @@ export type RootStackParamList = {
   AddRecurringTransaction: { editRecurringTransactionId?: string } | undefined;
   RecurringTransactions: undefined;
   BankSms: undefined;
+  /** Paste SMS to prefill Add Transaction (optional returnTo when opened from Add Transaction). */
+  SmsImport: { returnTo?: 'AddTransaction' } | undefined;
   Accounts: undefined;
   SmsAccountMapping: undefined;
   UserGuide: undefined;

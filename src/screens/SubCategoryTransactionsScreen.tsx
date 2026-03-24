@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -39,6 +40,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SubCategory
 type RouteType = RouteProp<RootStackParamList, 'SubCategoryTransactions'>;
 
 const SubCategoryTransactionsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
@@ -156,21 +158,21 @@ const SubCategoryTransactionsScreen: React.FC = () => {
     if (debitAccount?.accountType === 'expense') {
       return {
         title: debitAccount.name,
-        subtitle: `from ${creditAccount?.name ?? 'Unknown'}`,
+        subtitle: t('subCategoryTransactions.fromAccount', { name: creditAccount?.name ?? t('common.unknown') }),
         type: 'expense' as AccountType,
         isExpense: true,
       };
     } else if (creditAccount?.accountType === 'income') {
       return {
         title: creditAccount.name,
-        subtitle: `to ${debitAccount?.name ?? 'Unknown'}`,
+        subtitle: t('subCategoryTransactions.toAccount', { name: debitAccount?.name ?? t('common.unknown') }),
         type: 'income' as AccountType,
         isExpense: false,
       };
     } else {
       return {
-        title: `${creditAccount?.name ?? 'Unknown'} → ${debitAccount?.name ?? 'Unknown'}`,
-        subtitle: 'Transfer',
+        title: `${creditAccount?.name ?? t('common.unknown')} → ${debitAccount?.name ?? t('common.unknown')}`,
+        subtitle: t('addTransaction.transfer'),
         type: 'asset' as AccountType,
         isExpense: false,
       };
@@ -280,7 +282,7 @@ const SubCategoryTransactionsScreen: React.FC = () => {
       return (
         <View style={styles.emptyState}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
-          <Text style={styles.emptyStateText}>Loading transactions...</Text>
+          <Text style={styles.emptyStateText}>{t('subCategoryTransactions.loadingTransactions')}</Text>
         </View>
       );
     }
@@ -295,12 +297,12 @@ const SubCategoryTransactionsScreen: React.FC = () => {
           />
         </View>
         <Text style={styles.emptyStateText}>
-          {searchQuery ? 'No matching transactions' : 'No transactions found'}
+          {searchQuery ? t('subCategoryTransactions.noMatchingTransactions') : t('reports.noTransactionsFound')}
         </Text>
         <Text style={styles.emptyStateSubtext}>
           {searchQuery 
-            ? 'Try adjusting your search query'
-            : `No transactions found for "${subCategory}" in the selected period`
+            ? t('subCategoryTransactions.tryAdjustingSearchQuery')
+            : t('subCategoryTransactions.noTransactionsForSubCategory', { subCategory })
           }
         </Text>
       </View>
@@ -322,8 +324,8 @@ const SubCategoryTransactionsScreen: React.FC = () => {
       });
       return `${fromStr} - ${toStr}`;
     }
-    return 'All time';
-  }, [fromDate, toDate]);
+    return t('subCategoryTransactions.allTime');
+  }, [fromDate, toDate, t]);
 
   // Group transactions by date
   const groupedTransactions = useMemo(() => {
@@ -377,7 +379,7 @@ const SubCategoryTransactionsScreen: React.FC = () => {
         <Ionicons name="search" size={18} color={colors.neutral[400]} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search transactions..."
+          placeholder={t('subCategoryTransactions.searchTransactions')}
           placeholderTextColor={colors.neutral[400]}
           value={searchQuery}
           onChangeText={setSearchQuery}
