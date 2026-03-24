@@ -248,12 +248,12 @@
   },
   "languages": {
     "en": "English",
-    "hi": "Hindi",
-    "gu": "Gujarati",
-    "ta": "Tamil",
-    "mr": "Marathi",
-    "te": "Telugu",
-    "kn": "Kannada"
+    "hi": "हिंदी"
+    // "gu": "Gujarati",
+    // "ta": "Tamil",
+    // "mr": "Marathi",
+    // "te": "Telugu",
+    // "kn": "Kannada"
   },
   "transactionDetail": {
     "notFound": "Transaction not found",

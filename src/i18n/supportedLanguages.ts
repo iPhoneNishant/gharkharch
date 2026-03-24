@@ -2,7 +2,9 @@
  * App UI languages (JSON resources under src/i18n/locales).
  * Device / saved codes are normalized to these base codes before i18n.changeLanguage.
  */
-export const SUPPORTED_LANGUAGE_CODES = ['en', 'hi', 'gu', 'ta', 'mr', 'te', 'kn'] as const;
+export const SUPPORTED_LANGUAGE_CODES = ['en', 'hi'] as const;
+// export const SUPPORTED_LANGUAGE_CODES = ['en', 'hi', 'gu', 'ta', 'mr', 'te', 'kn'] as const;
+
 
 export type AppLanguageCode = (typeof SUPPORTED_LANGUAGE_CODES)[number];
 
